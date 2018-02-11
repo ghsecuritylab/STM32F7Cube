@@ -33,7 +33,7 @@ extern SAI_HandleTypeDef haudio_out_sai;
 void DMA2_Stream4_IRQHandler() { HAL_DMA_IRQHandler (haudio_out_sai.hdmatx); }
 //}}}
 
-int oldValue = -1;
+int oldFaster = 1;
 int writePtrOnRead = 0;
 //{{{  usb audio
 //{{{  usb audio defines
@@ -903,24 +903,29 @@ static USBD_ClassTypeDef audioClass = {
 
 // audio out
 //{{{
-void audioClock (int value) {
+void audioClock (int faster) {
 // Set the PLL configuration according to the audio frequency
 // 48000*2*2 * 256 = 49.152Mhz
 // - PLLI2S_VCO: VCO_344M
 // - I2S_CLK = PLLI2S_VCO / PLLI2SQ = 344/7 = 49.142 Mhz
 // - I2S_CLK1 = I2S_CLK / PLLI2SDIVQ = 49.142/1 = 49.142 Mhz
 
-  if (value != oldValue) {
+// - I2S_CLK = PLLI2S_VCO / PLLI2SQ = 295/6 = 49.166 Mhz
+// - I2S_CLK1 = I2S_CLK / PLLI2SDIVQ = 49.1666/1 = 49.142 Mhz
+
+  if (faster != oldFaster) {
     RCC_PeriphCLKInitTypeDef RCC_ExCLKInitStruct;
     HAL_RCCEx_GetPeriphCLKConfig (&RCC_ExCLKInitStruct);
     RCC_ExCLKInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI2;
     RCC_ExCLKInitStruct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLI2S;
     RCC_ExCLKInitStruct.PLLI2S.PLLI2SP = 8;
-    RCC_ExCLKInitStruct.PLLI2S.PLLI2SN = value;
-    RCC_ExCLKInitStruct.PLLI2S.PLLI2SQ = 7;
+
+    RCC_ExCLKInitStruct.PLLI2S.PLLI2SN = faster ? 295 : 344;
+    RCC_ExCLKInitStruct.PLLI2S.PLLI2SQ = faster ? 6 : 7;
+
     RCC_ExCLKInitStruct.PLLI2SDivQ = 1;
     HAL_RCCEx_PeriphCLKConfig (&RCC_ExCLKInitStruct);
-    oldValue = value;
+    oldFaster = faster;
     }
   }
 //}}}
@@ -933,10 +938,10 @@ void BSP_AUDIO_OUT_ClockConfig (SAI_HandleTypeDef* hsai, uint32_t freq, void* Pa
 void BSP_AUDIO_OUT_TransferComplete_CallBack() {
 
   writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / AUDIO_PACKET_SIZE;
-  if (writePtrOnRead > (AUDIO_PACKETS/2) + 1) // faster - 49.2857  - target 49.152
-    audioClock (345); // slower - 49.142Mhz
-  else if (writePtrOnRead < (AUDIO_PACKETS/2))
-    audioClock (344);
+  if (writePtrOnRead > (AUDIO_PACKETS/2)) // faster
+    audioClock (1);
+  else if (writePtrOnRead < (AUDIO_PACKETS/2)) // slower
+    audioClock (0);
   }
 //}}}
 //}}}
@@ -1067,7 +1072,7 @@ int main() {
   while (1) {
     touch();
     dec (1, writePtrOnRead);
-    dec (2, oldValue);
+    dec (2, oldFaster);
     HAL_Delay (40);
     }
   }
