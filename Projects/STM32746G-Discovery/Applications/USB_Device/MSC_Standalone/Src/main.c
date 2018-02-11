@@ -46,18 +46,14 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
+
 USBD_HandleTypeDef USBD_Device;
 
-/* Private function prototypes -----------------------------------------------*/
+
 static void SystemClock_Config(void);
 static void Error_Handler(void);
 static void CPU_CACHE_Enable(void);
 
-/* Private functions ---------------------------------------------------------*/
 
 /**
   * @brief  Main program

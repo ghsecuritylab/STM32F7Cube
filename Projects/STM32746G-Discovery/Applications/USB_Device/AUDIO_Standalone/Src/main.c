@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB audio V1.0 - 16.00 11/2/18";
+char* kVersion = "USB audio V1.0 - 17.00 11/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -561,7 +561,7 @@ static USBD_DescriptorsTypeDef audioDescriptor = {
   };
 //}}}
 
-//{{{  tAudioContext
+//{{{  tAudioData
 typedef struct {
   uint8_t       mBuffer[AUDIO_PACKET_BUF_SIZE];
   uint8_t       mPlayStarted;
@@ -571,7 +571,7 @@ typedef struct {
   uint8_t       mData[USB_MAX_EP0_SIZE];
   uint8_t       mLength;
   uint8_t       mUnit;
-  } tAudioContext;
+  } tAudioData;
 //}}}
 //{{{  audioClass
 __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END = {
@@ -719,12 +719,12 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   // Open EP OUT
   USBD_LL_OpenEP (device, AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, AUDIO_PACKET_SIZE);
 
-  // allocate audioContext
-  tAudioContext* audioContext = malloc (sizeof (tAudioContext));
-  audioContext->mPlayStarted = 0;
-  audioContext->mWritePtr = 0;
-  audioContext->mAltSetting = 0;
-  device->pClassData = audioContext;
+  // allocate audioData
+  tAudioData* audioData = malloc (sizeof (tAudioData));
+  audioData->mPlayStarted = 0;
+  audioData->mWritePtr = 0;
+  audioData->mAltSetting = 0;
+  device->pClassData = audioData;
 
   BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, AUDIO_DEFAULT_VOLUME, AUDIO_FREQ);
   BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_2);
@@ -732,7 +732,7 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   //BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
 
   // Prepare Out endpoint to receive 1st packet
-  USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, audioContext->mBuffer, AUDIO_PACKET_SIZE);
+  USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, audioData->mBuffer, AUDIO_PACKET_SIZE);
 
   return USBD_OK;
   }
@@ -754,7 +754,7 @@ static uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 //{{{
 static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
-  tAudioContext* audioContext = (tAudioContext*)device->pClassData;
+  tAudioData* audioData = (tAudioData*)device->pClassData;
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest) {
@@ -764,13 +764,13 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
           break;
 
         case USB_REQ_GET_INTERFACE : {
-          USBD_CtlSendData (device, (uint8_t*)&(audioContext->mAltSetting), 1);
+          USBD_CtlSendData (device, (uint8_t*)&(audioData->mAltSetting), 1);
           break;
           }
 
         case USB_REQ_SET_INTERFACE :
           if ((uint8_t)(req->wValue) <= USBD_MAX_NUM_INTERFACES)
-            audioContext->mAltSetting = (uint8_t)(req->wValue);
+            audioData->mAltSetting = (uint8_t)(req->wValue);
           else // NAK
             USBD_CtlError (device, req);
           break;
@@ -784,18 +784,18 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
     case USB_REQ_TYPE_CLASS :
       switch (req->bRequest) {
         case AUDIO_REQ_GET_CUR: {
-          memset (audioContext->mData, 0, 64);
-          USBD_CtlSendData (device, audioContext->mData, req->wLength);
+          memset (audioData->mData, 0, 64);
+          USBD_CtlSendData (device, audioData->mData, req->wLength);
           break;
           }
 
         case AUDIO_REQ_SET_CUR:
           if (req->wLength) {
             // prepare to rx buffer from ep0
-            USBD_CtlPrepareRx (device, audioContext->mData, req->wLength);
-            audioContext->mCommand = AUDIO_REQ_SET_CUR; // Set the request value
-            audioContext->mLength = req->wLength;       // Set the request data length
-            audioContext->mUnit = HIBYTE(req->wIndex);  // Set the request target unit
+            USBD_CtlPrepareRx (device, audioData->mData, req->wLength);
+            audioData->mCommand = AUDIO_REQ_SET_CUR; // Set the request value
+            audioData->mLength = req->wLength;       // Set the request data length
+            audioData->mUnit = HIBYTE(req->wIndex);  // Set the request target unit
             }
           break;
 
@@ -816,12 +816,12 @@ static uint8_t usbEp0TxReady (USBD_HandleTypeDef* device) {
 static uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
 // only SET_CUR request is managed
 
-  tAudioContext* audioContext = (tAudioContext*)device->pClassData;
-  if (audioContext->mCommand == AUDIO_REQ_SET_CUR) {
-    if (audioContext->mUnit == AUDIO_OUT_STREAMING_CTRL) {
-      BSP_AUDIO_OUT_SetMute (audioContext->mData[0]);
-      audioContext->mCommand = 0;
-      audioContext->mLength = 0;
+  tAudioData* audioData = (tAudioData*)device->pClassData;
+  if (audioData->mCommand == AUDIO_REQ_SET_CUR) {
+    if (audioData->mUnit == AUDIO_OUT_STREAMING_CTRL) {
+      BSP_AUDIO_OUT_SetMute (audioData->mData[0]);
+      audioData->mCommand = 0;
+      audioData->mLength = 0;
       }
     }
 
@@ -837,19 +837,19 @@ static uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epNum) {
 static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
 
   if (epNum == AUDIO_OUT_EP) {
-    tAudioContext* audioContext = (tAudioContext*)device->pClassData;
-    audioContext->mWritePtr += AUDIO_PACKET_SIZE;
-    if (audioContext->mWritePtr >= AUDIO_PACKET_BUF_SIZE)
-      audioContext->mWritePtr = 0;
+    tAudioData* audioData = (tAudioData*)device->pClassData;
+    audioData->mWritePtr += AUDIO_PACKET_SIZE;
+    if (audioData->mWritePtr >= AUDIO_PACKET_BUF_SIZE)
+      audioData->mWritePtr = 0;
 
-    if (!audioContext->mPlayStarted)
-      if (audioContext->mWritePtr >= AUDIO_PACKET_BUF_SIZE / 2) {
-        BSP_AUDIO_OUT_Play ((uint16_t*)audioContext->mBuffer, AUDIO_PACKET_BUF_SIZE);
-        audioContext->mPlayStarted = 1;
+    if (!audioData->mPlayStarted)
+      if (audioData->mWritePtr >= AUDIO_PACKET_BUF_SIZE / 2) {
+        BSP_AUDIO_OUT_Play ((uint16_t*)audioData->mBuffer, AUDIO_PACKET_BUF_SIZE);
+        audioData->mPlayStarted = 1;
         }
 
     // prepare outEndpoint to rx next audio packet
-    USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioContext->mBuffer[audioContext->mWritePtr], AUDIO_PACKET_SIZE);
+    USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], AUDIO_PACKET_SIZE);
     }
 
   return USBD_OK;
@@ -932,7 +932,7 @@ void BSP_AUDIO_OUT_ClockConfig (SAI_HandleTypeDef* hsai, uint32_t freq, void* Pa
 //{{{
 void BSP_AUDIO_OUT_TransferComplete_CallBack() {
 
-  writePtrOnRead = ((tAudioContext*)gUsbDevice.pClassData)->mWritePtr / AUDIO_PACKET_SIZE;
+  writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / AUDIO_PACKET_SIZE;
   if (writePtrOnRead > (AUDIO_PACKETS/2) + 1) // faster - 49.2857  - target 49.152
     audioClock (345); // slower - 49.142Mhz
   else if (writePtrOnRead < (AUDIO_PACKETS/2))
