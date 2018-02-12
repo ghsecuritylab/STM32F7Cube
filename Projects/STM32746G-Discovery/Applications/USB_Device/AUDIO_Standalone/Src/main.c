@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB audio V1.0 - 17.00 11/2/18";
+char* kVersion = "USB audio V1.0 - 12.00 12/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -870,7 +870,6 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
     audioData->mWritePtr += AUDIO_OUT_PACKET_SIZE;
     if (audioData->mWritePtr >= AUDIO_OUT_PACKET_BUF_SIZE)
       audioData->mWritePtr = 0;
-
     USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], AUDIO_IN_PACKET_SIZE);
     }
 
