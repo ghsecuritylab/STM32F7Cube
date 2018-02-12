@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "UAC 2pm 12/2/18";
+char* kVersion = "UAC 7pm 12/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,7 +79,7 @@ char* kVersion = "UAC 2pm 12/2/18";
 
 static int debugOffset = 1;
 static int debugLine = 0;
-static int debugSize = 16;
+static int debugSize = 20;
 static char str[40];
 //{{{
 static void debug (int col) {
@@ -892,18 +892,17 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
         }
 
     // twiddle samples into slots
-    uint16_t* srcPtr = ((uint16_t*)(audioData->mBuffer + audioData->mWritePtr)) + (2*AUDIO_PACKET_SAMPLES);
-    uint16_t* dstPtr = ((uint16_t*)(audioData->mBuffer + audioData->mWritePtr)) + (4*AUDIO_PACKET_SAMPLES);
-    do  {
+    uint16_t* srcPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 4*AUDIO_PACKET_SAMPLES);
+    uint16_t* dstPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 8*AUDIO_PACKET_SAMPLES);
+    for (int sample = 0; sample < AUDIO_PACKET_SAMPLES*2; sample++) {
       *--dstPtr = *--srcPtr;
       *--dstPtr = *srcPtr;
-      } while (dstPtr > (uint16_t*)(audioData->mBuffer + audioData->mWritePtr));
+      }
 
     // prepare outEndpoint to rx next audio packet
     audioData->mWritePtr += AUDIO_OUT_PACKET_SIZE;
     if (audioData->mWritePtr >= AUDIO_OUT_PACKET_BUF_SIZE)
       audioData->mWritePtr = 0;
-
     USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], AUDIO_IN_PACKET_SIZE);
     }
 
@@ -930,12 +929,18 @@ static uint8_t usbIsoOutInComplete (USBD_HandleTypeDef* device, uint8_t epNum) {
 
 //{{{
 static uint8_t* usbGetConfigDescriptor (uint16_t* length) {
+
+  sprintf (str, "usbGetConfigDescriptor");
+  debug (LCD_COLOR_CYAN);
+
   *length = sizeof (kConfigDescriptor);
   return kConfigDescriptor;
   }
 //}}}
 //{{{
 static uint8_t* usbGetDeviceQualifierDescriptor (uint16_t *length) {
+  sprintf (str, "usbGetDeviceQualifierDescriptor");
+  debug (LCD_COLOR_WHITE);
   *length = sizeof (kDeviceQualifierDescriptor);
   return kDeviceQualifierDescriptor;
   }
@@ -1032,7 +1037,7 @@ static void initGraphics() {
   BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
   BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
   BSP_LCD_Clear(LCD_COLOR_BLACK);
-  BSP_LCD_SetFont (&Font16);
+  BSP_LCD_SetFont (&Font12);
   BSP_LCD_DisplayOn();
   }
 //}}}
