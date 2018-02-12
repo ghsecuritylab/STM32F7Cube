@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB audio V1.0 - 2.00 12/2/18";
+char* kVersion = "UAC 2pm 12/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -1110,7 +1110,7 @@ int main() {
   while (1) {
     touch();
     char str1[40];
-    sprintf (str1, "%s %s %d", kVersion, oldFaster ? "faster" : "slower", writePtrOnRead);
+    sprintf (str1, "%s %d %d %s %d", kVersion, AUDIO_FREQ, AUDIO_CHANNELS, oldFaster ? "faster" : "slower", writePtrOnRead);
     BSP_LCD_SetTextColor (oldFaster ? LCD_COLOR_WHITE : LCD_COLOR_YELLOW);
     BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
     HAL_Delay (40);
