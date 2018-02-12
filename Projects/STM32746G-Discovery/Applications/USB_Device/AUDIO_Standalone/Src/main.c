@@ -36,7 +36,7 @@ void DMA2_Stream4_IRQHandler() { HAL_DMA_IRQHandler (haudio_out_sai.hdmatx); }
 int oldFaster = 1;
 int writePtrOnRead = 0;
 //{{{  usb audio
-//{{{  usb audio defines
+//{{{  defines
 #define USBD_VID              0x0483
 #define USBD_PID              0x5730
 #define USBD_LANGID_STRING    0x409
@@ -447,6 +447,7 @@ __ALIGN_BEGIN static uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
 //}}}
 //{{{
 __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END = {
+  // config
   9,                           // bLength - 9
   USB_DESC_TYPE_CONFIGURATION, // bDescriptorType
   LOBYTE(USB_AUDIO_CONFIG_DESC_SIZ), HIBYTE(USB_AUDIO_CONFIG_DESC_SIZ), // wTotalLength  109 bytes
@@ -455,7 +456,8 @@ __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIG
   0x00,                        // iConfiguration
   0xC0,                        // bmAttributes - BUS Powred
   0x32,                        // bMaxPower = 100 mA
-  //{{{  standard control interface
+
+  // control interface
   AUDIO_INTERFACE_DESC_SIZE,   // bLength - 9
   USB_DESC_TYPE_INTERFACE,     // bDescriptorType
   0x00,                        // bInterfaceNumber
@@ -465,7 +467,7 @@ __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIG
   AUDIO_SUBCLASS_AUDIOCONTROL, // bInterfaceSubClass
   AUDIO_PROTOCOL_UNDEFINED,    // bInterfaceProtocol
   0x00,                        // iInterface
-  //}}}
+
   //{{{  speaker control input,feature,output
   //  class-specific AC interface descriptor
   AUDIO_INTERFACE_DESC_SIZE,       // bLength - 9
@@ -483,8 +485,8 @@ __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIG
   0x01,                            // bTerminalID
   0x01, 0x01,                      // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
   0x00,                            // bAssocTerminal
-  0x01,                            // bNrChannels
-  0x00, 0x00,                      // wChannelConfig 0x0000  Mono
+  0x04,                            // bNrChannels
+  0x33, 0x00,                      // wChannelConfig - 0x0003 - leftFront rightFront, leftSurround, rightSurround
   0x00,                            // iChannelNames
   0x00,                            // iTerminal
 
@@ -598,7 +600,6 @@ __ALIGN_BEGIN static uint8_t kStringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = 
   };
 //}}}
 __ALIGN_BEGIN static uint8_t strDesc[256] __ALIGN_END;
-
 //{{{  audioDescriptor
 //{{{
 static void intToUnicode (uint32_t value, uint8_t* pbuf, uint8_t len) {
@@ -751,6 +752,7 @@ static uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   return USBD_OK;
   }
 //}}}
+
 //{{{
 static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
@@ -763,14 +765,13 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
             USBD_CtlSendData (device, kConfigDescriptor + 18, MIN(USB_AUDIO_DESC_SIZ, req->wLength));
           break;
 
-        case USB_REQ_GET_INTERFACE : {
-          USBD_CtlSendData (device, (uint8_t*)&(audioData->mAltSetting), 1);
+        case USB_REQ_GET_INTERFACE :
+          USBD_CtlSendData (device, (uint8_t*)&audioData->mAltSetting, 1);
           break;
-          }
 
         case USB_REQ_SET_INTERFACE :
           if ((uint8_t)(req->wValue) <= USBD_MAX_NUM_INTERFACES)
-            audioData->mAltSetting = (uint8_t)(req->wValue);
+            audioData->mAltSetting = (uint8_t)req->wValue;
           else // NAK
             USBD_CtlError (device, req);
           break;
@@ -783,19 +784,18 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 
     case USB_REQ_TYPE_CLASS :
       switch (req->bRequest) {
-        case AUDIO_REQ_GET_CUR: {
+        case AUDIO_REQ_GET_CUR:
           memset (audioData->mData, 0, 64);
           USBD_CtlSendData (device, audioData->mData, req->wLength);
           break;
-          }
 
         case AUDIO_REQ_SET_CUR:
           if (req->wLength) {
             // prepare to rx buffer from ep0
             USBD_CtlPrepareRx (device, audioData->mData, req->wLength);
-            audioData->mCommand = AUDIO_REQ_SET_CUR; // Set the request value
-            audioData->mLength = req->wLength;       // Set the request data length
-            audioData->mUnit = HIBYTE(req->wIndex);  // Set the request target unit
+            audioData->mCommand = AUDIO_REQ_SET_CUR; // set request value
+            audioData->mLength = req->wLength;       // set request data length
+            audioData->mUnit = HIBYTE(req->wIndex);  // set request target unit
             }
           break;
 
@@ -807,6 +807,7 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
   return USBD_OK;
   }
 //}}}
+
 //{{{
 static uint8_t usbEp0TxReady (USBD_HandleTypeDef* device) {
   return USBD_OK;
@@ -828,6 +829,7 @@ static uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
   return USBD_OK;
   }
 //}}}
+
 //{{{
 static uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epNum) {
   return USBD_OK;
@@ -855,11 +857,13 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
   return USBD_OK;
   }
 //}}}
+
 //{{{
 static uint8_t usbSof (USBD_HandleTypeDef* device) {
   return USBD_OK;
   }
 //}}}
+
 //{{{
 static uint8_t usbIsoInInComplete (USBD_HandleTypeDef* device, uint8_t epNum) {
   return USBD_OK;
@@ -870,6 +874,7 @@ static uint8_t usbIsoOutInComplete (USBD_HandleTypeDef* device, uint8_t epNum) {
   return USBD_OK;
   }
 //}}}
+
 //{{{
 static uint8_t* usbGetConfigDescriptor (uint16_t* length) {
   *length = sizeof (kConfigDescriptor);
@@ -901,15 +906,19 @@ static USBD_ClassTypeDef audioClass = {
   };
 //}}}
 
-// audio out
+// BSP_audio out
 //{{{
 void audioClock (int faster) {
 // Set the PLL configuration according to the audio frequency
-// 48000*2*2 * 256 = 49.152Mhz
-// - PLLI2S_VCO: VCO_344M
+// target = 48000*2*2 * 256 = 49.152Mhz
+
+// slower
+// - PLLI2S_VCO: VCO_344 N
 // - I2S_CLK = PLLI2S_VCO / PLLI2SQ = 344/7 = 49.142 Mhz
 // - I2S_CLK1 = I2S_CLK / PLLI2SDIVQ = 49.142/1 = 49.142 Mhz
 
+// faster
+// - PLLI2S_VCO: VCO_295 N
 // - I2S_CLK = PLLI2S_VCO / PLLI2SQ = 295/6 = 49.166 Mhz
 // - I2S_CLK1 = I2S_CLK / PLLI2SDIVQ = 49.1666/1 = 49.142 Mhz
 
@@ -919,10 +928,8 @@ void audioClock (int faster) {
     RCC_ExCLKInitStruct.PeriphClockSelection = RCC_PERIPHCLK_SAI2;
     RCC_ExCLKInitStruct.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLI2S;
     RCC_ExCLKInitStruct.PLLI2S.PLLI2SP = 8;
-
     RCC_ExCLKInitStruct.PLLI2S.PLLI2SN = faster ? 295 : 344;
     RCC_ExCLKInitStruct.PLLI2S.PLLI2SQ = faster ? 6 : 7;
-
     RCC_ExCLKInitStruct.PLLI2SDivQ = 1;
     HAL_RCCEx_PeriphCLKConfig (&RCC_ExCLKInitStruct);
     oldFaster = faster;
