@@ -77,7 +77,7 @@ int writePtrOnRead = 0;
 
 #define AUDIO_CONTROL_MUTE        0x01
 #define AUDIO_CONTROL_VOLUME      0x02
-#define AUDIO_DEFAULT_VOLUME      70
+#define AUDIO_DEFAULT_VOLUME      100
 
 #define AUDIO_FORMAT_TYPE_I       0x01
 #define AUDIO_ENDPOINT_GENERAL    0x01
@@ -486,7 +486,7 @@ __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIG
   0x01, 0x01,                      // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
   0x00,                            // bAssocTerminal
   AUDIO_CHANNELS,                  // bNrChannels
-  0x30, 0x00,                      // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
+  0x33, 0x00,                      // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
   0x00,                            // iChannelNames
   0x00,                            // iTerminal
 
@@ -755,6 +755,12 @@ static uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   tAudioData* audioData = (tAudioData*)device->pClassData;
+
+  char str[100];
+  sprintf (str, "setup %d", req->bmRequest & USB_REQ_TYPE_MASK);
+  BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+  BSP_LCD_DisplayStringAtLine (3, (uint8_t*)str);
+
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest) {
@@ -1093,7 +1099,6 @@ int main() {
   while (1) {
     touch();
     dec (1, writePtrOnRead);
-
     BSP_LCD_SetTextColor (oldFaster ? LCD_COLOR_YELLOW : LCD_COLOR_MAGENTA);
     BSP_LCD_DisplayStringAtLine (2, (uint8_t*)(oldFaster ? "faster" : "slower"));
     HAL_Delay (40);
