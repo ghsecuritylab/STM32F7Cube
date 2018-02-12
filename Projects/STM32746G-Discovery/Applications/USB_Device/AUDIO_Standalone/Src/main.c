@@ -35,6 +35,10 @@ void DMA2_Stream4_IRQHandler() { HAL_DMA_IRQHandler (haudio_out_sai.hdmatx); }
 
 int oldFaster = 1;
 int writePtrOnRead = 0;
+
+#define AUDIO_FREQ      48000
+#define AUDIO_CHANNELS  2
+#define AUDIO_PACKETS   40
 //{{{  usb audio
 //{{{  defines
 #define USBD_VID              0x0483
@@ -71,31 +75,22 @@ int writePtrOnRead = 0;
 #define AUDIO_OUTPUT_TERMINAL_DESC_SIZE     0x09
 #define AUDIO_STREAMING_INTERFACE_DESC_SIZE 0x07
 
-#define AUDIO_CONTROL_MUTE       0x01
-#define AUDIO_CONTROL_VOLUME     0x02
-#define AUDIO_DEFAULT_VOLUME     70
+#define AUDIO_CONTROL_MUTE        0x01
+#define AUDIO_CONTROL_VOLUME      0x02
+#define AUDIO_DEFAULT_VOLUME      70
 
-#define AUDIO_FORMAT_TYPE_I      0x01
-#define AUDIO_FORMAT_TYPE_III    0x03
+#define AUDIO_FORMAT_TYPE_I       0x01
+#define AUDIO_ENDPOINT_GENERAL    0x01
+#define AUDIO_REQ_GET_CUR         0x81
+#define AUDIO_REQ_SET_CUR         0x01
+#define AUDIO_OUT_STREAMING_CTRL  0x02
 
-#define AUDIO_ENDPOINT_GENERAL   0x01
-
-#define AUDIO_REQ_GET_CUR        0x81
-#define AUDIO_REQ_SET_CUR        0x01
-
-#define AUDIO_OUT_STREAMING_CTRL 0x02
-
-#define AUDIO_FREQ             48000
-#define AUDIO_SAMPLE_FREQ_DESC (uint8_t)(AUDIO_FREQ), (uint8_t)((AUDIO_FREQ >> 8)), (uint8_t)((AUDIO_FREQ >> 16))
-
-#define AUDIO_CHANNELS         2
-#define AUDIO_BYTES_PER_SAMPLE 2
-#define AUDIO_PACKETS_PER_SECOND 1000
-#define AUDIO_PACKET_SIZE      (AUDIO_FREQ * AUDIO_BYTES_PER_SAMPLE * AUDIO_CHANNELS / AUDIO_PACKETS_PER_SECOND)
-#define AUDIO_PACKET_SIZE_DESC (uint8_t)(AUDIO_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_PACKET_SIZE >> 8) & 0xFF)
-
-#define AUDIO_PACKETS          40
+#define AUDIO_BYTES_PER_SAMPLE    2
+#define AUDIO_PACKETS_PER_SECOND  1000
+#define AUDIO_PACKET_SIZE      (AUDIO_CHANNELS * AUDIO_BYTES_PER_SAMPLE * AUDIO_FREQ / AUDIO_PACKETS_PER_SECOND)
 #define AUDIO_PACKET_BUF_SIZE  (AUDIO_PACKETS * AUDIO_PACKET_SIZE)
+#define AUDIO_SAMPLE_FREQ_DESC (uint8_t)(AUDIO_FREQ), (uint8_t)((AUDIO_FREQ >> 8)), (uint8_t)((AUDIO_FREQ >> 16))
+#define AUDIO_PACKET_SIZE_DESC (uint8_t)(AUDIO_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_PACKET_SIZE >> 8) & 0xFF)
 //}}}
 
 USBD_HandleTypeDef gUsbDevice;
@@ -485,8 +480,8 @@ __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIG
   0x01,                            // bTerminalID
   0x01, 0x01,                      // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
   0x00,                            // bAssocTerminal
-  0x04,                            // bNrChannels
-  0x33, 0x00,                      // wChannelConfig - 0x0003 - leftFront rightFront, leftSurround, rightSurround
+  AUDIO_CHANNELS,                  // bNrChannels
+  0x33, 0x00,                      // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
   0x00,                            // iChannelNames
   0x00,                            // iTerminal
 
@@ -546,7 +541,7 @@ __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIG
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_STREAMING_FORMAT_TYPE,     // bDescriptorSubtype
   AUDIO_FORMAT_TYPE_I,             // bFormatType
-  0x02,                            // bNrChannels
+  AUDIO_CHANNELS,                  // bNrChannels
   0x02,                            // bSubFrameSize - 2bytes per frame (16bits)
   16,                              // bBitResolution - 16bits per sample
   0x01,                            // bSamFreqType - single frequency supported
@@ -938,16 +933,16 @@ void audioClock (int faster) {
 //}}}
 //{{{
 void BSP_AUDIO_OUT_ClockConfig (SAI_HandleTypeDef* hsai, uint32_t freq, void* Params) {
-  audioClock (344);
+  audioClock (0);
   }
 //}}}
 //{{{
 void BSP_AUDIO_OUT_TransferComplete_CallBack() {
 
   writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / AUDIO_PACKET_SIZE;
-  if (writePtrOnRead > (AUDIO_PACKETS/2)) // faster
+  if (writePtrOnRead > AUDIO_PACKETS/2) // faster
     audioClock (1);
-  else if (writePtrOnRead < (AUDIO_PACKETS/2)) // slower
+  else if (writePtrOnRead < AUDIO_PACKETS/2) // slower
     audioClock (0);
   }
 //}}}
