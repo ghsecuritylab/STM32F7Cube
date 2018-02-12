@@ -80,6 +80,14 @@ char* kVersion = "USB audio V1.0 - 17.00 11/2/18";
 int debugOffset = 4;
 int debugLine = 0;
 int debugSize = 12;
+char str[100];
+//{{{
+static void debug (int col) {
+  BSP_LCD_SetTextColor (col);
+  BSP_LCD_DisplayStringAtLine (debugOffset + (debugLine++ % debugSize), (uint8_t*)str);
+  BSP_LCD_ClearStringLine (debugOffset + debugLine);
+  }
+//}}}
 
 int oldFaster = 1;
 int writePtrOnRead = 0;
@@ -760,10 +768,9 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 
   tAudioData* audioData = (tAudioData*)device->pClassData;
 
-  char str[100];
-  sprintf (str, "setup %d", req->bmRequest & USB_REQ_TYPE_MASK);
-  BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-  BSP_LCD_DisplayStringAtLine (debugOffset + (debugLine++ % debugSize), (uint8_t*)str);
+  sprintf (str, "setup %d %d %d %d %d",
+           req->bmRequest, req->bRequest, req->wValue, req->wLength, req->wIndex);
+  debug (LCD_COLOR_WHITE);
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
     case USB_REQ_TYPE_STANDARD:
@@ -827,10 +834,8 @@ static uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
 
   tAudioData* audioData = (tAudioData*)device->pClassData;
 
-  char str[100];
   sprintf (str, "usbEp0RxReady %d %d %d", audioData->mCommand, audioData->mUnit, audioData->mLength);
-  BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-  BSP_LCD_DisplayStringAtLine (3, (uint8_t*)str);
+  debug (LCD_COLOR_YELLOW);
 
   if (audioData->mCommand == AUDIO_REQ_SET_CUR) {
     if (audioData->mUnit == AUDIO_OUT_STREAMING_CTRL) {
