@@ -1,2 +1,6 @@
 /Drivers/
 /app/
+/makefile
+/objects.list
+/objects.mk
+/sources.mk

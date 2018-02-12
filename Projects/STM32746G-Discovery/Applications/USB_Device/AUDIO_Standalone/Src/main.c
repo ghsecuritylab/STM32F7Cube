@@ -1072,7 +1072,9 @@ int main() {
   while (1) {
     touch();
     dec (1, writePtrOnRead);
-    dec (2, oldFaster);
+
+    BSP_LCD_SetTextColor (oldFaster ? LCD_COLOR_YELLOW : LCD_COLOR_MAGENTA);
+    BSP_LCD_DisplayStringAtLine (2, (uint8_t*)(oldFaster ? "faster" : "slower"));
     HAL_Delay (40);
     }
   }
