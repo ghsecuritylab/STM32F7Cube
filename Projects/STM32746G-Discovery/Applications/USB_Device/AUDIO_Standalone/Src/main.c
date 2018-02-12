@@ -36,8 +36,8 @@ void DMA2_Stream4_IRQHandler() { HAL_DMA_IRQHandler (haudio_out_sai.hdmatx); }
 int oldFaster = 1;
 int writePtrOnRead = 0;
 
-#define AUDIO_FREQ      48000
 #define AUDIO_CHANNELS  2
+#define AUDIO_FREQ      48000
 #define AUDIO_PACKETS   40
 //{{{  usb audio
 //{{{  defines
@@ -424,20 +424,20 @@ void USBD_LL_Delay (uint32_t Delay) {
 
 //{{{
 __ALIGN_BEGIN static uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
-  0x12,                       /* bLength */
-  USB_DESC_TYPE_DEVICE,       /* bDescriptorType */
-  0x00, 0x02,                 /* bcdUSB */
-  0x00,                       /* bDeviceClass */
-  0x00,                       /* bDeviceSubClass */
-  0x00,                       /* bDeviceProtocol */
-  USB_MAX_EP0_SIZE,           /* bMaxPacketSize*/
-  LOBYTE(USBD_VID), HIBYTE(USBD_VID), /* idVendor */
-  LOBYTE(USBD_PID), HIBYTE(USBD_PID), /* idVendor */
-  0x00, 0x02,                 /* bcdDevice rel. 2.00 */
-  USBD_IDX_MFC_STR,           /* Index of manufacturer string */
-  USBD_IDX_PRODUCT_STR,       /* Index of product string */
-  USBD_IDX_SERIAL_STR,        /* Index of serial number string */
-  USBD_MAX_NUM_CONFIGURATION  /* bNumConfigurations */
+  0x12,                       // bLength
+  USB_DESC_TYPE_DEVICE,       // bDescriptorType
+  0x00, 0x02,                 // bcdUSB
+  0x00,                       // bDeviceClass
+  0x00,                       // bDeviceSubClass
+  0x00,                       // bDeviceProtocol
+  USB_MAX_EP0_SIZE,           // bMaxPacketSize
+  LOBYTE(USBD_VID), HIBYTE(USBD_VID), // vid
+  LOBYTE(USBD_PID), HIBYTE(USBD_PID), // pid
+  0x00, 0x02,                 // bcdDevice rel 2.00
+  USBD_IDX_MFC_STR,           // Index of manufacturer string
+  USBD_IDX_PRODUCT_STR,       // Index of product string
+  USBD_IDX_SERIAL_STR,        // Index of serial number string
+  USBD_MAX_NUM_CONFIGURATION  // bNumConfigurations
   };
 //}}}
 //{{{
@@ -481,7 +481,7 @@ __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIG
   0x01, 0x01,                      // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
   0x00,                            // bAssocTerminal
   AUDIO_CHANNELS,                  // bNrChannels
-  0x33, 0x00,                      // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
+  0x30, 0x00,                      // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
   0x00,                            // iChannelNames
   0x00,                            // iTerminal
 
@@ -723,9 +723,9 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   device->pClassData = audioData;
 
   BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, AUDIO_DEFAULT_VOLUME, AUDIO_FREQ);
-  BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_2);
-  //BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_3);
-  //BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
+  BSP_AUDIO_OUT_SetAudioFrameSlot (AUDIO_CHANNELS == 2 ?
+    SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_2 :
+    SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
 
   // Prepare Out endpoint to receive 1st packet
   USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, audioData->mBuffer, AUDIO_PACKET_SIZE);
@@ -836,8 +836,6 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
   if (epNum == AUDIO_OUT_EP) {
     tAudioData* audioData = (tAudioData*)device->pClassData;
     audioData->mWritePtr += AUDIO_PACKET_SIZE;
-    if (audioData->mWritePtr >= AUDIO_PACKET_BUF_SIZE)
-      audioData->mWritePtr = 0;
 
     if (!audioData->mPlayStarted)
       if (audioData->mWritePtr >= AUDIO_PACKET_BUF_SIZE / 2) {
@@ -846,6 +844,9 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
         }
 
     // prepare outEndpoint to rx next audio packet
+    if (audioData->mWritePtr >= AUDIO_PACKET_BUF_SIZE)
+      audioData->mWritePtr = 0;
+
     USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], AUDIO_PACKET_SIZE);
     }
 
