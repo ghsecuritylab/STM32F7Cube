@@ -844,6 +844,7 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
         audioData->mPlayStarted = 1;
         }
 
+    // twiddle samples into slots
     uint8_t* fromPtr = audioData->mBuffer + audioData->mWritePtr + 4*(AUDIO_PACKET_SAMPLES-1);
     uint8_t* toPtr = audioData->mBuffer + audioData->mWritePtr + 8*(AUDIO_PACKET_SAMPLES-1);
     for (int i = 0; i < AUDIO_PACKET_SAMPLES; i++) {
