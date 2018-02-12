@@ -892,19 +892,19 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
         }
 
     // twiddle samples into slots
-    uint8_t* fromPtr = audioData->mBuffer + audioData->mWritePtr + 4*(AUDIO_PACKET_SAMPLES-1);
-    uint8_t* toPtr = audioData->mBuffer + audioData->mWritePtr + 8*(AUDIO_PACKET_SAMPLES-1);
+    uint8_t* srcPtr = audioData->mBuffer + audioData->mWritePtr + 4*(AUDIO_PACKET_SAMPLES-1);
+    uint8_t* dstPtr = audioData->mBuffer + audioData->mWritePtr + 8*(AUDIO_PACKET_SAMPLES-1);
     for (int i = 0; i < AUDIO_PACKET_SAMPLES; i++) {
-      toPtr[0] = fromPtr[0];
-      toPtr[1] = fromPtr[1];
-      toPtr[2] = fromPtr[2];
-      toPtr[3] = fromPtr[3];
-      toPtr[4] = fromPtr[0];
-      toPtr[5] = fromPtr[1];
-      toPtr[6] = fromPtr[2];
-      toPtr[7] = fromPtr[3];
-      fromPtr -= 4;
-      toPtr -= 8;
+      dstPtr[0] = srcPtr[0];
+      dstPtr[1] = srcPtr[1];
+      dstPtr[2] = srcPtr[0];
+      dstPtr[3] = srcPtr[1];
+      dstPtr[4] = srcPtr[2];
+      dstPtr[5] = srcPtr[3];
+      dstPtr[6] = srcPtr[2];
+      dstPtr[7] = srcPtr[3];
+      srcPtr -= 4;
+      dstPtr -= 8;
       }
 
     // prepare outEndpoint to rx next audio packet
