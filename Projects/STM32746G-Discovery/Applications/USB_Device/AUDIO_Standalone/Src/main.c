@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB audio V1.0 - 12.00 12/2/18";
+char* kVersion = "USB audio V1.0 - 17.00 11/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,30 +16,6 @@ char* kVersion = "USB audio V1.0 - 12.00 12/2/18";
 #include "stm32746g_discovery_ts.h"
 #include "stm32746g_discovery_audio.h"
 //}}}
-//{{{  interrupt, system handlers
-void NMI_Handler() {}
-void SVC_Handler() {}
-void PendSV_Handler() {}
-void DebugMon_Handler() {}
-
-void BusFault_Handler() { while (1) {} }
-void HardFault_Handler() { while (1) {} }
-void MemManage_Handler() { while (1) {} }
-void UsageFault_Handler() { while (1) {} }
-
-void SysTick_Handler() { HAL_IncTick(); }
-
-extern SAI_HandleTypeDef haudio_out_sai;
-void DMA2_Stream4_IRQHandler() { HAL_DMA_IRQHandler (haudio_out_sai.hdmatx); }
-//}}}
-
-int oldFaster = 1;
-int writePtrOnRead = 0;
-
-#define AUDIO_CHANNELS  2
-#define AUDIO_FREQ      48000
-#define AUDIO_PACKETS   40
-//{{{  usb audio
 //{{{  defines
 #define USBD_VID              0x0483
 #define USBD_PID              0x5730
@@ -97,9 +73,35 @@ int writePtrOnRead = 0;
 
 #define AUDIO_SAMPLE_FREQ_DESC    (uint8_t)(AUDIO_FREQ), (uint8_t)((AUDIO_FREQ >> 8)), (uint8_t)((AUDIO_FREQ >> 16))
 //}}}
+#define AUDIO_CHANNELS  2
+#define AUDIO_FREQ      48000
+#define AUDIO_PACKETS   40
 
+int debugOffset = 4;
+int debugLine = 0;
+int debugSize = 12;
+
+int oldFaster = 1;
+int writePtrOnRead = 0;
 USBD_HandleTypeDef gUsbDevice;
 PCD_HandleTypeDef gPcdHandle;
+
+//{{{  interrupt, system handlers
+void NMI_Handler() {}
+void SVC_Handler() {}
+void PendSV_Handler() {}
+void DebugMon_Handler() {}
+
+void BusFault_Handler() { while (1) {} }
+void HardFault_Handler() { while (1) {} }
+void MemManage_Handler() { while (1) {} }
+void UsageFault_Handler() { while (1) {} }
+
+void SysTick_Handler() { HAL_IncTick(); }
+
+extern SAI_HandleTypeDef haudio_out_sai;
+void DMA2_Stream4_IRQHandler() { HAL_DMA_IRQHandler (haudio_out_sai.hdmatx); }
+//}}}
 //{{{  usbd pcd handler
 void OTG_FS_IRQHandler() { HAL_PCD_IRQHandler (&gPcdHandle); }
 void OTG_HS_IRQHandler() { HAL_PCD_IRQHandler (&gPcdHandle); }
@@ -426,7 +428,7 @@ void USBD_LL_Delay (uint32_t Delay) {
   }
 //}}}
 //}}}
-
+//{{{  usb audio
 //{{{
 __ALIGN_BEGIN static uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12,                       // bLength
@@ -600,6 +602,7 @@ __ALIGN_BEGIN static uint8_t kStringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = 
   };
 //}}}
 __ALIGN_BEGIN static uint8_t strDesc[256] __ALIGN_END;
+
 //{{{  audioDescriptor
 //{{{
 static void intToUnicode (uint32_t value, uint8_t* pbuf, uint8_t len) {
@@ -707,6 +710,7 @@ typedef struct {
   uint8_t       mPlayStarted;
   uint16_t      mWritePtr;
   __IO uint32_t mAltSetting;
+
   uint8_t       mCommand;
   uint8_t       mData[USB_MAX_EP0_SIZE];
   uint8_t       mLength;
@@ -759,7 +763,7 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
   char str[100];
   sprintf (str, "setup %d", req->bmRequest & USB_REQ_TYPE_MASK);
   BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-  BSP_LCD_DisplayStringAtLine (3, (uint8_t*)str);
+  BSP_LCD_DisplayStringAtLine (debugOffset + (debugLine++ % debugSize), (uint8_t*)str);
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
     case USB_REQ_TYPE_STANDARD:
@@ -822,6 +826,12 @@ static uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
 // only SET_CUR request is managed
 
   tAudioData* audioData = (tAudioData*)device->pClassData;
+
+  char str[100];
+  sprintf (str, "usbEp0RxReady %d %d %d", audioData->mCommand, audioData->mUnit, audioData->mLength);
+  BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+  BSP_LCD_DisplayStringAtLine (3, (uint8_t*)str);
+
   if (audioData->mCommand == AUDIO_REQ_SET_CUR) {
     if (audioData->mUnit == AUDIO_OUT_STREAMING_CTRL) {
       BSP_AUDIO_OUT_SetMute (audioData->mData[0]);
@@ -870,6 +880,7 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
     audioData->mWritePtr += AUDIO_OUT_PACKET_SIZE;
     if (audioData->mWritePtr >= AUDIO_OUT_PACKET_BUF_SIZE)
       audioData->mWritePtr = 0;
+
     USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], AUDIO_IN_PACKET_SIZE);
     }
 
@@ -927,7 +938,7 @@ static USBD_ClassTypeDef audioClass = {
 
 // BSP_audio out
 //{{{
-void audioClock (int faster) {
+static void audioClock (int faster) {
 // Set the PLL configuration according to the audio frequency
 // target = 48000*2*2 * 256 = 49.152Mhz
 
