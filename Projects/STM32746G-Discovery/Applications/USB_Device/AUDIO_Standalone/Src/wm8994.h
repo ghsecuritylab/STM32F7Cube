@@ -47,9 +47,6 @@ typedef struct {
 #define AUDIO_MUTE_ON   1
 #define AUDIO_MUTE_OFF  0
 
-#define AUDIO_FREQUENCY_96K ((uint32_t)96000)
-#define AUDIO_FREQUENCY_48K ((uint32_t)48000)
-
 #define VOLUME_CONVERT(Volume)    (((Volume) > 100)? 100:((uint8_t)(((Volume) * 63) / 100)))
 #define VOLUME_IN_CONVERT(Volume) (((Volume) >= 100)? 239:((uint8_t)(((Volume) * 240) / 100)))
 

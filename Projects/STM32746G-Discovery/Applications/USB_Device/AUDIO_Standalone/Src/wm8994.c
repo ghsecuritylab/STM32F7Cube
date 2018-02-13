@@ -57,14 +57,24 @@ static uint32_t SetFrequency (uint16_t DeviceAddr, uint32_t AudioFreq) {
 
   //  Clock Configurations
   switch (AudioFreq) {
-    case  AUDIO_FREQUENCY_48K:
+    case 48000:
       // AIF1 Sample Rate = 48KHz, ratio = 256
       AUDIO_IO_Write (DeviceAddr, 0x210, 0x0083);
       break;
 
-    case  AUDIO_FREQUENCY_96K:
-      // AIF1 Sample Rate = 96KHz, ratio = 256
-      AUDIO_IO_Write (DeviceAddr, 0x210, 0x00A3);
+    case 32000:
+      // AIF1 Sample Rate = 32KHz, ratio=256
+      AUDIO_IO_Write (DeviceAddr, 0x210, 0x0063);
+      break;
+
+    case 16000:
+      // AIF1 Sample Rate = 16KHz, ratio=256
+      AUDIO_IO_Write (DeviceAddr, 0x210, 0x0033);
+      break;
+
+    case 44100:
+      // AIF1 Sample Rate = 44.1KHz, ratio=256
+      AUDIO_IO_Write (DeviceAddr, 0x210, 0x0073);
       break;
     }
 

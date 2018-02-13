@@ -442,7 +442,7 @@ void USBD_LL_Delay (uint32_t Delay) {
 //}}}
 //{{{  usb audio
 //{{{
-__ALIGN_BEGIN static uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12,                       // bLength
   USB_DESC_TYPE_DEVICE,       // bDescriptorType
   0x00, 0x02,                 // bcdUSB
@@ -460,7 +460,7 @@ __ALIGN_BEGIN static uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   };
 //}}}
 //{{{
-__ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END = {
   // config
   9,                           // bLength - 9
   USB_DESC_TYPE_CONFIGURATION, // bDescriptorType
@@ -588,7 +588,7 @@ __ALIGN_BEGIN static uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIG
   };
 //}}}
 //{{{
-__ALIGN_BEGIN static uint8_t kDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
   USB_LEN_DEV_QUALIFIER_DESC,     // bLength
   USB_DESC_TYPE_DEVICE_QUALIFIER, // bDescriptorType */
   0x00, 0x02,                     // bcdUSb
@@ -601,7 +601,7 @@ __ALIGN_BEGIN static uint8_t kDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DE
   };
 //}}}
 //{{{
-__ALIGN_BEGIN static uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
   USB_LEN_LANGID_STR_DESC,
   USB_DESC_TYPE_STRING,
   LOBYTE(USBD_LANGID_STRING), HIBYTE(USBD_LANGID_STRING),
@@ -780,7 +780,7 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
       switch (req->bRequest) {
         case USB_REQ_GET_DESCRIPTOR:
           if ((req->wValue >> 8) == AUDIO_DESCRIPTOR_TYPE) {
-            USBD_CtlSendData (device, kConfigDescriptor + 18, MIN(USB_AUDIO_DESC_SIZ, req->wLength));
+            USBD_CtlSendData (device, (uint8_t*)kConfigDescriptor + 18, MIN(USB_AUDIO_DESC_SIZ, req->wLength));
             sprintf (str, "- USB_REQ_GET_DESCRIPTOR - AUDIO tx %d ", MIN(USB_AUDIO_DESC_SIZ, req->wLength));
             debug (LCD_COLOR_WHITE);
             }
@@ -934,7 +934,7 @@ static uint8_t* usbGetConfigDescriptor (uint16_t* length) {
   debug (LCD_COLOR_CYAN);
 
   *length = sizeof (kConfigDescriptor);
-  return kConfigDescriptor;
+  return (uint8_t*)kConfigDescriptor;
   }
 //}}}
 //{{{
@@ -942,7 +942,7 @@ static uint8_t* usbGetDeviceQualifierDescriptor (uint16_t *length) {
   sprintf (str, "usbGetDeviceQualifierDescriptor");
   debug (LCD_COLOR_WHITE);
   *length = sizeof (kDeviceQualifierDescriptor);
-  return kDeviceQualifierDescriptor;
+  return (uint8_t*)kDeviceQualifierDescriptor;
   }
 //}}}
 
