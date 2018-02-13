@@ -751,7 +751,7 @@ typedef struct {
   uint8_t       mLength;
   uint8_t       mUnit;
 
-  uint8_t       mMute;
+  uint16_t      mMute;
   uint16_t      mCurVolume;
   uint16_t      mMinVolume;
   uint16_t      mMaxVolume;
@@ -844,35 +844,47 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 
     case USB_REQ_TYPE_CLASS :
       switch (req->bRequest) {
-        case 0x81: // GET_CUR
-          USBD_CtlSendData (device, &audioData->mMute, req->wLength);
-          sprintf (str, "%d - getCur %d:%x", debugLine, req->wLength, audioData->mMute);
-          debug (LCD_COLOR_YELLOW);
+        //{{{
+        case 0x81: // getCur
+          if ((req->wValue >> 8) == 1) {
+            USBD_CtlSendData (device, (uint8_t*)(&audioData->mMute), req->wLength);
+            sprintf (str, "%d - getCur mute %d:%x", debugLine, req->wLength, audioData->mMute);
+            debug (LCD_COLOR_YELLOW);
+            }
+          else if ((req->wValue >> 8) == 2) {
+            USBD_CtlSendData (device, (uint8_t*)(&audioData->mCurVolume), req->wLength);
+            sprintf (str, "%d - getCur volume %d:%x", debugLine, req->wLength, audioData->mCurVolume);
+            debug (LCD_COLOR_YELLOW);
+            }
+          else  {
+            sprintf (str, "%d - getCur %d", debugLine, req->wLength);
+            debug (LCD_COLOR_RED);
+            }
           break;
-
-        case 0x82: // GET_MIN
-          audioData->mData[0] = 0;
-          audioData->mData[1] = 0;
+        //}}}
+        //{{{
+        case 0x82: // getMin
           USBD_CtlSendData (device, (uint8_t*)(&audioData->mMinVolume), req->wLength);
           sprintf (str, "%d - getMin %d:%x", debugLine, req->wLength, audioData->mMinVolume);
           debug (LCD_COLOR_YELLOW);
           break;
-        case 0x83: // GET_MAX
-          audioData->mData[0] = 0;
-          audioData->mData[1] = 0;
+        //}}}
+        //{{{
+        case 0x83: // getMax
           USBD_CtlSendData (device, (uint8_t*)(&audioData->mMaxVolume), req->wLength);
           sprintf (str, "%d - getMax %d:%x", debugLine, req->wLength, audioData->mMaxVolume);
           debug (LCD_COLOR_YELLOW);
           break;
-        case 0x84: // GET_RES
-          audioData->mData[0] = 0;
-          audioData->mData[1] = 0;
+        //}}}
+        //{{{
+        case 0x84: // getRes
           USBD_CtlSendData (device, (uint8_t*)(&audioData->mResVolume), req->wLength);
           sprintf (str, "%d - getRes %d:%x", debugLine, req->wLength, audioData->mResVolume);
           debug (LCD_COLOR_YELLOW);
           break;
-
-        case 0x01: // SET_CUR
+        //}}}
+        //{{{
+        case 0x01: // setCur
           if (req->wLength) {
             // rx buffer from ep0
             USBD_CtlPrepareRx (device, audioData->mData, req->wLength);
@@ -883,23 +895,26 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
           sprintf (str, "%d - setCur %d:%x", debugLine, req->wLength, audioData->mData[0]);
           debug (LCD_COLOR_YELLOW);
           break;
-
-        case 0x02: // SETMIN
+        //}}}
+        //{{{
+        case 0x02: // setMin
           sprintf (str, "%d - setMin %d", debugLine, req->wLength);
           debug (LCD_COLOR_YELLOW);
           break;
-
-        case 0x03: // SETMAX
+        //}}}
+        //{{{
+        case 0x03: // setMax
           sprintf (str, "%d - setMax %d", debugLine, req->wLength);
           debug (LCD_COLOR_YELLOW);
           break;
-
-        case 0x04: // SETRES
+        //}}}
+        //{{{
+        case 0x04: // setRes
           sprintf (str, "%d - setRes %d", debugLine, req->wLength);
           debug (LCD_COLOR_YELLOW);
           break;
           break;
-
+        //}}}
         default:
           sprintf (str, "%d - default %d", debugLine, req->wLength);
           debug (LCD_COLOR_YELLOW);
