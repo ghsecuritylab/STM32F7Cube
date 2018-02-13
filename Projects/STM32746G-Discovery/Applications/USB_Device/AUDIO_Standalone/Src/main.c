@@ -917,12 +917,14 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
         audioData->mPlayStarted = 1;
         }
 
-    // twiddle samples into slots
-    uint16_t* srcPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 4*AUDIO_PACKET_SAMPLES);
-    uint16_t* dstPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 8*AUDIO_PACKET_SAMPLES);
-    for (int sample = 0; sample < AUDIO_PACKET_SAMPLES*2; sample++) {
-      *--dstPtr = *--srcPtr;
-      *--dstPtr = *srcPtr;
+    if (AUDIO_CHANNELS == 2) {
+      // twiddle samples into slots
+      uint16_t* srcPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 4*AUDIO_PACKET_SAMPLES);
+      uint16_t* dstPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 8*AUDIO_PACKET_SAMPLES);
+      for (int sample = 0; sample < AUDIO_PACKET_SAMPLES*2; sample++) {
+        *--dstPtr = *--srcPtr;
+        *--dstPtr = *srcPtr;
+        }
       }
 
     // prepare outEndpoint to rx next audio packet
@@ -956,15 +958,15 @@ static uint8_t usbIsoOutInComplete (USBD_HandleTypeDef* device, uint8_t epNum) {
 //{{{
 static uint8_t* usbGetConfigDescriptor (uint16_t* length) {
 
-  sprintf (str, "%d usbGetConfigDescriptor", debugLine); debug (LCD_COLOR_CYAN);
-
+  //sprintf (str, "%d usbGetConfigDescriptor", debugLine); debug (LCD_COLOR_CYAN);
   *length = sizeof (kConfigDescriptor);
   return (uint8_t*)kConfigDescriptor;
   }
 //}}}
 //{{{
 static uint8_t* usbGetDeviceQualifierDescriptor (uint16_t *length) {
-  sprintf (str, "%d usbGetDeviceQualifierDescriptor", debugLine); debug (LCD_COLOR_WHITE);
+
+  //sprintf (str, "%d usbGetDeviceQualifierDescriptor", debugLine); debug (LCD_COLOR_WHITE);
   *length = sizeof (kDeviceQualifierDescriptor);
   return (uint8_t*)kDeviceQualifierDescriptor;
   }
