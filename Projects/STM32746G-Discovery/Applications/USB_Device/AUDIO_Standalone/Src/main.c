@@ -584,10 +584,10 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   // Standard AS Isochronous Synch Endpoint Descriptor - out endPoint 1
   9, USB_DESC_TYPE_ENDPOINT,
   AUDIO_OUT_EP,               // bEndpointAddress 1 - out endpoint
-  USBD_EP_TYPE_ISOC,          // bmAttributes
+  5,                          // bmAttributes Isochronous Asynchronous
   AUDIO_MAX_PACKET_SIZE_DESC, // wMaxPacketSize bytes
   1,                          // bInterval
-  1,                          // bRefresh
+  0,                          // bRefresh
   0,                          // bSynchAddress
 
   // Class-Specific AS Isochronous Audio Data Endpoint Descriptor
