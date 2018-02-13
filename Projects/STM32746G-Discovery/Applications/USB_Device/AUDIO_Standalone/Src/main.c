@@ -16,27 +16,27 @@ char* kVersion = "UAC 3pm 13/2/18";
 #include "stm32746g_discovery_ts.h"
 #include "stm32746g_discovery_audio.h"
 //}}}
-#define AUDIO_CHANNELS     2
-#define AUDIO_SAMPLE_RATE  16000
+#define CHANNELS     2
+#define SAMPLE_RATE  16000
 //{{{  packet defines
-#define AUDIO_PACKETS               40
+#define PACKETS               40
 
-#define AUDIO_BYTES_PER_SAMPLE      2
-#define AUDIO_PACKETS_PER_SECOND    1000
+#define BYTES_PER_SAMPLE      2
+#define PACKETS_PER_SECOND    1000
 
-#define AUDIO_PACKET_SAMPLES        (AUDIO_SAMPLE_RATE / AUDIO_PACKETS_PER_SECOND)
-#define AUDIO_PACKET_SIZE           (AUDIO_CHANNELS * AUDIO_PACKET_SAMPLES * AUDIO_BYTES_PER_SAMPLE)
+#define PACKET_SAMPLES        (SAMPLE_RATE / PACKETS_PER_SECOND)
+#define PACKET_SIZE           (CHANNELS * PACKET_SAMPLES * BYTES_PER_SAMPLE)
 
-#define AUDIO_MAX_CHANNELS          4
-#define AUDIO_MAX_SAMPLE_RATE       48000
-#define AUDIO_MAX_PACKET_SAMPLES    (AUDIO_MAX_SAMPLE_RATE / AUDIO_PACKETS_PER_SECOND)
-#define AUDIO_MAX_PACKET_SIZE       (AUDIO_MAX_CHANNELS * AUDIO_MAX_PACKET_SAMPLES * AUDIO_BYTES_PER_SAMPLE)
+#define MAX_CHANNELS          4
+#define MAX_SAMPLE_RATE       48000
+#define MAX_PACKET_SAMPLES    (MAX_SAMPLE_RATE / PACKETS_PER_SECOND)
+#define MAX_PACKET_SIZE       (MAX_CHANNELS * MAX_PACKET_SAMPLES * BYTES_PER_SAMPLE)
 
-#define AUDIO_SLOTS                 4
-#define AUDIO_SLOTS_PACKET_SIZE     (AUDIO_SLOTS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
-#define AUDIO_SLOTS_PACKET_BUF_SIZE (AUDIO_PACKETS * AUDIO_SLOTS_PACKET_SIZE)
+#define SLOTS                 4
+#define SLOTS_PACKET_SIZE     (SLOTS * BYTES_PER_SAMPLE * PACKET_SAMPLES)
+#define SLOTS_PACKET_BUF_SIZE (PACKETS * SLOTS_PACKET_SIZE)
 
-#define AUDIO_MAX_PACKET_SIZE_DESC  (uint8_t)(AUDIO_MAX_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_MAX_PACKET_SIZE >> 8) & 0xFF)
+#define MAX_PACKET_SIZE_DESC  (uint8_t)(MAX_PACKET_SIZE & 0xFF), (uint8_t)((MAX_PACKET_SIZE >> 8) & 0xFF)
 //}}}
 //{{{  descriptor defines
 #define USBD_VID              0x0483
@@ -455,11 +455,11 @@ __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_E
   };
 //}}}
 //{{{  configuration descriptor
-#define AUDIO_CONFIG_DESC_SIZ 109
-__ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __ALIGN_END = {
+#define CONFIG_DESC_SIZ 109
+__ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_END = {
   // Configuration Descriptor
   9, USB_DESC_TYPE_CONFIGURATION,
-  LOBYTE(AUDIO_CONFIG_DESC_SIZ), HIBYTE(AUDIO_CONFIG_DESC_SIZ), // wTotalLength
+  LOBYTE(CONFIG_DESC_SIZ), HIBYTE(CONFIG_DESC_SIZ), // wTotalLength
   2,    // bNumInterfaces
   1,    // bConfigurationValue
   0,    // iConfiguration
@@ -489,7 +489,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   1,              // bTerminalID = 1
   1,1,            // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
   0x00,           // bAssocTerminal
-  AUDIO_CHANNELS, // bNrChannels
+  CHANNELS, // bNrChannels
   0x33,0x00,      // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
   0,              // iChannelNames
   0,              // iTerminal
@@ -540,7 +540,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   // Audio Streaming Descriptor Audio Type I Format
   11, AUDIO_INTERFACE_DESCRIPTOR_TYPE, AUDIO_STREAMING_FORMAT_TYPE,
   AUDIO_FORMAT_TYPE_I, // bFormatType
-  AUDIO_CHANNELS,      // bNrChannels
+  CHANNELS,      // bNrChannels
   2,                   // bSubFrameSize - 2bytes per frame (16bits)
   16,                  // bBitResolution - 16bits per sample
   1,                   // bSamFreqType - single frequency supported
@@ -554,7 +554,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   9, USB_DESC_TYPE_ENDPOINT,
   AUDIO_OUT_EP,               // bEndpointAddress 1 - out endpoint
   5,                          // bmAttributes Isochronous Asynchronous
-  AUDIO_MAX_PACKET_SIZE_DESC, // wMaxPacketSize bytes
+  MAX_PACKET_SIZE_DESC, // wMaxPacketSize bytes
   1,                          // bInterval
   0,                          // bRefresh
   0,                          // bSynchAddress
@@ -689,7 +689,7 @@ static USBD_DescriptorsTypeDef audioDescriptor = {
 //}}}
 //{{{  audioClass handler
 typedef struct {
-  uint8_t       mBuffer[AUDIO_SLOTS_PACKET_BUF_SIZE];
+  uint8_t       mBuffer[SLOTS_PACKET_BUF_SIZE];
   uint8_t       mPlayStarted;
   uint16_t      mWritePtr;
   __IO uint32_t mAltSetting;
@@ -711,7 +711,7 @@ typedef struct {
 static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   // Open EP OUT
-  USBD_LL_OpenEP (device, AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, AUDIO_PACKET_SIZE);
+  USBD_LL_OpenEP (device, AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, PACKET_SIZE);
 
   // allocate audioData
   tAudioData* audioData = malloc (sizeof (tAudioData));
@@ -724,15 +724,15 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   audioData->mMinVolume = 0;
   audioData->mMaxVolume = 100;
   audioData->mResVolume = 1;
-  audioData->mFrequency = AUDIO_SAMPLE_RATE;
+  audioData->mFrequency = SAMPLE_RATE;
   device->pClassData = audioData;
 
   //sprintf (str, "%d usbInit", debugLine); debug (LCD_COLOR_GREEN);
-  BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, AUDIO_DEFAULT_VOLUME, AUDIO_SAMPLE_RATE);
+  BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, AUDIO_DEFAULT_VOLUME, SAMPLE_RATE);
   BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
 
   // Prepare Out endpoint to receive 1st packet
-  USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, audioData->mBuffer, AUDIO_PACKET_SIZE);
+  USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, audioData->mBuffer, PACKET_SIZE);
 
   return USBD_OK;
   }
@@ -942,27 +942,27 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
   if (epNum == AUDIO_OUT_EP) {
     tAudioData* audioData = (tAudioData*)device->pClassData;
     if (!audioData->mPlayStarted)
-      if (audioData->mWritePtr >= AUDIO_SLOTS_PACKET_BUF_SIZE / 2) {
+      if (audioData->mWritePtr >= SLOTS_PACKET_BUF_SIZE / 2) {
         sprintf (str, "%d aud_play", debugLine); debug (LCD_COLOR_GREEN);
-        BSP_AUDIO_OUT_Play ((uint16_t*)audioData->mBuffer, AUDIO_SLOTS_PACKET_BUF_SIZE);
+        BSP_AUDIO_OUT_Play ((uint16_t*)audioData->mBuffer, SLOTS_PACKET_BUF_SIZE);
         audioData->mPlayStarted = 1;
         }
 
-    if (AUDIO_CHANNELS == 2) {
+    if (CHANNELS == 2) {
       // twiddle samples into slots
-      uint16_t* srcPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 4*AUDIO_PACKET_SAMPLES);
-      uint16_t* dstPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 8*AUDIO_PACKET_SAMPLES);
-      for (int sample = 0; sample < AUDIO_PACKET_SAMPLES*2; sample++) {
+      uint16_t* srcPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 4*PACKET_SAMPLES);
+      uint16_t* dstPtr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr + 8*PACKET_SAMPLES);
+      for (int sample = 0; sample < PACKET_SAMPLES*2; sample++) {
         *--dstPtr = *--srcPtr;
         *--dstPtr = *srcPtr;
         }
       }
 
     // prepare outEndpoint to rx next audio packet
-    audioData->mWritePtr += AUDIO_SLOTS_PACKET_SIZE;
-    if (audioData->mWritePtr >= AUDIO_SLOTS_PACKET_BUF_SIZE)
+    audioData->mWritePtr += SLOTS_PACKET_SIZE;
+    if (audioData->mWritePtr >= SLOTS_PACKET_BUF_SIZE)
       audioData->mWritePtr = 0;
-    USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], AUDIO_PACKET_SIZE);
+    USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], PACKET_SIZE);
     }
 
   return USBD_OK;
@@ -1058,10 +1058,10 @@ void BSP_AUDIO_OUT_ClockConfig (SAI_HandleTypeDef* hsai, uint32_t freq, void* Pa
 //{{{
 void BSP_AUDIO_OUT_TransferComplete_CallBack() {
 
-  writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / AUDIO_SLOTS_PACKET_SIZE;
-  if (writePtrOnRead > AUDIO_PACKETS/2) // faster
+  writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / SLOTS_PACKET_SIZE;
+  if (writePtrOnRead > PACKETS/2) // faster
     audioClock (1);
-  else if (writePtrOnRead < AUDIO_PACKETS/2) // slower
+  else if (writePtrOnRead < PACKETS/2) // slower
     audioClock (0);
   }
 //}}}
@@ -1135,7 +1135,7 @@ int main() {
     touch();
 
     char str1[40];
-    sprintf (str1, "%s %d %d %s %d", kVersion, AUDIO_SAMPLE_RATE, AUDIO_CHANNELS, oldFaster ? "faster" : "slower", writePtrOnRead);
+    sprintf (str1, "%s %d %d %s %d", kVersion, SAMPLE_RATE, CHANNELS, oldFaster ? "faster" : "slower", writePtrOnRead);
     BSP_LCD_SetTextColor (oldFaster ? LCD_COLOR_WHITE : LCD_COLOR_YELLOW);
     BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
 
