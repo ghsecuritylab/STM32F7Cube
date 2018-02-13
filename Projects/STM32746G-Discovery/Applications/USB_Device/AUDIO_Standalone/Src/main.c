@@ -45,10 +45,6 @@ char* kVersion = "UAC 10am 13/2/18";
 #define USB_SIZ_STRING_SERIAL 0x1A
 
 #define AUDIO_OUT_EP                        0x01
-#define AUDIO_INTERFACE_DESC_SIZE           9
-#define USB_AUDIO_DESC_SIZ                  0x09
-#define AUDIO_STANDARD_ENDPOINT_DESC_SIZE   0x09
-#define AUDIO_STREAMING_ENDPOINT_DESC_SIZE  0x07
 
 #define AUDIO_DESCRIPTOR_TYPE               0x21
 #define USB_DEVICE_CLASS_AUDIO              0x01
@@ -444,7 +440,7 @@ void USBD_LL_Delay (uint32_t Delay) {
 //}}}
 //}}}
 //{{{  usb audio
-// device descriptor
+//{{{  device descriptor
 __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12,                                // bLength
   USB_DESC_TYPE_DEVICE,                // bDescriptorType
@@ -461,7 +457,7 @@ __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_E
   USBD_IDX_SERIAL_STR,                 // Index of serial number string
   USBD_MAX_NUM_CONFIGURATION           // bNumConfigurations
   };
-
+//}}}
 //{{{  configuration descriptor
 #define AUDIO_CONFIG_DESC_SIZ 118
 __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __ALIGN_END = {
@@ -469,95 +465,95 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   9,                           // bLength
   USB_DESC_TYPE_CONFIGURATION, // bDescriptorType
   LOBYTE(AUDIO_CONFIG_DESC_SIZ), HIBYTE(AUDIO_CONFIG_DESC_SIZ), // wTotalLength
-  0x02,                        // bNumInterfaces
-  0x01,                        // bConfigurationValue
-  0x00,                        // iConfiguration
+  2,                           // bNumInterfaces
+  1,                           // bConfigurationValue
+  0,                           // iConfiguration
   0xC0,                        // bmAttributes - BUS Powred
   0x32,                        // bMaxPower = 100 mA
 
   // Control Interface Descriptor
   9,                           // bLength
   USB_DESC_TYPE_INTERFACE,     // bDescriptorType
-  0x00,                        // bInterfaceNumber
-  0x00,                        // bAlternateSetting
-  0x00,                        // bNumEndpoints
+  0,                           // bInterfaceNumber
+  0,                           // bAlternateSetting
+  0,                           // bNumEndpoints
   USB_DEVICE_CLASS_AUDIO,      // bInterfaceClass
   AUDIO_SUBCLASS_AUDIOCONTROL, // bInterfaceSubClass
   AUDIO_PROTOCOL_UNDEFINED,    // bInterfaceProtocol
-  0x00,                        // iInterface
+  0,                           // iInterface
 
   //{{{  speaker control input,feature,output
   //  class-specific AC interface descriptor
   9,                               // bLength
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_CONTROL_HEADER,            // bDescriptorSubtype
-  0x00, 0x01,                      // bcdADC - 1.00
-  0x27, 0x00,                      // wTotalLength AC = 39
-  0x01,                            // bInCollection
-  0x01,                            // baInterfaceNr
+  0x00,0x01,                       // bcdADC - 1.00
+  39,0,                            // wTotalLength
+  1,                               // bInCollection
+  1,                               // baInterfaceNr
 
   // audio input terminal descriptor
   12,                              // bLength
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_CONTROL_INPUT_TERMINAL,    // bDescriptorSubtype
-  0x01,                            // bTerminalID
-  0x01, 0x01,                      // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
+  1,                               // bTerminalID
+  1,1,                             // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
   0x00,                            // bAssocTerminal
   AUDIO_CHANNELS,                  // bNrChannels
-  0x33, 0x00,                      // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
-  0x00,                            // iChannelNames
-  0x00,                            // iTerminal
+  0x33,0x00,                       // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
+  0,                               // iChannelNames
+  0,                               // iTerminal
 
   // audio feature Unit Descriptor
   9,                               // bLength
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_CONTROL_FEATURE_UNIT,      // bDescriptorSubtype
   AUDIO_OUT_STREAMING_CTRL,        // bUnitID
-  0x01,                            // bSourceID
-  0x01,                            // bControlSize
+  1,                               // bSourceID
+  1,                               // bControlSize
   AUDIO_CONTROL_MUTE,0,            // bmaControls | AUDIO_CONTROL_VOLUME,
-  0x00,                            // iTerminal
+  0,                               // iTerminal
 
   // audio output Terminal Descriptor
   9,                               // bLength
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_CONTROL_OUTPUT_TERMINAL,   // bDescriptorSubtype
-  0x03,                            // bTerminalID
-  0x01, 0x03,                      // wTerminalType - speaker 0x0301
-  0x00,                            // bAssocTerminal
-  0x02,                            // bSourceID
-  0x00,                            // iTerminal
+  3,                               // bTerminalID
+  1,3,                             // wTerminalType - speaker 0x0301
+  0,                               // bAssocTerminal
+  2,                               // bSourceID
+  0,                               // iTerminal
   //}}}
   //{{{  speaker streaming interface
   // Speaker AS Interface Descriptor Audio Streaming Zero Band   Interface 1 Alternate Setting 0
   9,                               // bLength
   USB_DESC_TYPE_INTERFACE,         // bDescriptorType
-  0x01,                            // bInterfaceNumber
-  0x00,                            // bAlternateSetting
-  0x00,                            // bNumEndpoints
+  1,                               // bInterfaceNumber
+  0,                               // bAlternateSetting
+  0,                               // bNumEndpoints
   USB_DEVICE_CLASS_AUDIO,          // bInterfaceClass
   AUDIO_SUBCLASS_AUDIOSTREAMING,   // bInterfaceSubClass
   AUDIO_PROTOCOL_UNDEFINED,        // bInterfaceProtocol
-  0x00,                            // iInterface
+  0,                              // iInterface
 
   // Speaker AS Interface Descriptor Audio Streaming Operational Interface 1 Alternate Setting 1
   9,                               // bLength
   USB_DESC_TYPE_INTERFACE,         // bDescriptorType
-  0x01,                            // bInterfaceNumber
-  0x01,                            // bAlternateSetting
-  0x01,                            // bNumEndpoints
+  1,                               // bInterfaceNumber
+  1,                               // bAlternateSetting
+  1,                               // bNumEndpoints
   USB_DEVICE_CLASS_AUDIO,          // bInterfaceClass
   AUDIO_SUBCLASS_AUDIOSTREAMING,   // bInterfaceSubClass
   AUDIO_PROTOCOL_UNDEFINED,        // bInterfaceProtocol
-  0x00,                            // iInterface
+  0,                               // iInterface
 
   // Speaker Audio Streaming Interface Descriptor
   7,                               // bLength
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_STREAMING_GENERAL,         // bDescriptorSubtype
-  0x01,                            // bTerminalLink
-  0x01,                            // bDelay
-  0x01, 0x00,                      // wFormatTag AUDIO_FORMAT_PCM - 0x0001
+  1,                               // bTerminalLink
+  1,                               // bDelay
+  1,0,                             // wFormatTag AUDIO_FORMAT_PCM - 0x0001
 
   // Speaker Audio Type I Format Interface Descriptor
   20,                              // bLength
@@ -565,9 +561,9 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   AUDIO_STREAMING_FORMAT_TYPE,     // bDescriptorSubtype
   AUDIO_FORMAT_TYPE_I,             // bFormatType
   AUDIO_CHANNELS,                  // bNrChannels
-  0x02,                            // bSubFrameSize - 2bytes per frame (16bits)
+  2,                               // bSubFrameSize - 2bytes per frame (16bits)
   16,                              // bBitResolution - 16bits per sample
-  0x04,                            // bSamFreqType - single frequency supported
+  4,                               // bSamFreqType - single frequency supported
   48000 & 0xFF, (48000 >> 8) & 0xFF, 48000 >> 16, // audio sampling frequency coded on 3 bytes
   44100 & 0xFF, (44100 >> 8) & 0xFF, 44100 >> 16, // audio sampling frequency coded on 3 bytes
   32000 & 0xFF, (32000 >> 8) & 0xFF, 32000 >> 16, // audio sampling frequency coded on 3 bytes
@@ -580,17 +576,17 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   AUDIO_OUT_EP,                      // bEndpointAddress 1 - out endpoint
   USBD_EP_TYPE_ISOC,                 // bmAttributes
   AUDIO_MAX_PACKET_SIZE_DESC,        // wMaxPacketSize bytes
-  0x01,                              // bInterval
-  0x00,                              // bRefresh
-  0x00,                              // bSynchAddress
+  1,                                 // bInterval
+  0,                                 // bRefresh
+  0,                                 // bSynchAddress
 
   // Endpoint Audio Streaming Descriptor
   7,                                  // bLength
   AUDIO_ENDPOINT_DESCRIPTOR_TYPE,     // bDescriptorType
   AUDIO_ENDPOINT_GENERAL,             // bDescriptor
-  0x00,                               // bmAttributes
-  0x00,                               // bLockDelayUnits
-  0x00,                               // wLockDelay
+  0,                                  // bmAttributes
+  0,                                  // bLockDelayUnits
+  0,                                  // wLockDelay
   };
 //}}}
 //{{{  device qualifier descriptor
@@ -779,9 +775,9 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
       switch (req->bRequest) {
         case USB_REQ_GET_DESCRIPTOR:
           if ((req->wValue >> 8) == AUDIO_DESCRIPTOR_TYPE) {
-            USBD_CtlSendData (device, (uint8_t*)kConfigDescriptor + 18, MIN(USB_AUDIO_DESC_SIZ, req->wLength));
+            USBD_CtlSendData (device, (uint8_t*)kConfigDescriptor + 18, MIN(9, req->wLength));
             sprintf (str, "%d - USB_REQ_GET_DESCRIPTOR - AUDIO tx %d ",
-                     debugLine, MIN(USB_AUDIO_DESC_SIZ, req->wLength));
+                     debugLine, MIN(9, req->wLength));
             debug (LCD_COLOR_WHITE);
             }
           else {
