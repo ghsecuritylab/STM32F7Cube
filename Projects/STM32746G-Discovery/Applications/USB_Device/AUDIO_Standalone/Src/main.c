@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "UAC 7pm 12/2/18";
+char* kVersion = "UAC 10am 13/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,7 @@ char* kVersion = "UAC 7pm 12/2/18";
 #define AUDIO_SLOTS_PACKET_SIZE     (AUDIO_SLOTS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
 #define AUDIO_SLOTS_PACKET_BUF_SIZE (AUDIO_PACKETS * AUDIO_SLOTS_PACKET_SIZE)
 
-#define AUDIO_SAMPLE_FREQ_DESC      (uint8_t)(AUDIO_SAMPLE_RATE & 0xFF), (uint8_t)((AUDIO_SAMPLE_RATE >> 8) & 0xFF), (uint8_t)(AUDIO_SAMPLE_RATE >> 16)
+#define AUDIO_SAMPLE_RATE_DESC      (uint8_t)(AUDIO_SAMPLE_RATE & 0xFF), (uint8_t)((AUDIO_SAMPLE_RATE >> 8) & 0xFF), (uint8_t)(AUDIO_SAMPLE_RATE >> 16)
 #define AUDIO_MAX_PACKET_SIZE_DESC  (uint8_t)(AUDIO_MAX_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_MAX_PACKET_SIZE >> 8) & 0xFF)
 //}}}
 //{{{  descriptor defines
@@ -87,17 +87,15 @@ char* kVersion = "UAC 7pm 12/2/18";
 
 static int debugOffset = 1;
 static int debugLine = 0;
-static int debugSize = 20;
+static int debugSize = 16;
 static char str[40];
 //{{{
 static void debug (int col) {
 
   BSP_LCD_SetTextColor (col);
-  BSP_LCD_ClearStringLine (debugOffset + debugLine);
-  BSP_LCD_DisplayStringAtLine (debugOffset + debugLine, (uint8_t*)str);
-  debugLine = (debugLine+1) % debugSize;
-  sprintf (str, "----------------------------");
-  BSP_LCD_DisplayStringAtLine (debugOffset + debugLine, (uint8_t*)str);
+  BSP_LCD_DisplayStringAtLine (debugOffset + (debugLine % debugSize), (uint8_t*)str);
+  debugLine++;
+  BSP_LCD_ClearStringLine (debugOffset + (debugLine % debugSize));
   }
 //}}}
 
@@ -572,7 +570,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] 
   0x02,                            // bSubFrameSize - 2bytes per frame (16bits)
   16,                              // bBitResolution - 16bits per sample
   0x01,                            // bSamFreqType - single frequency supported
-  AUDIO_SAMPLE_FREQ_DESC,          // audio sampling frequency coded on 3 bytes
+  AUDIO_SAMPLE_RATE_DESC,          // audio sampling frequency coded on 3 bytes
   //}}}
 
   // Endpoint1 Standard Descriptor
@@ -777,8 +775,8 @@ static uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 //{{{
 static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
-  sprintf (str, "setup %02x %02x %d %d %d",
-           req->bmRequest, req->bRequest, req->wValue, req->wLength, req->wIndex);
+  sprintf (str, "%d setup %02x %02x %d %d %d",
+           debugLine, req->bmRequest, req->bRequest, req->wValue, req->wLength, req->wIndex);
   debug (LCD_COLOR_WHITE);
 
   tAudioData* audioData = (tAudioData*)device->pClassData;
@@ -788,7 +786,8 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
         case USB_REQ_GET_DESCRIPTOR:
           if ((req->wValue >> 8) == AUDIO_DESCRIPTOR_TYPE) {
             USBD_CtlSendData (device, (uint8_t*)kConfigDescriptor + 18, MIN(USB_AUDIO_DESC_SIZ, req->wLength));
-            sprintf (str, "- USB_REQ_GET_DESCRIPTOR - AUDIO tx %d ", MIN(USB_AUDIO_DESC_SIZ, req->wLength));
+            sprintf (str, "%d - USB_REQ_GET_DESCRIPTOR - AUDIO tx %d ",
+                     debugLine, MIN(USB_AUDIO_DESC_SIZ, req->wLength));
             debug (LCD_COLOR_WHITE);
             }
           else {
@@ -799,12 +798,12 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 
         case USB_REQ_GET_INTERFACE :
           USBD_CtlSendData (device, (uint8_t*)&audioData->mAltSetting, 1);
-          sprintf (str, "- USB_REQ_GET_INTERFACE - tx 1");
+          sprintf (str, "%d - USB_REQ_GET_INTERFACE - tx 1", debugLine);
           debug (LCD_COLOR_WHITE);
           break;
 
         case USB_REQ_SET_INTERFACE :
-          sprintf (str, "- USB_REQ_SET_INTERFACE");
+          sprintf (str, "%d - USB_REQ_SET_INTERFACE", debugLine);
           debug (LCD_COLOR_WHITE);
 
           if ((uint8_t)(req->wValue) <= USBD_MAX_NUM_INTERFACES)
@@ -824,12 +823,12 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
         case AUDIO_REQ_GET_CUR:
           memset (audioData->mData, 0, 64);
           USBD_CtlSendData (device, audioData->mData, req->wLength);
-          sprintf (str, "- AUDIO_REQ_GET_CUR - tx% d", req->wLength);
+          sprintf (str, "%d - AUDIO_REQ_GET_CUR - tx% d", debugLine, req->wLength);
           debug (LCD_COLOR_WHITE);
           break;
 
         case AUDIO_REQ_SET_CUR:
-          sprintf (str, "- AUDIO_REQ_SET_CUR - rx %d", req->wLength);
+          sprintf (str, "%d - AUDIO_REQ_SET_CUR - rx %d", debugLine, req->wLength);
           debug (LCD_COLOR_WHITE);
           if (req->wLength) {
             // prepare to rx buffer from ep0
@@ -852,9 +851,7 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 //{{{
 static uint8_t usbEp0TxReady (USBD_HandleTypeDef* device) {
 
-  sprintf (str, "usbEp0TxReady");
-  debug (LCD_COLOR_RED);
-
+  //sprintf (str, "usbEp0TxReady"); debug (LCD_COLOR_RED);
   return USBD_OK;
   }
 //}}}
@@ -864,7 +861,7 @@ static uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
 
   tAudioData* audioData = (tAudioData*)device->pClassData;
 
-  sprintf (str, "usbEp0RxReady %d %d %d", audioData->mCommand, audioData->mUnit, audioData->mLength);
+  sprintf (str, "%d epRxReady %d %d %d", debugLine, audioData->mCommand, audioData->mUnit, audioData->mLength);
   debug (LCD_COLOR_YELLOW);
 
   if (audioData->mCommand == AUDIO_REQ_SET_CUR) {
@@ -882,7 +879,7 @@ static uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
 //{{{
 static uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epNum) {
 
-  sprintf (str, "usbDataIn");
+  sprintf (str, "%d usbDataIn", debugLine);
   debug (LCD_COLOR_RED);
   return USBD_OK;
   }
@@ -937,8 +934,7 @@ static uint8_t usbIsoOutInComplete (USBD_HandleTypeDef* device, uint8_t epNum) {
 //{{{
 static uint8_t* usbGetConfigDescriptor (uint16_t* length) {
 
-  sprintf (str, "usbGetConfigDescriptor");
-  debug (LCD_COLOR_CYAN);
+  sprintf (str, "%d usbGetConfigDescriptor", debugLine); debug (LCD_COLOR_CYAN);
 
   *length = sizeof (kConfigDescriptor);
   return (uint8_t*)kConfigDescriptor;
@@ -946,8 +942,7 @@ static uint8_t* usbGetConfigDescriptor (uint16_t* length) {
 //}}}
 //{{{
 static uint8_t* usbGetDeviceQualifierDescriptor (uint16_t *length) {
-  sprintf (str, "usbGetDeviceQualifierDescriptor");
-  debug (LCD_COLOR_WHITE);
+  sprintf (str, "%d usbGetDeviceQualifierDescriptor", debugLine); debug (LCD_COLOR_WHITE);
   *length = sizeof (kDeviceQualifierDescriptor);
   return (uint8_t*)kDeviceQualifierDescriptor;
   }
@@ -1044,7 +1039,7 @@ static void initGraphics() {
   BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
   BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
   BSP_LCD_Clear(LCD_COLOR_BLACK);
-  BSP_LCD_SetFont (&Font12);
+  BSP_LCD_SetFont (&Font16);
   BSP_LCD_DisplayOn();
   }
 //}}}
