@@ -79,6 +79,9 @@ char* kVersion = "UAC 10am 13/2/18";
 #define AUDIO_OUT_STREAMING_CTRL   0x02
 //}}}
 
+//{{{  graphics, debug
+static int oldFaster = 1;
+static int writePtrOnRead = 0;
 static int debugOffset = 1;
 static int debugLine = 0;
 static int debugSize = 16;
@@ -92,9 +95,38 @@ static void debug (int col) {
   BSP_LCD_ClearStringLine (debugOffset + (debugLine % debugSize));
   }
 //}}}
+//{{{
+static void touch() {
 
-int oldFaster = 1;
-int writePtrOnRead = 0;
+  TS_StateTypeDef TS_State;
+  BSP_TS_GetState (&TS_State);
+  if (TS_State.touchDetected == 1) {
+    if (TS_State.touchWeight[0] > 128)
+      BSP_LCD_SetTextColor (LCD_COLOR_GREEN);
+    else
+      BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
+
+    BSP_TS_GetState (&TS_State);
+    BSP_LCD_FillCircle (TS_State.touchX[0], TS_State.touchY[0], 20);
+    }
+  }
+//}}}
+//{{{
+static void initGraphics() {
+
+  BSP_LCD_Init();
+  BSP_LCD_LayerDefaultInit (1, LCD_FB_START_ADDRESS);
+  BSP_LCD_SelectLayer(1);
+
+  BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
+  BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
+  BSP_LCD_SetFont (&Font16);
+  BSP_LCD_DisplayOn();
+  }
+//}}}
+//}}}
+
 USBD_HandleTypeDef gUsbDevice;
 PCD_HandleTypeDef gPcdHandle;
 //{{{  interrupt, system handlers
@@ -1003,37 +1035,6 @@ void BSP_AUDIO_OUT_TransferComplete_CallBack() {
 //}}}
 //}}}
 
-//{{{
-static void touch() {
-
-  TS_StateTypeDef TS_State;
-  BSP_TS_GetState (&TS_State);
-  if (TS_State.touchDetected == 1) {
-    if (TS_State.touchWeight[0] > 128)
-      BSP_LCD_SetTextColor (LCD_COLOR_GREEN);
-    else
-      BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
-
-    BSP_TS_GetState (&TS_State);
-    BSP_LCD_FillCircle (TS_State.touchX[0], TS_State.touchY[0], 20);
-    }
-  }
-//}}}
-//{{{
-static void initGraphics() {
-
-  BSP_LCD_Init();
-  BSP_LCD_LayerDefaultInit (1, LCD_FB_START_ADDRESS);
-  BSP_LCD_SelectLayer(1);
-
-  BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
-  BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-  BSP_LCD_Clear(LCD_COLOR_BLACK);
-  BSP_LCD_SetFont (&Font16);
-  BSP_LCD_DisplayOn();
-  }
-//}}}
-
 int main() {
   SCB_EnableICache();
   SCB_EnableDCache();
@@ -1088,6 +1089,7 @@ int main() {
 
   BSP_LED_Init (LED1);
   initGraphics();
+
   BSP_TS_Init (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
 
   // init usbDevice library
