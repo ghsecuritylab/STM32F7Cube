@@ -470,7 +470,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   2,   // bUnitID = 2
   1,   // bSourceID
   1,   // bControlSize
-  3,0, // bmaControls =  mute + volume
+  1,0, // bmaControls =  mute
   0,   // iTerminal
 
   // Audio Control Output Terminal Descriptor
