@@ -324,7 +324,6 @@ void HAL_PCD_ResetCallback (PCD_HandleTypeDef* pcdHandle) {
 //{{{
 USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device) {
 
-#ifdef USE_USB_FS
   /* Set LL Driver parameters */
   gPcdHandle.Instance = USB_OTG_FS;
   gPcdHandle.Init.dev_endpoints = 4;
@@ -346,36 +345,6 @@ USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device) {
   HAL_PCD_Init (&gPcdHandle);
   HAL_PCDEx_SetRxFiFo (&gPcdHandle, 0x80);
   HAL_PCDEx_SetTxFiFo (&gPcdHandle, 0, 0x60);
-#endif
-
-#ifdef USE_USB_HS
-  /* Set LL Driver parameters */
-  gPcdHandle.Instance = USB_OTG_HS;
-  gPcdHandle.Init.dev_endpoints = 6;
-  gPcdHandle.Init.use_dedicated_ep1 = 0;
-  gPcdHandle.Init.ep0_mps = 0x40;
-
-  // Be aware that enabling DMA mode will result in data being sent only by
-  // multiple of 4 packet sizes. This is due to the fact that USB DMA does
-  // not allow sending data from non word-aligned addresses.
-  // For this specific application, it is advised to not enable this option unless required. */
-  gPcdHandle.Init.dma_enable = 0;
-  gPcdHandle.Init.low_power_enable = 0;
-  gPcdHandle.Init.lpm_enable = 0;
-  gPcdHandle.Init.phy_itface = PCD_PHY_ULPI;
-  gPcdHandle.Init.Sof_enable = 0;
-  gPcdHandle.Init.speed = PCD_SPEED_HIGH;
-  gPcdHandle.Init.vbus_sensing_enable = 1;
-
-  /* Link The driver to the stack */
-  gPcdHandle.pData = device;
-  device->pData = &gPcdHandle;
-
-  /* Initialize LL Driver */
-  HAL_PCD_Init (&gPcdHandle);
-  HAL_PCDEx_SetRxFiFo (&gPcdHandle, 0x100);
-  HAL_PCDEx_SetTxFiFo (&gPcdHandle, 0, 0x200);
-#endif
 
   return USBD_OK;
   }
