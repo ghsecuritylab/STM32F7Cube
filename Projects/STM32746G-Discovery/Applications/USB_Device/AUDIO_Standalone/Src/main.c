@@ -16,7 +16,30 @@ char* kVersion = "UAC 7pm 12/2/18";
 #include "stm32746g_discovery_ts.h"
 #include "stm32746g_discovery_audio.h"
 //}}}
-//{{{  defines
+#define AUDIO_CHANNELS    2
+#define AUDIO_SAMPLE_RATE 48000
+//{{{  packet defines
+#define AUDIO_PACKETS               40
+
+#define AUDIO_BYTES_PER_SAMPLE      2
+#define AUDIO_PACKETS_PER_SECOND    1000
+
+#define AUDIO_PACKET_SAMPLES        (AUDIO_SAMPLE_RATE / AUDIO_PACKETS_PER_SECOND)
+#define AUDIO_PACKET_SIZE           (AUDIO_CHANNELS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
+
+#define AUDIO_MAX_CHANNELS          4
+#define AUDIO_MAX_SAMPLE_RATE       48000
+#define AUDIO_MAX_PACKET_SAMPLES    (AUDIO_MAX_SAMPLE_RATE / AUDIO_PACKETS_PER_SECOND)
+#define AUDIO_MAX_PACKET_SIZE       (AUDIO_MAX_CHANNELS * AUDIO_BYTES_PER_SAMPLE * AUDIO_MAX_PACKET_SAMPLES)
+
+#define AUDIO_SLOTS                 4
+#define AUDIO_SLOTS_PACKET_SIZE     (AUDIO_SLOTS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
+#define AUDIO_SLOTS_PACKET_BUF_SIZE (AUDIO_PACKETS * AUDIO_SLOTS_PACKET_SIZE)
+
+#define AUDIO_SAMPLE_FREQ_DESC      (uint8_t)(AUDIO_SAMPLE_RATE & 0xFF), (uint8_t)((AUDIO_SAMPLE_RATE >> 8) & 0xFF), (uint8_t)(AUDIO_SAMPLE_RATE >> 16)
+#define AUDIO_MAX_PACKET_SIZE_DESC  (uint8_t)(AUDIO_MAX_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_MAX_PACKET_SIZE >> 8) & 0xFF)
+//}}}
+//{{{  descriptor defines
 #define USBD_VID              0x0483
 #define USBD_PID              0x5730
 #define USBD_LANGID_STRING    0x409
@@ -51,38 +74,16 @@ char* kVersion = "UAC 7pm 12/2/18";
 #define AUDIO_OUTPUT_TERMINAL_DESC_SIZE     0x09
 #define AUDIO_STREAMING_INTERFACE_DESC_SIZE 0x07
 
-#define AUDIO_CONTROL_MUTE        0x01
-#define AUDIO_CONTROL_VOLUME      0x02
-#define AUDIO_DEFAULT_VOLUME      100
+#define AUDIO_CONTROL_MUTE         0x01
+#define AUDIO_CONTROL_VOLUME       0x02
+#define AUDIO_DEFAULT_VOLUME       100
 
-#define AUDIO_FORMAT_TYPE_I       0x01
-#define AUDIO_ENDPOINT_GENERAL    0x01
-#define AUDIO_REQ_GET_CUR         0x81
-#define AUDIO_REQ_SET_CUR         0x01
-#define AUDIO_OUT_STREAMING_CTRL  0x02
-
-#define AUDIO_SAMPLE_FREQ_DESC    (uint8_t)(AUDIO_FREQ), (uint8_t)((AUDIO_FREQ >> 8)), (uint8_t)((AUDIO_FREQ >> 16))
-
-#define AUDIO_BYTES_PER_SAMPLE    2
-#define AUDIO_PACKETS_PER_SECOND  1000
-#define AUDIO_PACKET_SAMPLES      (AUDIO_FREQ / AUDIO_PACKETS_PER_SECOND)
-
-#define AUDIO_PACKET_SIZE        (AUDIO_CHANNELS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
-#define AUDIO_PACKET_SIZE_DESC   (uint8_t)(AUDIO_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_PACKET_SIZE >> 8) & 0xFF)
-
-#define AUDIO_MAX_CHANNELS        4
-#define AUDIO_MAX_FREQ            48000
-#define AUDIO_MAX_PACKET_SAMPLES  (AUDIO_MAX_FREQ / AUDIO_PACKETS_PER_SECOND)
-#define AUDIO_MAX_PACKET_SIZE     (AUDIO_MAX_CHANNELS * AUDIO_BYTES_PER_SAMPLE * AUDIO_MAX_PACKET_SAMPLES)
-#define AUDIO_MAX_PACKET_SIZE_DESC (uint8_t)(AUDIO_MAX_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_MAX_PACKET_SIZE >> 8) & 0xFF)
-
-#define AUDIO_SLOTS               4
-#define AUDIO_SLOTS_PACKET_SIZE   (AUDIO_SLOTS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
-#define AUDIO_SLOTS_PACKET_BUF_SIZE (AUDIO_PACKETS * AUDIO_SLOTS_PACKET_SIZE)
+#define AUDIO_FORMAT_TYPE_I        0x01
+#define AUDIO_ENDPOINT_GENERAL     0x01
+#define AUDIO_REQ_GET_CUR          0x81
+#define AUDIO_REQ_SET_CUR          0x01
+#define AUDIO_OUT_STREAMING_CTRL   0x02
 //}}}
-#define AUDIO_CHANNELS  2
-#define AUDIO_FREQ      48000
-#define AUDIO_PACKETS   40
 
 static int debugOffset = 1;
 static int debugLine = 0;
@@ -749,7 +750,7 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   audioData->mAltSetting = 0;
   device->pClassData = audioData;
 
-  BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, AUDIO_DEFAULT_VOLUME, AUDIO_FREQ);
+  BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, AUDIO_DEFAULT_VOLUME, AUDIO_SAMPLE_RATE);
   BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
 
   // Prepare Out endpoint to receive 1st packet
@@ -1113,7 +1114,7 @@ int main() {
   while (1) {
     touch();
     char str1[40];
-    sprintf (str1, "%s %d %d %s %d", kVersion, AUDIO_FREQ, AUDIO_CHANNELS, oldFaster ? "faster" : "slower", writePtrOnRead);
+    sprintf (str1, "%s %d %d %s %d", kVersion, AUDIO_SAMPLE_RATE, AUDIO_CHANNELS, oldFaster ? "faster" : "slower", writePtrOnRead);
     BSP_LCD_SetTextColor (oldFaster ? LCD_COLOR_WHITE : LCD_COLOR_YELLOW);
     BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
     HAL_Delay (40);
