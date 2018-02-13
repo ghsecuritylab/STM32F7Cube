@@ -442,7 +442,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   0, // bInterfaceNumber
   0, // bAlternateSetting
   0, // bNumEndpoints
-  1, // bInterfaceClass - audio device class
+  1, // bInterfaceClass - audio device class 1
   1, // bInterfaceSubClass - control
   0, // bInterfaceProtocol
   0, // iInterface
@@ -450,7 +450,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   //{{{  audio control descriptors
   //  Audio Control Interface Descriptor
   9, 36, 1,
-  0x00,0x01, // bcdADC - 1.00
+  0,1,       // bcdADC - 1.00
   39,0,      // wTotalLength
   1,         // bInCollection
   1,         // baInterfaceNr
@@ -484,23 +484,23 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   //{{{  audio streaming descriptors
   // Audio Streaming Interface Descriptor - Zero Band - Interface 1 - Alternate Setting 0
   9, USB_DESC_TYPE_INTERFACE,
-  1,                             // bInterfaceNumber
-  0,                             // bAlternateSetting
-  0,                             // bNumEndpoints
-  1,                             // bInterfaceClass - audio device class
-  2,                             // bInterfaceSubClass - streaming
-  0,      // bInterfaceProtocol
-  0,                             // iInterface
+  1, // bInterfaceNumber
+  0, // bAlternateSetting
+  0, // bNumEndpoints
+  1, // bInterfaceClass - audio device class
+  2, // bInterfaceSubClass - streaming
+  0, // bInterfaceProtocol
+  0, // iInterface
 
   // Audio Streaming Interface Descriptor - Operational - Interface 1 - Alternate Setting 1
   9, USB_DESC_TYPE_INTERFACE,
-  1,                             // bInterfaceNumber
-  1,                             // bAlternateSetting
-  1,                             // bNumEndpoints
-  1,                             // bInterfaceClass  - audio device class
-  2,                             // bInterfaceSubClass - streaming
-  0,      // bInterfaceProtocol
-  0,                             // iInterface
+  1, // bInterfaceNumber
+  1, // bAlternateSetting
+  1, // bNumEndpoints
+  1, // bInterfaceClass - audio device class
+  2, // bInterfaceSubClass - streaming
+  0, // bInterfaceProtocol
+  0, // iInterface
 
   // Audio Streaming Interface Descriptor
   7, 36, 1,
@@ -510,11 +510,11 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
 
   // Audio Streaming Descriptor Audio Type I Format
   11, 36, 2,
-  1, // bFormatType - type I
-  CHANNELS,      // bNrChannels
-  2,                   // bSubFrameSize - 2bytes per frame (16bits)
-  16,                  // bBitResolution - 16bits per sample
-  1,                   // bSamFreqType - single frequency supported
+  1,        // bFormatType - type I
+  CHANNELS, // bNrChannels
+  2,        // bSubFrameSize - 2bytes per frame (16bits)
+  16,       // bBitResolution - 16bits per sample
+  1,        // bSamFreqType - single frequency supported
   48000 & 0xFF, (48000 >> 8) & 0xFF, 48000 >> 16, // audio sampling frequency coded on 3 bytes
   //32000 & 0xFF, (32000 >> 8) & 0xFF, 32000 >> 16, // audio sampling frequency coded on 3 bytes
   //16000 & 0xFF, (16000 >> 8) & 0xFF, 16000 >> 16, // audio sampling frequency coded on 3 bytes
@@ -523,7 +523,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   // Standard AS Isochronous Synch Endpoint Descriptor - out endPoint 1
   9, USB_DESC_TYPE_ENDPOINT,
   AUDIO_OUT_EP,         // bEndpointAddress 1 - out endpoint
-  5,                    // bmAttributes Isochronous Asynchronous
+  5,                    // bmAttributes - Isochronous,Asynchronous
   MAX_PACKET_SIZE_DESC, // wMaxPacketSize bytes
   1,                    // bInterval
   0,                    // bRefresh
