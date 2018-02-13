@@ -471,7 +471,6 @@ void USBD_LL_Delay (uint32_t Delay) {
 //}}}
 //}}}
 
-//{{{  usb audio descriptors
 //{{{  device descriptor
 __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12,                                // bLength
@@ -602,21 +601,21 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   16000 & 0xFF, (16000 >> 8) & 0xFF, 16000 >> 16, // audio sampling frequency coded on 3 bytes
   //}}}
 
-  // Endpoint1 descriptor
+  // Standard AS Isochronous Synch Endpoint Descriptor - out endPoint 1
   9,                               // bLength
   USB_DESC_TYPE_ENDPOINT,          // bDescriptorType
   AUDIO_OUT_EP,                    // bEndpointAddress 1 - out endpoint
   USBD_EP_TYPE_ISOC,               // bmAttributes
   AUDIO_MAX_PACKET_SIZE_DESC,      // wMaxPacketSize bytes
   1,                               // bInterval
-  0,                               // bRefresh
+  1,                               // bRefresh
   0,                               // bSynchAddress
 
-  // Endpoint streaming Descriptor
+  // Class-Specific AS Isochronous Audio Data Endpoint Descriptor
   7,                               // bLength
   AUDIO_ENDPOINT_DESCRIPTOR_TYPE,  // bDescriptorType
   AUDIO_ENDPOINT_GENERAL,          // bDescriptor
-  0,                               // bmAttributes
+  1,                               // bmAttributes - sampling frequency control
   0,                               // bLockDelayUnits
   0,                               // wLockDelay
   };
@@ -647,9 +646,8 @@ __ALIGN_BEGIN static uint8_t kStringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = 
   USB_DESC_TYPE_STRING,
   };
 //}}}
+//{{{  audioDescriptor handler
 __ALIGN_BEGIN static uint8_t strDesc[256] __ALIGN_END;
-
-//{{{  audioDescriptor
 //{{{
 static void intToUnicode (uint32_t value, uint8_t* pbuf, uint8_t len) {
 
@@ -742,7 +740,6 @@ static USBD_DescriptorsTypeDef audioDescriptor = {
   configStrDescriptor,
   interfaceStrDescriptor,
   };
-//}}}
 //}}}
 //{{{  audioClass handler
 typedef struct {
@@ -880,6 +877,14 @@ static uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
   if ((audioData->mCommand == AUDIO_REQ_SET_CUR) && (audioData->mUnit == AUDIO_OUT_STREAMING_CTRL)) {
     BSP_AUDIO_OUT_SetMute (audioData->mData[0]);
     sprintf (str, "%d %s", debugLine, audioData->mData[0] ? "muted" : "unmuted");
+    debug (LCD_COLOR_GREEN);
+    audioData->mCommand = 0;
+    audioData->mLength = 0;
+    }
+  else if ((audioData->mCommand == AUDIO_REQ_SET_CUR) && (audioData->mUnit == 0)) {
+    int frequency = audioData->mData[0] + (audioData->mData[1] << 8) + (audioData->mData[2] << 16);
+    //BSP_AUDIO_OUT_SetFrequency (frequency);
+    sprintf (str, "%d setFreq %d", debugLine, frequency);
     debug (LCD_COLOR_GREEN);
     audioData->mCommand = 0;
     audioData->mLength = 0;
