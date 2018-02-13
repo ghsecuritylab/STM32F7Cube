@@ -427,13 +427,6 @@ __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_E
 //}}}
 //{{{  configuration descriptor
 #define CONFIG_DESC_SIZ 109
-#define AUDIO_SUBCLASS_AUDIOCONTROL   0x01
-#define AUDIO_SUBCLASS_AUDIOSTREAMING 0x02
-#define AUDIO_PROTOCOL_UNDEFINED      0x00
-#define AUDIO_STREAMING_GENERAL       0x01
-#define AUDIO_STREAMING_FORMAT_TYPE   0x02
-
-
 __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_END = {
   // Configuration Descriptor
   9, USB_DESC_TYPE_CONFIGURATION,
@@ -446,13 +439,13 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
 
   // Control Interface Descriptor
   9, USB_DESC_TYPE_INTERFACE,
-  0,                           // bInterfaceNumber
-  0,                           // bAlternateSetting
-  0,                           // bNumEndpoints
-  1,                           // bInterfaceClass - audio device class
-  AUDIO_SUBCLASS_AUDIOCONTROL, // bInterfaceSubClass
-  AUDIO_PROTOCOL_UNDEFINED,    // bInterfaceProtocol
-  0,                           // iInterface
+  0, // bInterfaceNumber
+  0, // bAlternateSetting
+  0, // bNumEndpoints
+  1, // bInterfaceClass - audio device class
+  1, // bInterfaceSubClass - control
+  0, // bInterfaceProtocol
+  0, // iInterface
 
   //{{{  audio control descriptors
   //  Audio Control Interface Descriptor
@@ -464,13 +457,13 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
 
   // Audio Control Input Terminal Descriptor
   12, 36, 2,
-  1,              // bTerminalID = 1
-  1,1,            // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
-  0x00,           // bAssocTerminal
-  CHANNELS, // bNrChannels
-  0x33,0x00,      // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
-  0,              // iChannelNames
-  0,              // iTerminal
+  1,         // bTerminalID = input 1
+  1,1,       // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
+  0x00,      // bAssocTerminal
+  CHANNELS,  // bNrChannels
+  0x33,0x00, // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
+  0,         // iChannelNames
+  0,         // iTerminal
 
   // Audio Control Feature Unit Descriptor
   9, 36, 6,
@@ -485,7 +478,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   3,   // bTerminalID = 3
   1,3, // wTerminalType - speaker 0x0301
   0,   // bAssocTerminal
-  1,   // bSourceID
+  2,   // bSourceID
   0,   // iTerminal
   //}}}
   //{{{  audio streaming descriptors
@@ -495,8 +488,8 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   0,                             // bAlternateSetting
   0,                             // bNumEndpoints
   1,                             // bInterfaceClass - audio device class
-  AUDIO_SUBCLASS_AUDIOSTREAMING, // bInterfaceSubClass
-  AUDIO_PROTOCOL_UNDEFINED,      // bInterfaceProtocol
+  2,                             // bInterfaceSubClass - streaming
+  0,      // bInterfaceProtocol
   0,                             // iInterface
 
   // Audio Streaming Interface Descriptor - Operational - Interface 1 - Alternate Setting 1
@@ -505,18 +498,18 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   1,                             // bAlternateSetting
   1,                             // bNumEndpoints
   1,                             // bInterfaceClass  - audio device class
-  AUDIO_SUBCLASS_AUDIOSTREAMING, // bInterfaceSubClass
-  AUDIO_PROTOCOL_UNDEFINED,      // bInterfaceProtocol
+  2,                             // bInterfaceSubClass - streaming
+  0,      // bInterfaceProtocol
   0,                             // iInterface
 
   // Audio Streaming Interface Descriptor
-  7, 36, AUDIO_STREAMING_GENERAL,
+  7, 36, 1,
   1,   // bTerminalLink
   1,   // bDelay
   1,0, // wFormatTag AUDIO_FORMAT_PCM - 0x0001
 
   // Audio Streaming Descriptor Audio Type I Format
-  11, 36, AUDIO_STREAMING_FORMAT_TYPE,
+  11, 36, 2,
   1, // bFormatType - type I
   CHANNELS,      // bNrChannels
   2,                   // bSubFrameSize - 2bytes per frame (16bits)
@@ -529,12 +522,12 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
 
   // Standard AS Isochronous Synch Endpoint Descriptor - out endPoint 1
   9, USB_DESC_TYPE_ENDPOINT,
-  AUDIO_OUT_EP,               // bEndpointAddress 1 - out endpoint
-  5,                          // bmAttributes Isochronous Asynchronous
+  AUDIO_OUT_EP,         // bEndpointAddress 1 - out endpoint
+  5,                    // bmAttributes Isochronous Asynchronous
   MAX_PACKET_SIZE_DESC, // wMaxPacketSize bytes
-  1,                          // bInterval
-  0,                          // bRefresh
-  0,                          // bSynchAddress
+  1,                    // bInterval
+  0,                    // bRefresh
+  0,                    // bSynchAddress
 
   // Class-Specific AS Isochronous Audio Data Endpoint Descriptor
   7, 37, 1,
