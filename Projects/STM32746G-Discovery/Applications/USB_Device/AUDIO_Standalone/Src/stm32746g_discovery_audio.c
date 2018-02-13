@@ -263,6 +263,7 @@ uint8_t BSP_AUDIO_OUT_Init (uint16_t OutputDevice, uint8_t Volume, uint32_t Audi
 //}}}
 //{{{
 void BSP_AUDIO_OUT_DeInit() {
+
   SAIx_Out_DeInit();
   BSP_AUDIO_OUT_MspDeInit(&haudio_out_sai, NULL);
   }
@@ -271,12 +272,9 @@ void BSP_AUDIO_OUT_DeInit() {
 //{{{
 uint8_t BSP_AUDIO_OUT_Play (uint16_t* pBuffer, uint32_t Size) {
 
-  if (audio_drv->Play (AUDIO_I2C_ADDRESS, pBuffer, Size) != 0)
-    return AUDIO_ERROR;
-  else {
-    HAL_SAI_Transmit_DMA (&haudio_out_sai, (uint8_t*) pBuffer, DMA_MAX(Size / AUDIODATA_SIZE));
-    return AUDIO_OK;
-    }
+  audio_drv->Play (AUDIO_I2C_ADDRESS, pBuffer, Size);
+  HAL_SAI_Transmit_DMA (&haudio_out_sai, (uint8_t*) pBuffer, DMA_MAX(Size / AUDIODATA_SIZE));
+  return AUDIO_OK;
   }
 //}}}
 //{{{
@@ -287,81 +285,51 @@ void BSP_AUDIO_OUT_ChangeBuffer (uint16_t *pData, uint16_t Size) {
 //{{{
 uint8_t BSP_AUDIO_OUT_Pause() {
 
-  /* Call the Audio Codec Pause/Resume function */
-  if (audio_drv->Pause(AUDIO_I2C_ADDRESS) != 0)
-    return AUDIO_ERROR;
-  else {
-    /* Call the Media layer pause function */
-    HAL_SAI_DMAPause(&haudio_out_sai);
-    /* Return AUDIO_OK when all operations are correctly done */
-    return AUDIO_OK;
-    }
+  audio_drv->Pause (AUDIO_I2C_ADDRESS);
+  HAL_SAI_DMAPause (&haudio_out_sai);
+  return AUDIO_OK;
   }
 //}}}
 //{{{
 uint8_t BSP_AUDIO_OUT_Resume() {
 
-  /* Call the Audio Codec Pause/Resume function */
-  if (audio_drv->Resume(AUDIO_I2C_ADDRESS) != 0)
-    return AUDIO_ERROR;
-  else {
-    /* Call the Media layer pause/resume function */
-    HAL_SAI_DMAResume(&haudio_out_sai);
-
-    /* Return AUDIO_OK when all operations are correctly done */
-    return AUDIO_OK;
-    }
+  audio_drv->Resume (AUDIO_I2C_ADDRESS);
+  HAL_SAI_DMAResume (&haudio_out_sai);
+  return AUDIO_OK;
   }
 //}}}
 //{{{
 uint8_t BSP_AUDIO_OUT_Stop (uint32_t Option) {
 
-  /* Call the Media layer stop function */
-  HAL_SAI_DMAStop(&haudio_out_sai);
+  HAL_SAI_DMAStop (&haudio_out_sai);
 
-  /* Call Audio Codec Stop function */
-  if (audio_drv->Stop(AUDIO_I2C_ADDRESS, Option) != 0)
-    return AUDIO_ERROR;
-  else {
-    if (Option == CODEC_PDWN_HW)
-      /* Wait at least 100us */
-      HAL_Delay(1);
-    /* Return AUDIO_OK when all operations are correctly done */
-    return AUDIO_OK;
-    }
+  audio_drv->Stop (AUDIO_I2C_ADDRESS, Option);
+  if (Option == CODEC_PDWN_HW)
+    /* Wait at least 100us */
+    HAL_Delay(1);
+
+  return AUDIO_OK;
   }
 //}}}
 //{{{
 uint8_t BSP_AUDIO_OUT_SetVolume (uint8_t Volume) {
 
-  /* Call the codec volume control function with converted volume value */
-  if (audio_drv->SetVolume(AUDIO_I2C_ADDRESS, Volume) != 0)
-    return AUDIO_ERROR;
-  else
-    /* Return AUDIO_OK when all operations are correctly done */
-    return AUDIO_OK;
+  audio_drv->SetVolume(AUDIO_I2C_ADDRESS, Volume);
+  return AUDIO_OK;
   }
 //}}}
 //{{{
 uint8_t BSP_AUDIO_OUT_SetMute (uint32_t Cmd) {
 
-  /* Call the Codec Mute function */
-  if (audio_drv->SetMute(AUDIO_I2C_ADDRESS, Cmd) != 0)
-    return AUDIO_ERROR;
-  else
-    /* Return AUDIO_OK when all operations are correctly done */
-    return AUDIO_OK;
+  audio_drv->SetMute (AUDIO_I2C_ADDRESS, Cmd);
+  return AUDIO_OK;
   }
 //}}}
 //{{{
 uint8_t BSP_AUDIO_OUT_SetOutputMode (uint8_t Output) {
 
-  /* Call the Codec output device function */
-  if (audio_drv->SetOutputMode(AUDIO_I2C_ADDRESS, Output) != 0)
-    return AUDIO_ERROR;
-  else
-    /* Return AUDIO_OK when all operations are correctly done */
-    return AUDIO_OK;
+  audio_drv->SetOutputMode (AUDIO_I2C_ADDRESS, Output);
+  return AUDIO_OK;
   }
 //}}}
 //{{{

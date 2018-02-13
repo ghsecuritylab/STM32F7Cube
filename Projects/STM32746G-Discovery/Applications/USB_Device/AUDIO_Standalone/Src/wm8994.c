@@ -166,7 +166,7 @@ static uint32_t ReadID (uint16_t DeviceAddr) {
 //{{{
 static uint32_t Play (uint16_t DeviceAddr, uint16_t* pBuffer, uint16_t Size) {
 
-  SetMute (DeviceAddr, AUDIO_MUTE_OFF);
+  //SetMute (DeviceAddr, AUDIO_MUTE_OFF);
   return 0;
   }
 //}}}
