@@ -439,15 +439,15 @@ void USBD_LL_Delay (uint32_t Delay) {
 
 //{{{  device descriptor
 __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
-  0x12, USB_DESC_TYPE_DEVICE,                // bDescriptorType
-  0x00, 0x02,                          // bcdUSB
+  0x12, USB_DESC_TYPE_DEVICE,
+  0x01, 0x01,                          // bcdUSB 1.1
   0x00,                                // bDeviceClass
   0x00,                                // bDeviceSubClass
   0x00,                                // bDeviceProtocol
   USB_MAX_EP0_SIZE,                    // bMaxPacketSize
   LOBYTE(USBD_VID), HIBYTE(USBD_VID),  // vid
   LOBYTE(USBD_PID), HIBYTE(USBD_PID),  // pid
-  0x00, 0x02,                          // bcdDevice rel 2.00
+  0x01, 0x01,                          // bcdDevice rel 1.01
   USBD_IDX_MFC_STR,                    // Index of manufacturer string
   USBD_IDX_PRODUCT_STR,                // Index of product string
   USBD_IDX_SERIAL_STR,                 // Index of serial number string
