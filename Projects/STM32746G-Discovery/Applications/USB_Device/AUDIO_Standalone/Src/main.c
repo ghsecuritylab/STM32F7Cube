@@ -44,7 +44,7 @@ char* kVersion = "UAC 12am 13/2/18";
 #define USBD_LANGID_STRING    0x409
 #define USB_SIZ_STRING_SERIAL 0x1A
 
-#define AUDIO_OUT_EP                        0x01
+#define AUDIO_OUT_EP                        1
 
 #define AUDIO_DESCRIPTOR_TYPE               0x21
 #define USB_DEVICE_CLASS_AUDIO              0x01
@@ -74,9 +74,6 @@ char* kVersion = "UAC 12am 13/2/18";
 
 #define AUDIO_FORMAT_TYPE_I        0x01
 #define AUDIO_ENDPOINT_GENERAL     0x01
-#define AUDIO_REQ_GET_CUR          0x81
-#define AUDIO_REQ_SET_CUR          0x01
-#define AUDIO_OUT_STREAMING_CTRL   0x02
 //}}}
 //{{{  graphics, debug
 static int oldFaster = 1;
@@ -527,7 +524,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   12,                              // bLength
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_CONTROL_INPUT_TERMINAL,    // bDescriptorSubtype
-  1,                               // bTerminalID
+  1,                               // bTerminalID = 1
   1,1,                             // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
   0x00,                            // bAssocTerminal
   AUDIO_CHANNELS,                  // bNrChannels
@@ -539,17 +536,17 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[AUDIO_CONFIG_DESC_SIZ] __AL
   9,                               // bLength
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_CONTROL_FEATURE_UNIT,      // bDescriptorSubtype
-  AUDIO_OUT_STREAMING_CTRL,        // bUnitID
+  2,                               // bUnitID = 2
   1,                               // bSourceID
   1,                               // bControlSize
-  AUDIO_CONTROL_MUTE,0,            // bmaControls | AUDIO_CONTROL_VOLUME,
+  3,0,                             // bmaControls | AUDIO_CONTROL_VOLUME,
   0,                               // iTerminal
 
   // Audio Control Output Terminal Descriptor
   9,                               // bLength
   AUDIO_INTERFACE_DESCRIPTOR_TYPE, // bDescriptorType
   AUDIO_CONTROL_OUTPUT_TERMINAL,   // bDescriptorSubtype
-  3,                               // bTerminalID
+  3,                               // bTerminalID = 3
   1,3,                             // wTerminalType - speaker 0x0301
   0,                               // bAssocTerminal
   2,                               // bSourceID
@@ -646,6 +643,7 @@ __ALIGN_BEGIN static uint8_t kStringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = 
   USB_DESC_TYPE_STRING,
   };
 //}}}
+
 //{{{  audioDescriptor handler
 __ALIGN_BEGIN static uint8_t strDesc[256] __ALIGN_END;
 //{{{
@@ -752,6 +750,12 @@ typedef struct {
   uint8_t       mData[USB_MAX_EP0_SIZE];
   uint8_t       mLength;
   uint8_t       mUnit;
+
+  uint8_t       mMute;
+  uint16_t      mCurVolume;
+  uint16_t      mMinVolume;
+  uint16_t      mMaxVolume;
+  uint16_t      mResVolume;
   } tAudioData;
 
 //{{{
@@ -765,6 +769,12 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   audioData->mPlayStarted = 0;
   audioData->mWritePtr = 0;
   audioData->mAltSetting = 0;
+
+  audioData->mMute = 0;
+  audioData->mCurVolume = 50;
+  audioData->mMinVolume = 0;
+  audioData->mMaxVolume = 100;
+  audioData->mResVolume = 1;
   device->pClassData = audioData;
 
   //sprintf (str, "%d usbInit", debugLine); debug (LCD_COLOR_GREEN);
@@ -834,26 +844,65 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 
     case USB_REQ_TYPE_CLASS :
       switch (req->bRequest) {
-        case AUDIO_REQ_GET_CUR:
-          memset (audioData->mData, 0, 64);
-          USBD_CtlSendData (device, audioData->mData, req->wLength);
-          sprintf (str, "%d - audReqGetCur %d:%x", debugLine, req->wLength, audioData->mData[0]);
+        case 0x81: // GET_CUR
+          USBD_CtlSendData (device, &audioData->mMute, req->wLength);
+          sprintf (str, "%d - getCur %d:%x", debugLine, req->wLength, audioData->mMute);
           debug (LCD_COLOR_YELLOW);
           break;
 
-        case AUDIO_REQ_SET_CUR:
+        case 0x82: // GET_MIN
+          audioData->mData[0] = 0;
+          audioData->mData[1] = 0;
+          USBD_CtlSendData (device, (uint8_t*)(&audioData->mMinVolume), req->wLength);
+          sprintf (str, "%d - getMin %d:%x", debugLine, req->wLength, audioData->mMinVolume);
+          debug (LCD_COLOR_YELLOW);
+          break;
+        case 0x83: // GET_MAX
+          audioData->mData[0] = 0;
+          audioData->mData[1] = 0;
+          USBD_CtlSendData (device, (uint8_t*)(&audioData->mMaxVolume), req->wLength);
+          sprintf (str, "%d - getMax %d:%x", debugLine, req->wLength, audioData->mMaxVolume);
+          debug (LCD_COLOR_YELLOW);
+          break;
+        case 0x84: // GET_RES
+          audioData->mData[0] = 0;
+          audioData->mData[1] = 0;
+          USBD_CtlSendData (device, (uint8_t*)(&audioData->mResVolume), req->wLength);
+          sprintf (str, "%d - getRes %d:%x", debugLine, req->wLength, audioData->mResVolume);
+          debug (LCD_COLOR_YELLOW);
+          break;
+
+        case 0x01: // SET_CUR
           if (req->wLength) {
             // rx buffer from ep0
             USBD_CtlPrepareRx (device, audioData->mData, req->wLength);
-            audioData->mCommand = AUDIO_REQ_SET_CUR; // set request value
+            audioData->mCommand = 0x01; // set request value
             audioData->mLength = req->wLength;       // set request data length
             audioData->mUnit = HIBYTE(req->wIndex);  // set request target unit
             }
-          sprintf (str, "%d - audReqSetCur %d:%x", debugLine, req->wLength, audioData->mData[0]);
+          sprintf (str, "%d - setCur %d:%x", debugLine, req->wLength, audioData->mData[0]);
           debug (LCD_COLOR_YELLOW);
           break;
 
+        case 0x02: // SETMIN
+          sprintf (str, "%d - setMin %d", debugLine, req->wLength);
+          debug (LCD_COLOR_YELLOW);
+          break;
+
+        case 0x03: // SETMAX
+          sprintf (str, "%d - setMax %d", debugLine, req->wLength);
+          debug (LCD_COLOR_YELLOW);
+          break;
+
+        case 0x04: // SETRES
+          sprintf (str, "%d - setRes %d", debugLine, req->wLength);
+          debug (LCD_COLOR_YELLOW);
+          break;
+          break;
+
         default:
+          sprintf (str, "%d - default %d", debugLine, req->wLength);
+          debug (LCD_COLOR_YELLOW);
           USBD_CtlError (device, req);
           return USBD_FAIL;
         }
@@ -874,20 +923,28 @@ static uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
 // only SET_CUR request is managed
 
   tAudioData* audioData = (tAudioData*)device->pClassData;
-  if ((audioData->mCommand == AUDIO_REQ_SET_CUR) && (audioData->mUnit == AUDIO_OUT_STREAMING_CTRL)) {
-    BSP_AUDIO_OUT_SetMute (audioData->mData[0]);
-    sprintf (str, "%d %s", debugLine, audioData->mData[0] ? "muted" : "unmuted");
-    debug (LCD_COLOR_GREEN);
-    audioData->mCommand = 0;
-    audioData->mLength = 0;
-    }
-  else if ((audioData->mCommand == AUDIO_REQ_SET_CUR) && (audioData->mUnit == 0)) {
-    int frequency = audioData->mData[0] + (audioData->mData[1] << 8) + (audioData->mData[2] << 16);
-    //BSP_AUDIO_OUT_SetFrequency (frequency);
-    sprintf (str, "%d setFreq %d", debugLine, frequency);
-    debug (LCD_COLOR_GREEN);
-    audioData->mCommand = 0;
-    audioData->mLength = 0;
+  if (audioData->mCommand == 0x01) {
+    if (audioData->mUnit == 0) {
+      int frequency = audioData->mData[0] + (audioData->mData[1] << 8) + (audioData->mData[2] << 16);
+      //BSP_AUDIO_OUT_SetFrequency (frequency);
+      sprintf (str, "%d setFreq %d", debugLine, frequency);
+      debug (LCD_COLOR_GREEN);
+      audioData->mCommand = 0;
+      audioData->mLength = 0;
+      }
+    else if (audioData->mUnit == 2) {
+      audioData->mMute = audioData->mData[0];
+      BSP_AUDIO_OUT_SetMute (audioData->mMute);
+      sprintf (str, "%d %s", debugLine, audioData->mMute ? "muted" : "unmuted");
+      debug (LCD_COLOR_GREEN);
+      audioData->mCommand = 0;
+      audioData->mLength = 0;
+      }
+    else {
+      sprintf (str, "%d epRx audReqSetCur %d cmd:%d unit:%d",
+               debugLine, audioData->mLength, audioData->mCommand, audioData->mUnit);
+      debug (LCD_COLOR_RED);
+      }
     }
   else {
     sprintf (str, "%d epRx:%d cmd:%d unit:%d data:%x",
@@ -1037,7 +1094,9 @@ void BSP_AUDIO_OUT_TransferComplete_CallBack() {
   }
 //}}}
 
+//{{{
 int main() {
+
   SCB_EnableICache();
   SCB_EnableDCache();
   HAL_Init();
@@ -1102,10 +1161,13 @@ int main() {
 
   while (1) {
     touch();
+
     char str1[40];
     sprintf (str1, "%s %d %d %s %d", kVersion, AUDIO_SAMPLE_RATE, AUDIO_CHANNELS, oldFaster ? "faster" : "slower", writePtrOnRead);
     BSP_LCD_SetTextColor (oldFaster ? LCD_COLOR_WHITE : LCD_COLOR_YELLOW);
     BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
+
     HAL_Delay (40);
     }
   }
+//}}}
