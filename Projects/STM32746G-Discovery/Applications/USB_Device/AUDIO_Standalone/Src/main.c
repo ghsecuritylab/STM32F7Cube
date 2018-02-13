@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "UAC 6pm 13/2/18";
+char* kVersion = "UAC 9pm 13/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +17,7 @@ char* kVersion = "UAC 6pm 13/2/18";
 #include "stm32746g_discovery_audio.h"
 //}}}
 #define CHANNELS     2
-#define SAMPLE_RATE  16000
+#define SAMPLE_RATE  48000
 //{{{  packet defines
 #define PACKETS               40
 
@@ -447,7 +447,7 @@ __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_E
   };
 //}}}
 //{{{  configuration descriptor
-#define CONFIG_DESC_SIZ 100
+#define CONFIG_DESC_SIZ 109
 __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_END = {
   // Configuration Descriptor
   9, USB_DESC_TYPE_CONFIGURATION,
@@ -472,7 +472,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   //  Audio Control Interface Descriptor
   9, AUDIO_INTERFACE_DESCRIPTOR_TYPE, AUDIO_CONTROL_HEADER,
   0x00,0x01, // bcdADC - 1.00
-  30,0,      // wTotalLength
+  39,0,      // wTotalLength
   1,         // bInCollection
   1,         // baInterfaceNr
 
@@ -487,12 +487,12 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   0,              // iTerminal
 
   // Audio Control Feature Unit Descriptor
-  //9, AUDIO_INTERFACE_DESCRIPTOR_TYPE, AUDIO_CONTROL_FEATURE_UNIT,
-  //2,   // bUnitID = 2
-  //1,   // bSourceID
-  //1,   // bControlSize
-  //3,0, // bmaControls =  mute + volume
-  //0,   // iTerminal
+  9, AUDIO_INTERFACE_DESCRIPTOR_TYPE, AUDIO_CONTROL_FEATURE_UNIT,
+  2,   // bUnitID = 2
+  1,   // bSourceID
+  1,   // bControlSize
+  3,0, // bmaControls =  mute + volume
+  0,   // iTerminal
 
   // Audio Control Output Terminal Descriptor
   9, AUDIO_INTERFACE_DESCRIPTOR_TYPE, AUDIO_CONTROL_OUTPUT_TERMINAL,
@@ -536,10 +536,9 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   2,                   // bSubFrameSize - 2bytes per frame (16bits)
   16,                  // bBitResolution - 16bits per sample
   1,                   // bSamFreqType - single frequency supported
-  //48000 & 0xFF, (48000 >> 8) & 0xFF, 48000 >> 16, // audio sampling frequency coded on 3 bytes
-  //44100 & 0xFF, (44100 >> 8) & 0xFF, 44100 >> 16, // audio sampling frequency coded on 3 bytes
+  48000 & 0xFF, (48000 >> 8) & 0xFF, 48000 >> 16, // audio sampling frequency coded on 3 bytes
   //32000 & 0xFF, (32000 >> 8) & 0xFF, 32000 >> 16, // audio sampling frequency coded on 3 bytes
-  16000 & 0xFF, (16000 >> 8) & 0xFF, 16000 >> 16, // audio sampling frequency coded on 3 bytes
+  //16000 & 0xFF, (16000 >> 8) & 0xFF, 16000 >> 16, // audio sampling frequency coded on 3 bytes
   //}}}
 
   // Standard AS Isochronous Synch Endpoint Descriptor - out endPoint 1
