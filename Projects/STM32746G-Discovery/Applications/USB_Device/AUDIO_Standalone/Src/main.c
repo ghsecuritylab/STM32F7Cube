@@ -61,17 +61,24 @@ char* kVersion = "UAC 7pm 12/2/18";
 #define AUDIO_REQ_SET_CUR         0x01
 #define AUDIO_OUT_STREAMING_CTRL  0x02
 
+#define AUDIO_SAMPLE_FREQ_DESC    (uint8_t)(AUDIO_FREQ), (uint8_t)((AUDIO_FREQ >> 8)), (uint8_t)((AUDIO_FREQ >> 16))
+
 #define AUDIO_BYTES_PER_SAMPLE    2
 #define AUDIO_PACKETS_PER_SECOND  1000
 #define AUDIO_PACKET_SAMPLES      (AUDIO_FREQ / AUDIO_PACKETS_PER_SECOND)
 
-#define AUDIO_OUT_PACKET_SIZE     (4 * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
-#define AUDIO_OUT_PACKET_BUF_SIZE (AUDIO_PACKETS * AUDIO_OUT_PACKET_SIZE)
+#define AUDIO_PACKET_SIZE        (AUDIO_CHANNELS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
+#define AUDIO_PACKET_SIZE_DESC   (uint8_t)(AUDIO_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_PACKET_SIZE >> 8) & 0xFF)
 
-#define AUDIO_IN_PACKET_SIZE      (AUDIO_CHANNELS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
-#define AUDIO_IN_PACKET_SIZE_DESC (uint8_t)(AUDIO_IN_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_IN_PACKET_SIZE >> 8) & 0xFF)
+#define AUDIO_MAX_CHANNELS        4
+#define AUDIO_MAX_FREQ            48000
+#define AUDIO_MAX_PACKET_SAMPLES  (AUDIO_MAX_FREQ / AUDIO_PACKETS_PER_SECOND)
+#define AUDIO_MAX_PACKET_SIZE     (AUDIO_MAX_CHANNELS * AUDIO_BYTES_PER_SAMPLE * AUDIO_MAX_PACKET_SAMPLES)
+#define AUDIO_MAX_PACKET_SIZE_DESC (uint8_t)(AUDIO_MAX_PACKET_SIZE & 0xFF), (uint8_t)((AUDIO_MAX_PACKET_SIZE >> 8) & 0xFF)
 
-#define AUDIO_SAMPLE_FREQ_DESC    (uint8_t)(AUDIO_FREQ), (uint8_t)((AUDIO_FREQ >> 8)), (uint8_t)((AUDIO_FREQ >> 16))
+#define AUDIO_SLOTS               4
+#define AUDIO_SLOTS_PACKET_SIZE   (AUDIO_SLOTS * AUDIO_BYTES_PER_SAMPLE * AUDIO_PACKET_SAMPLES)
+#define AUDIO_SLOTS_PACKET_BUF_SIZE (AUDIO_PACKETS * AUDIO_SLOTS_PACKET_SIZE)
 //}}}
 #define AUDIO_CHANNELS  2
 #define AUDIO_FREQ      48000
@@ -461,7 +468,7 @@ __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_E
 //}}}
 //{{{
 __ALIGN_BEGIN static const uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] __ALIGN_END = {
-  // config
+  // Configuration Descriptor
   9,                           // bLength - 9
   USB_DESC_TYPE_CONFIGURATION, // bDescriptorType
   LOBYTE(USB_AUDIO_CONFIG_DESC_SIZ), HIBYTE(USB_AUDIO_CONFIG_DESC_SIZ), // wTotalLength  109 bytes
@@ -471,7 +478,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] 
   0xC0,                        // bmAttributes - BUS Powred
   0x32,                        // bMaxPower = 100 mA
 
-  // control interface
+  // Control Interface Descriptor
   AUDIO_INTERFACE_DESC_SIZE,   // bLength - 9
   USB_DESC_TYPE_INTERFACE,     // bDescriptorType
   0x00,                        // bInterfaceNumber
@@ -566,13 +573,13 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] 
   0x01,                            // bSamFreqType - single frequency supported
   AUDIO_SAMPLE_FREQ_DESC,          // audio sampling frequency coded on 3 bytes
   //}}}
-  //{{{  speaker endpoint
+
   // Endpoint1 Standard Descriptor
   AUDIO_STANDARD_ENDPOINT_DESC_SIZE, // bLength - 9
   USB_DESC_TYPE_ENDPOINT,            // bDescriptorType
   AUDIO_OUT_EP,                      // bEndpointAddress 1 - out endpoint
   USBD_EP_TYPE_ISOC,                 // bmAttributes
-  AUDIO_IN_PACKET_SIZE_DESC,         // wMaxPacketSize bytes
+  AUDIO_MAX_PACKET_SIZE_DESC,        // wMaxPacketSize bytes
   0x01,                              // bInterval
   0x00,                              // bRefresh
   0x00,                              // bSynchAddress
@@ -584,7 +591,6 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[USB_AUDIO_CONFIG_DESC_SIZ] 
   0x00,                               // bmAttributes
   0x00,                               // bLockDelayUnits
   0x00,                               // wLockDelay
-  //}}}
   };
 //}}}
 //{{{
@@ -718,7 +724,7 @@ static USBD_DescriptorsTypeDef audioDescriptor = {
 //}}}
 //{{{  tAudioData
 typedef struct {
-  uint8_t       mBuffer[AUDIO_OUT_PACKET_BUF_SIZE];
+  uint8_t       mBuffer[AUDIO_SLOTS_PACKET_BUF_SIZE];
   uint8_t       mPlayStarted;
   uint16_t      mWritePtr;
   __IO uint32_t mAltSetting;
@@ -734,7 +740,7 @@ typedef struct {
 static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   // Open EP OUT
-  USBD_LL_OpenEP (device, AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, AUDIO_IN_PACKET_SIZE);
+  USBD_LL_OpenEP (device, AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, AUDIO_PACKET_SIZE);
 
   // allocate audioData
   tAudioData* audioData = malloc (sizeof (tAudioData));
@@ -747,7 +753,7 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
 
   // Prepare Out endpoint to receive 1st packet
-  USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, audioData->mBuffer, AUDIO_IN_PACKET_SIZE);
+  USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, audioData->mBuffer, AUDIO_PACKET_SIZE);
 
   return USBD_OK;
   }
@@ -886,8 +892,8 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
   if (epNum == AUDIO_OUT_EP) {
     tAudioData* audioData = (tAudioData*)device->pClassData;
     if (!audioData->mPlayStarted)
-      if (audioData->mWritePtr >= AUDIO_OUT_PACKET_BUF_SIZE / 2) {
-        BSP_AUDIO_OUT_Play ((uint16_t*)audioData->mBuffer, AUDIO_OUT_PACKET_BUF_SIZE);
+      if (audioData->mWritePtr >= AUDIO_SLOTS_PACKET_BUF_SIZE / 2) {
+        BSP_AUDIO_OUT_Play ((uint16_t*)audioData->mBuffer, AUDIO_SLOTS_PACKET_BUF_SIZE);
         audioData->mPlayStarted = 1;
         }
 
@@ -900,10 +906,10 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
       }
 
     // prepare outEndpoint to rx next audio packet
-    audioData->mWritePtr += AUDIO_OUT_PACKET_SIZE;
-    if (audioData->mWritePtr >= AUDIO_OUT_PACKET_BUF_SIZE)
+    audioData->mWritePtr += AUDIO_SLOTS_PACKET_SIZE;
+    if (audioData->mWritePtr >= AUDIO_SLOTS_PACKET_BUF_SIZE)
       audioData->mWritePtr = 0;
-    USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], AUDIO_IN_PACKET_SIZE);
+    USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], AUDIO_PACKET_SIZE);
     }
 
   return USBD_OK;
@@ -1002,7 +1008,7 @@ void BSP_AUDIO_OUT_ClockConfig (SAI_HandleTypeDef* hsai, uint32_t freq, void* Pa
 //{{{
 void BSP_AUDIO_OUT_TransferComplete_CallBack() {
 
-  writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / AUDIO_OUT_PACKET_SIZE;
+  writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / AUDIO_SLOTS_PACKET_SIZE;
   if (writePtrOnRead > AUDIO_PACKETS/2) // faster
     audioClock (1);
   else if (writePtrOnRead < AUDIO_PACKETS/2) // slower
