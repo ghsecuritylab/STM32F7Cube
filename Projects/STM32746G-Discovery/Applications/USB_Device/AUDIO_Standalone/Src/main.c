@@ -44,36 +44,28 @@ char* kVersion = "UAC 3pm 13/2/18";
 #define USBD_LANGID_STRING    0x409
 #define USB_SIZ_STRING_SERIAL 0x1A
 
-#define AUDIO_OUT_EP                        1
+#define AUDIO_OUT_EP          1
 
-#define AUDIO_DESCRIPTOR_TYPE               0x21
-#define USB_DEVICE_CLASS_AUDIO              0x01
-#define AUDIO_SUBCLASS_AUDIOCONTROL         0x01
-#define AUDIO_SUBCLASS_AUDIOSTREAMING       0x02
-#define AUDIO_PROTOCOL_UNDEFINED            0x00
-#define AUDIO_STREAMING_GENERAL             0x01
-#define AUDIO_STREAMING_FORMAT_TYPE         0x02
+#define USB_DEVICE_CLASS_AUDIO        0x01
+#define AUDIO_DESCRIPTOR_TYPE         0x21
+#define AUDIO_SUBCLASS_AUDIOCONTROL   0x01
+#define AUDIO_SUBCLASS_AUDIOSTREAMING 0x02
+#define AUDIO_PROTOCOL_UNDEFINED      0x00
+#define AUDIO_STREAMING_GENERAL       0x01
+#define AUDIO_STREAMING_FORMAT_TYPE   0x02
 
 // Audio Descriptor Types
-#define AUDIO_INTERFACE_DESCRIPTOR_TYPE     0x24
-#define AUDIO_ENDPOINT_DESCRIPTOR_TYPE      0x25
+#define AUDIO_INTERFACE_DESCRIPTOR_TYPE 0x24
+#define AUDIO_ENDPOINT_DESCRIPTOR_TYPE  0x25
 
 // Audio Control Interface Descriptor Subtypes
-#define AUDIO_CONTROL_HEADER                0x01
-#define AUDIO_CONTROL_INPUT_TERMINAL        0x02
-#define AUDIO_CONTROL_OUTPUT_TERMINAL       0x03
-#define AUDIO_CONTROL_FEATURE_UNIT          0x06
+#define AUDIO_CONTROL_HEADER            1
+#define AUDIO_CONTROL_INPUT_TERMINAL    2
+#define AUDIO_CONTROL_OUTPUT_TERMINAL   3
+#define AUDIO_CONTROL_FEATURE_UNIT      6
 
-#define AUDIO_INPUT_TERMINAL_DESC_SIZE      0x0C
-#define AUDIO_OUTPUT_TERMINAL_DESC_SIZE     0x09
-#define AUDIO_STREAMING_INTERFACE_DESC_SIZE 0x07
-
-#define AUDIO_CONTROL_MUTE         0x01
-#define AUDIO_CONTROL_VOLUME       0x02
-#define AUDIO_DEFAULT_VOLUME       100
-
-#define AUDIO_FORMAT_TYPE_I        0x01
-#define AUDIO_ENDPOINT_GENERAL     0x01
+#define AUDIO_FORMAT_TYPE_I        1
+#define AUDIO_ENDPOINT_GENERAL     1
 //}}}
 //{{{  graphics, debug
 static int oldFaster = 1;
@@ -728,7 +720,7 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   device->pClassData = audioData;
 
   //sprintf (str, "%d usbInit", debugLine); debug (LCD_COLOR_GREEN);
-  BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, AUDIO_DEFAULT_VOLUME, SAMPLE_RATE);
+  BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, 100, SAMPLE_RATE);
   BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
 
   // Prepare Out endpoint to receive 1st packet
