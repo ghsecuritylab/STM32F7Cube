@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "UAC 9pm 13/2/18";
+char* kVersion = "USB audio 1.0 12am 14/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,9 +16,9 @@ char* kVersion = "UAC 9pm 13/2/18";
 #include "stm32746g_discovery_ts.h"
 #include "stm32746g_discovery_audio.h"
 //}}}
-#define CHANNELS     2
-#define SAMPLE_RATE  48000
 //{{{  packet defines
+#define CHANNELS              4
+#define SAMPLE_RATE           48000
 #define PACKETS               40
 
 #define BYTES_PER_SAMPLE      2
@@ -27,16 +27,11 @@ char* kVersion = "UAC 9pm 13/2/18";
 #define PACKET_SAMPLES        (SAMPLE_RATE / PACKETS_PER_SECOND)
 #define PACKET_SIZE           (CHANNELS * PACKET_SAMPLES * BYTES_PER_SAMPLE)
 
-#define MAX_CHANNELS          4
-#define MAX_SAMPLE_RATE       48000
-#define MAX_PACKET_SAMPLES    (MAX_SAMPLE_RATE / PACKETS_PER_SECOND)
-#define MAX_PACKET_SIZE       (MAX_CHANNELS * MAX_PACKET_SAMPLES * BYTES_PER_SAMPLE)
-
 #define SLOTS                 4
 #define SLOTS_PACKET_SIZE     (SLOTS * BYTES_PER_SAMPLE * PACKET_SAMPLES)
 #define SLOTS_PACKET_BUF_SIZE (PACKETS * SLOTS_PACKET_SIZE)
 
-#define MAX_PACKET_SIZE_DESC  (uint8_t)(MAX_PACKET_SIZE & 0xFF), (uint8_t)((MAX_PACKET_SIZE >> 8) & 0xFF)
+#define PACKET_SIZE_DESC  (uint8_t)(PACKET_SIZE & 0xFF), (uint8_t)((PACKET_SIZE >> 8) & 0xFF)
 //}}}
 //{{{  descriptor defines
 #define USBD_VID              0x0483
@@ -515,19 +510,17 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
   2,        // bSubFrameSize - 2bytes per frame (16bits)
   16,       // bBitResolution - 16bits per sample
   1,        // bSamFreqType - single frequency supported
-  48000 & 0xFF, (48000 >> 8) & 0xFF, 48000 >> 16, // audio sampling frequency coded on 3 bytes
-  //32000 & 0xFF, (32000 >> 8) & 0xFF, 32000 >> 16, // audio sampling frequency coded on 3 bytes
-  //16000 & 0xFF, (16000 >> 8) & 0xFF, 16000 >> 16, // audio sampling frequency coded on 3 bytes
+  48000 & 0xFF, (48000 >> 8) & 0xFF, 48000 >> 16, // audio sampling frequency in 3 bytes
   //}}}
 
   // Standard AS Isochronous Synch Endpoint Descriptor - out endPoint 1
   9, USB_DESC_TYPE_ENDPOINT,
-  AUDIO_OUT_EP,         // bEndpointAddress 1 - out endpoint
-  5,                    // bmAttributes - Isochronous,Asynchronous
-  MAX_PACKET_SIZE_DESC, // wMaxPacketSize bytes
-  1,                    // bInterval
-  0,                    // bRefresh
-  0,                    // bSynchAddress
+  AUDIO_OUT_EP, // bEndpointAddress - out endpoint 1
+  5,            // bmAttributes - isochronous,asynchronous
+  PACKET_SIZE & 0xFF, (PACKET_SIZE >> 8) & 0xFF, // wMaxPacketSize bytes
+  1,            // bInterval
+  0,            // bRefresh
+  0,            // bSynchAddress
 
   // Class-Specific AS Isochronous Audio Data Endpoint Descriptor
   7, 37, 1,
@@ -582,18 +575,14 @@ static void intToUnicode (uint32_t value, uint8_t* pbuf, uint8_t len) {
 //{{{
 static void getSerialNum() {
 
-  #define DEVICE_ID1 (0x1FFF7A10)
-  #define DEVICE_ID2 (0x1FFF7A14)
-  #define DEVICE_ID3 (0x1FFF7A18)
+  uint32_t deviceserial0 = *(uint32_t*)0x1FFF7A10;
+  uint32_t deviceserial1 = *(uint32_t*)0x1FFF7A14;
+  uint32_t deviceserial2 = *(uint32_t*)0x1FFF7A18;
 
-  uint32_t deviceserial0, deviceserial1, deviceserial2;
-  deviceserial0 = *(uint32_t*)DEVICE_ID1;
-  deviceserial1 = *(uint32_t*)DEVICE_ID2;
-  deviceserial2 = *(uint32_t*)DEVICE_ID3;
   deviceserial0 += deviceserial2;
   if (deviceserial0 != 0) {
-    intToUnicode (deviceserial0, &kStringSerial[2] ,8);
-    intToUnicode (deviceserial1, &kStringSerial[18] ,4);
+    intToUnicode (deviceserial0, &kStringSerial[2], 8);
+    intToUnicode (deviceserial1, &kStringSerial[18], 4);
     }
   }
 //}}}
@@ -613,13 +602,13 @@ static uint8_t* langIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t* length) {
 //{{{
 static uint8_t* manufacturerStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   #define USBD_MANUFACTURER_STRING  "colin"
-  USBD_GetString ((uint8_t *)USBD_MANUFACTURER_STRING, strDesc, length);
+  USBD_GetString ((uint8_t*)USBD_MANUFACTURER_STRING, strDesc, length);
   return strDesc;
   }
 //}}}
 //{{{
 static uint8_t* productStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  USBD_GetString ((uint8_t*)((speed == USBD_SPEED_HIGH) ? "HS stm32 audio" : "FS stm32 audio"), strDesc, length);
+  USBD_GetString ((uint8_t*)((speed == USBD_SPEED_HIGH) ? "Stm32 HS USB audio 1.0" : "Stm32 FS USB audio 1.0"), strDesc, length);
   return strDesc;
   }
 //}}}
@@ -633,7 +622,7 @@ static uint8_t* serialStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) 
 //}}}
 //{{{
 static uint8_t* configStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  #define USBD_CONFIGURATION_STRING "AUDIO Config"
+  #define USBD_CONFIGURATION_STRING "audio config"
   USBD_GetString ((uint8_t*)USBD_CONFIGURATION_STRING, strDesc, length);
   return strDesc;
   }
@@ -641,7 +630,7 @@ static uint8_t* configStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) 
 //{{{
 static uint8_t* interfaceStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
 
-  #define USBD_INTERFACE_STRING     "AUDIO Interface"
+  #define USBD_INTERFACE_STRING "audio Interface"
   USBD_GetString ((uint8_t*)USBD_INTERFACE_STRING, strDesc, length);
   return strDesc;
   }
@@ -927,6 +916,19 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
         *--dstPtr = *srcPtr;
         }
       }
+    else if (CHANNELS == 4) {
+      // twiddle samples into slots
+      uint16_t* ptr = (uint16_t*)(audioData->mBuffer + audioData->mWritePtr);
+      for (int sample = 0; sample < PACKET_SAMPLES; sample++) {
+        // swap FR,RL, save src RL
+        uint16_t srcRL = *(ptr+2);
+        // dst FR = src FR
+        *(ptr+2) = *(ptr+1);
+        // dst RL = srcRL
+        *(ptr+1) = srcRL;
+        ptr += 4;
+        }
+      }
 
     // prepare outEndpoint to rx next audio packet
     audioData->mWritePtr += SLOTS_PACKET_SIZE;
@@ -1105,7 +1107,7 @@ int main() {
     touch();
 
     char str1[40];
-    sprintf (str1, "%s %d %d %s %d", kVersion, SAMPLE_RATE, CHANNELS, oldFaster ? "faster" : "slower", writePtrOnRead);
+    sprintf (str1, "%s %d %d %s %d", kVersion, SAMPLE_RATE, CHANNELS, oldFaster ? "fast" : "slow", writePtrOnRead);
     BSP_LCD_SetTextColor (oldFaster ? LCD_COLOR_WHITE : LCD_COLOR_YELLOW);
     BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
 
