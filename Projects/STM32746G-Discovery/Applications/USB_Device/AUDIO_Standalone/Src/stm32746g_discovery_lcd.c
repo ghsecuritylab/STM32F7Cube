@@ -28,7 +28,7 @@ static uint32_t            ActiveLayer = 0;
 static LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
 
 //{{{
-static void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t *c) {
+static void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t* c) {
 
   uint16_t width = DrawProp[ActiveLayer].pFont->Width;
   uint8_t offset = 8 *((width+7)/8) -  width;
@@ -400,7 +400,7 @@ uint32_t BSP_LCD_GetBackColor()
 }
 //}}}
 //{{{
-void BSP_LCD_SetFont (sFONT *fonts)
+void BSP_LCD_SetFont (sFONT* fonts)
 {
   DrawProp[ActiveLayer].pFont = fonts;
 }
@@ -464,55 +464,49 @@ void BSP_LCD_DisplayChar (uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
 }
 //}}}
 //{{{
-void BSP_LCD_DisplayStringAt (uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_AlignModeTypdef Mode) {
+void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, uint8_t* text, Text_AlignModeTypdef mode) {
 
-  uint16_t ref_column = 1, i = 0;
-  uint32_t size = 0, xsize = 0;
-  uint8_t  *ptr = Text;
-
-  /* Get the text size */
-  while (*ptr++) size ++ ;
-
-  /* Characters number per line */
-  xsize = (BSP_LCD_GetXSize()/DrawProp[ActiveLayer].pFont->Width);
-
-  switch (Mode) {
-    case CENTER_MODE:
-      ref_column = Xpos + ((xsize - size)* DrawProp[ActiveLayer].pFont->Width) / 2;
+  uint16_t column = 1;
+  switch (mode) {
+    case CENTER_MODE:  {
+      uint32_t xSize = BSP_LCD_GetXSize() / DrawProp[ActiveLayer].pFont->Width;
+      uint8_t* ptr = text;
+      uint32_t size = 0;
+      while (*ptr++)
+        size++;
+      column = xpos + ((xSize - size) * DrawProp[ActiveLayer].pFont->Width) / 2;
       break;
+      }
+
+    case RIGHT_MODE: {
+     uint32_t xSize = BSP_LCD_GetXSize() / DrawProp[ActiveLayer].pFont->Width;
+      uint8_t* ptr = text;
+      uint32_t size = 0;
+      while (*ptr++)
+        size++;
+      column = -xpos + ((xSize - size) * DrawProp[ActiveLayer].pFont->Width);
+      break;
+      }
+
     case LEFT_MODE:
-      ref_column = Xpos;
+      column = xpos;
       break;
-    case RIGHT_MODE:
-      ref_column = - Xpos + ((xsize - size)*DrawProp[ActiveLayer].pFont->Width);
-      break;
-    default:
-      ref_column = Xpos;
-      break;
-  }
+    }
 
-  /* Check that the Start column is located in the screen */
-  if ((ref_column < 1) || (ref_column >= 0x8000))
-    ref_column = 1;
+  // Check that the start x is on screen
+  if ((column < 1) || (column >= BSP_LCD_GetXSize()))
+    column = 1;
 
-  /* Send the string character by character on LCD */
-  while ((*Text != 0) & (((BSP_LCD_GetXSize() - (i*DrawProp[ActiveLayer].pFont->Width)) & 0xFFFF) >= DrawProp[ActiveLayer].pFont->Width))
-  {
-    /* Display one character on LCD */
-    BSP_LCD_DisplayChar (ref_column, Ypos, *Text);
-    /* Decrement the column position by 16 */
-    ref_column += DrawProp[ActiveLayer].pFont->Width;
-    /* Point on the next character */
-    Text++;
-    i++;
+  while (*text && (column < BSP_LCD_GetXSize())) {
+    BSP_LCD_DisplayChar (column, ypos, *text++);
+    column += DrawProp[ActiveLayer].pFont->Width;
+    }
   }
-}
 //}}}
 //{{{
-void BSP_LCD_DisplayStringAtLine (uint16_t line, uint8_t *ptr)
-{
+void BSP_LCD_DisplayStringAtLine (uint16_t line, uint8_t *ptr) {
   BSP_LCD_DisplayStringAt(0, LINE(line), ptr, LEFT_MODE);
-}
+  }
 //}}}
 //{{{
 void BSP_LCD_DisplayStringAtLineColumn (uint16_t line, uint16_t column, char* ptr) {

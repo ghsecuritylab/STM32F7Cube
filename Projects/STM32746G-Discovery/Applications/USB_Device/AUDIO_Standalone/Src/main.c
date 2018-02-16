@@ -40,19 +40,21 @@ char* kVersion = "USB audio 14/2/18";
 
 #define AUDIO_OUT_EP          1
 //}}}
-//{{{  global vars
-static int gLayer = 1;
-static int gTick = 0;
 
-// debug
-#define DEBUG_MAX_LINES 1000
-#define DEBUG_DISPLAY_LINES 16
+//{{{  global debug vars
 #define DEBUG_STRING_SIZE 40
+#define DEBUG_DISPLAY_LINES 16
+#define DEBUG_MAX_LINES 1000
+
+static int gTick = 0;
+static int gLayer = 1;
+
 static uint16_t gDebugLine = 0;
 static char* gDebugStr[DEBUG_MAX_LINES];
 static uint32_t gDebugTicks[DEBUG_MAX_LINES];
 static uint32_t gDebugColour[DEBUG_MAX_LINES];
-
+//}}}
+//{{{  global waveform vars
 // waveform
 static uint16_t gPackets = 0;
 static uint16_t gSample = 0;
@@ -66,14 +68,10 @@ static uint16_t gFL[240];
 static uint16_t gFR[240];
 static uint16_t gRL[240];
 static uint16_t gRR[240];
-
-// touchscreen
-static TS_StateTypeDef gTS_State;
-
-// packets
+//}}}
 static int gFaster = 1;
 static int writePtrOnRead = 0;
-//}}}
+static TS_StateTypeDef gTS_State;
 
 //{{{
 static void initGraphics() {
@@ -87,6 +85,7 @@ static void initGraphics() {
   BSP_LCD_Clear (LCD_COLOR_BLACK);
   BSP_LCD_SetFont (&Font16);
   BSP_LCD_SetLayerVisible (0, ENABLE);
+  BSP_LCD_SetTransparency (0, 255);
 
   BSP_LCD_LayerDefaultInit (1, LCD_FB_START_ADDRESS + (BSP_LCD_GetXSize() * BSP_LCD_GetYSize() * 4));
   BSP_LCD_SelectLayer(1);
@@ -95,6 +94,7 @@ static void initGraphics() {
   BSP_LCD_Clear (LCD_COLOR_BLACK);
   BSP_LCD_SetFont (&Font16);
   BSP_LCD_SetLayerVisible (1, ENABLE);
+  BSP_LCD_SetTransparency (1, 0);
 
   BSP_LCD_DisplayOn();
   }
@@ -116,6 +116,7 @@ static void flipGraphics() {
 
   for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
     int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ? displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine;
+    debugLine = debugLine % DEBUG_MAX_LINES;
     BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
     char tickStr[20];
     sprintf (tickStr, "%2d.%03d", (int)gDebugTicks[debugLine] / 1000, (int)gDebugTicks[debugLine] % 1000);
@@ -146,6 +147,8 @@ static void debug (uint32_t colour, const char* format, ... ) {
 
   gDebugColour[gDebugLine] = colour;
   gDebugTicks[gDebugLine] = HAL_GetTick();
+
+  // could determine size dynamically
   gDebugStr[gDebugLine] = (char*)malloc (DEBUG_STRING_SIZE);
 
   va_list args;
@@ -153,8 +156,7 @@ static void debug (uint32_t colour, const char* format, ... ) {
   vsnprintf (gDebugStr[gDebugLine], DEBUG_STRING_SIZE, format, args);
   va_end (args);
 
-  if (gDebugLine < DEBUG_MAX_LINES)
-    gDebugLine++;
+  gDebugLine = (gDebugLine+1) % DEBUG_MAX_LINES;
   }
 //}}}
 
