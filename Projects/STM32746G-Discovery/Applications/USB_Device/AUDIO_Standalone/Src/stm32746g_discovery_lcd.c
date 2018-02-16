@@ -8,9 +8,18 @@
 #include "../../../Utilities/Fonts/font8.c"
 //}}}
 //{{{  defines
-#define POLY_X(Z)              ((int32_t)((Points + Z)->X))
-#define POLY_Y(Z)              ((int32_t)((Points + Z)->Y))
-#define ABS(X)  ((X) > 0 ? (X) : -(X))
+#define POLY_X(Z)           ((int32_t)((Points + Z)->X))
+#define POLY_Y(Z)           ((int32_t)((Points + Z)->Y))
+#define ABS(X)              ((X) > 0 ? (X) : -(X))
+
+#define  RK043FN48H_HSYNC   ((uint16_t)41)   /* Horizontal synchronization */
+#define  RK043FN48H_HBP     ((uint16_t)13)   /* Horizontal back porch      */
+#define  RK043FN48H_HFP     ((uint16_t)32)   /* Horizontal front porch     */
+#define  RK043FN48H_VSYNC   ((uint16_t)10)   /* Vertical synchronization   */
+#define  RK043FN48H_VBP     ((uint16_t)2)    /* Vertical back porch        */
+#define  RK043FN48H_VFP     ((uint16_t)2)    /* Vertical front porch       */
+
+#define  RK043FN48H_FREQUENCY_DIVIDER    5            /* LCD Frequency divider      */
 //}}}
 
 LTDC_HandleTypeDef         hLtdcHandler;
@@ -227,30 +236,6 @@ uint8_t BSP_LCD_DeInit() {
   }
 //}}}
 //{{{
-uint32_t BSP_LCD_GetXSize()
-{
-  return hLtdcHandler.LayerCfg[ActiveLayer].ImageWidth;
-}
-//}}}
-//{{{
-uint32_t BSP_LCD_GetYSize()
-{
-  return hLtdcHandler.LayerCfg[ActiveLayer].ImageHeight;
-}
-//}}}
-//{{{
-void BSP_LCD_SetXSize (uint32_t imageWidthPixels)
-{
-  hLtdcHandler.LayerCfg[ActiveLayer].ImageWidth = imageWidthPixels;
-}
-//}}}
-//{{{
-void BSP_LCD_SetYSize (uint32_t imageHeightPixels)
-{
-  hLtdcHandler.LayerCfg[ActiveLayer].ImageHeight = imageHeightPixels;
-}
-//}}}
-//{{{
 void BSP_LCD_LayerDefaultInit (uint16_t LayerIndex, uint32_t FB_Address)
 {
   LCD_LayerCfgTypeDef  layer_cfg;
@@ -261,35 +246,6 @@ void BSP_LCD_LayerDefaultInit (uint16_t LayerIndex, uint32_t FB_Address)
   layer_cfg.WindowY0 = 0;
   layer_cfg.WindowY1 = BSP_LCD_GetYSize();
   layer_cfg.PixelFormat = LTDC_PIXEL_FORMAT_ARGB8888;
-  layer_cfg.FBStartAdress = FB_Address;
-  layer_cfg.Alpha = 255;
-  layer_cfg.Alpha0 = 0;
-  layer_cfg.Backcolor.Blue = 0;
-  layer_cfg.Backcolor.Green = 0;
-  layer_cfg.Backcolor.Red = 0;
-  layer_cfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA;
-  layer_cfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA;
-  layer_cfg.ImageWidth = BSP_LCD_GetXSize();
-  layer_cfg.ImageHeight = BSP_LCD_GetYSize();
-
-  HAL_LTDC_ConfigLayer(&hLtdcHandler, &layer_cfg, LayerIndex);
-
-  DrawProp[LayerIndex].BackColor = LCD_COLOR_WHITE;
-  DrawProp[LayerIndex].pFont     = &Font24;
-  DrawProp[LayerIndex].TextColor = LCD_COLOR_BLACK;
-}
-//}}}
-//{{{
-void BSP_LCD_LayerRgb565Init (uint16_t LayerIndex, uint32_t FB_Address)
-{
-  LCD_LayerCfgTypeDef  layer_cfg;
-
-  /* Layer Init */
-  layer_cfg.WindowX0 = 0;
-  layer_cfg.WindowX1 = BSP_LCD_GetXSize();
-  layer_cfg.WindowY0 = 0;
-  layer_cfg.WindowY1 = BSP_LCD_GetYSize();
-  layer_cfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
   layer_cfg.FBStartAdress = FB_Address;
   layer_cfg.Alpha = 255;
   layer_cfg.Alpha0 = 0;

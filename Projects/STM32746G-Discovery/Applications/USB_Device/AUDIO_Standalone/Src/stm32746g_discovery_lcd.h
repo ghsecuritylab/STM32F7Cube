@@ -5,7 +5,6 @@
  extern "C" {
 #endif
 //}}}
-#include "rk043fn48h.h"
 #include "stm32746g_discovery_sdram.h"
 #include "stm32746g_discovery.h"
 #include "../../../Utilities/Fonts/fonts.h"
@@ -14,7 +13,7 @@
 typedef struct {
   uint32_t TextColor;
   uint32_t BackColor;
-  sFONT    *pFont;
+  sFONT* pFont;
   } LCD_DrawPropTypeDef;
 //}}}
 //{{{  Point
@@ -83,15 +82,15 @@ typedef enum {
 #define LCD_BL_CTRL_GPIO_CLK_ENABLE()    __HAL_RCC_GPIOK_CLK_ENABLE()
 #define LCD_BL_CTRL_GPIO_CLK_DISABLE()   __HAL_RCC_GPIOK_CLK_DISABLE()
 
+#define  RK043FN48H_WIDTH   480
+#define  RK043FN48H_HEIGHT  272
+inline uint32_t BSP_LCD_GetXSize() { return RK043FN48H_WIDTH; }
+inline uint32_t BSP_LCD_GetYSize() { return RK043FN48H_HEIGHT; }
+
 uint8_t  BSP_LCD_Init();
 uint8_t  BSP_LCD_DeInit();
-uint32_t BSP_LCD_GetXSize(void);
-uint32_t BSP_LCD_GetYSize();
-void     BSP_LCD_SetXSize(uint32_t imageWidthPixels);
-void     BSP_LCD_SetYSize(uint32_t imageHeightPixels);
 
 void     BSP_LCD_LayerDefaultInit(uint16_t LayerIndex, uint32_t FrameBuffer);
-void     BSP_LCD_LayerRgb565Init(uint16_t LayerIndex, uint32_t FB_Address);
 void     BSP_LCD_SetTransparency(uint32_t LayerIndex, uint8_t Transparency);
 void     BSP_LCD_SetTransparency_NoReload(uint32_t LayerIndex, uint8_t Transparency);
 void     BSP_LCD_SetLayerAddress(uint32_t LayerIndex, uint32_t Address);
