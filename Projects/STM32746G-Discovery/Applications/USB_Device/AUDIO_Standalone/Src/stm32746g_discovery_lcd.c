@@ -21,41 +21,44 @@ static LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
 //{{{
 static void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t *c) {
 
-  uint32_t i = 0, j = 0;
-  uint16_t height, width;
-  uint8_t  offset;
-  uint8_t  *pchar;
+  uint16_t height = DrawProp[ActiveLayer].pFont->Height;
+  uint16_t width  = DrawProp[ActiveLayer].pFont->Width;
+
+  uint8_t offset =  8 *((width+7)/8) -  width ;
+
   uint32_t line;
+  for (int i = 0; i < height; i++) {
+    uint8_t* pchar = ((uint8_t*)c + (width+7)/8 * i);
 
-  height = DrawProp[ActiveLayer].pFont->Height;
-  width  = DrawProp[ActiveLayer].pFont->Width;
+    switch (((width+7)/8)) {
+      case 1:
+        line =  pchar[0];
+        break;
+      case 2:
+        line =  (pchar[0] << 8) | pchar[1];
+        break;
+      case 3:
+      default:
+        line =  (pchar[0] << 16) | (pchar[1] << 8) | pchar[2];
+        break;
+      }
 
-  offset =  8 *((width + 7)/8) -  width ;
+    if (hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565) {
+      for (int j = 0; j < width; j++)
+        if (line & (1 << (width- j + offset- 1)))
+          *(uint16_t*)(hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress +
+                        2 * (Ypos*BSP_LCD_GetXSize() + Xpos + j)) = (uint16_t)DrawProp[ActiveLayer].TextColor;
+      }
+    else {
+      for (int j = 0; j < width; j++)
+        if (line & (1 << (width- j + offset- 1)))
+          *(uint32_t*)(hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress +
+                        4 * (Ypos*BSP_LCD_GetXSize() + Xpos + j)) = DrawProp[ActiveLayer].TextColor;
+      }
 
-  for(i = 0; i < height; i++) {
-    pchar = ((uint8_t *)c + (width + 7)/8 * i);
-
-    switch(((width + 7)/8)) {
-    case 1:
-      line =  pchar[0];
-      break;
-
-    case 2:
-      line =  (pchar[0]<< 8) | pchar[1];
-      break;
-
-    case 3:
-    default:
-      line =  (pchar[0]<< 16) | (pchar[1]<< 8) | pchar[2];
-      break;
+    Ypos++;
     }
-
-    for (j = 0; j < width; j++) 
-      if (line & (1 << (width- j + offset- 1)))
-        BSP_LCD_DrawPixel ((Xpos + j), Ypos, DrawProp[ActiveLayer].TextColor);
-  Ypos++;
   }
-}
 //}}}
 //{{{
 static void FillTriangle (uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3)
@@ -129,30 +132,24 @@ static void FillTriangle (uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, ui
 //{{{
 static void LL_FillBuffer (uint32_t LayerIndex, void* pDst, uint32_t xSize, uint32_t ySize, uint32_t OffLine, uint32_t ColorIndex)
 {
-  /* Register to memory mode with ARGB8888 as color Mode */
-  hDma2dHandler.Init.Mode         = DMA2D_R2M;
-  if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565)
-    hDma2dHandler.Init.ColorMode    = DMA2D_RGB565;
+  hDma2dHandler.Init.Mode = DMA2D_R2M;
+  if (hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565)
+    hDma2dHandler.Init.ColorMode = DMA2D_RGB565;
   else
-    hDma2dHandler.Init.ColorMode    = DMA2D_ARGB8888;
+    hDma2dHandler.Init.ColorMode = DMA2D_ARGB8888;
   hDma2dHandler.Init.OutputOffset = OffLine;
 
-  hDma2dHandler.Instance = DMA2D;
-
-  /* DMA2D Initialization */
-  if(HAL_DMA2D_Init(&hDma2dHandler) == HAL_OK)
-    if(HAL_DMA2D_ConfigLayer(&hDma2dHandler, LayerIndex) == HAL_OK)
-      if (HAL_DMA2D_Start(&hDma2dHandler, ColorIndex, (uint32_t)pDst, xSize, ySize) == HAL_OK)
-        /* Polling For DMA transfer */
-        HAL_DMA2D_PollForTransfer(&hDma2dHandler, 10);
+  if (HAL_DMA2D_Init (&hDma2dHandler) == HAL_OK)
+    if (HAL_DMA2D_ConfigLayer (&hDma2dHandler, LayerIndex) == HAL_OK)
+      if (HAL_DMA2D_Start (&hDma2dHandler, ColorIndex, (uint32_t)pDst, xSize, ySize) == HAL_OK)
+        HAL_DMA2D_PollForTransfer (&hDma2dHandler, 10);
 }
 //}}}
 //{{{
 static void LL_ConvertLineToARGB8888 (void* pSrc, void* pDst, uint32_t xSize, uint32_t ColorMode)
 {
-  /* Configure the DMA2D Mode, Color Mode and output offset */
-  hDma2dHandler.Init.Mode         = DMA2D_M2M_PFC;
-  hDma2dHandler.Init.ColorMode    = DMA2D_ARGB8888;
+  hDma2dHandler.Init.Mode = DMA2D_M2M_PFC;
+  hDma2dHandler.Init.ColorMode = DMA2D_ARGB8888;
   hDma2dHandler.Init.OutputOffset = 0;
 
   /* Foreground Configuration */
@@ -161,15 +158,11 @@ static void LL_ConvertLineToARGB8888 (void* pSrc, void* pDst, uint32_t xSize, ui
   hDma2dHandler.LayerCfg[1].InputColorMode = ColorMode;
   hDma2dHandler.LayerCfg[1].InputOffset = 0;
 
-  hDma2dHandler.Instance = DMA2D;
-
-  /* DMA2D Initialization */
-  if(HAL_DMA2D_Init(&hDma2dHandler) == HAL_OK)
-    if(HAL_DMA2D_ConfigLayer(&hDma2dHandler, 1) == HAL_OK)
-      if (HAL_DMA2D_Start(&hDma2dHandler, (uint32_t)pSrc, (uint32_t)pDst, xSize, 1) == HAL_OK)
-        /* Polling For DMA transfer */
-        HAL_DMA2D_PollForTransfer(&hDma2dHandler, 10);
-}
+  if (HAL_DMA2D_Init (&hDma2dHandler) == HAL_OK)
+    if (HAL_DMA2D_ConfigLayer (&hDma2dHandler, 1) == HAL_OK)
+      if (HAL_DMA2D_Start (&hDma2dHandler, (uint32_t)pSrc, (uint32_t)pDst, xSize, 1) == HAL_OK)
+        HAL_DMA2D_PollForTransfer (&hDma2dHandler, 10);
+  }
 //}}}
 
 //{{{
@@ -186,7 +179,7 @@ uint8_t BSP_LCD_Init() {
   hLtdcHandler.Init.TotalWidth = (RK043FN48H_WIDTH + RK043FN48H_HSYNC + RK043FN48H_HBP + RK043FN48H_HFP - 1);
 
   /* LCD clock configuration */
-  BSP_LCD_ClockConfig(&hLtdcHandler, NULL);
+  BSP_LCD_ClockConfig (&hLtdcHandler, NULL);
 
   /* Initialize the LCD pixel width and pixel height */
   hLtdcHandler.LayerCfg->ImageWidth  = RK043FN48H_WIDTH;
@@ -205,44 +198,41 @@ uint8_t BSP_LCD_Init() {
   hLtdcHandler.Instance = LTDC;
 
   if(HAL_LTDC_GetState(&hLtdcHandler) == HAL_LTDC_STATE_RESET)
-    /* Initialize the LCD Msp: this __weak function can be rewritten by the application */
-    BSP_LCD_MspInit(&hLtdcHandler, NULL);
-  HAL_LTDC_Init(&hLtdcHandler);
+    BSP_LCD_MspInit (&hLtdcHandler, NULL);
+  HAL_LTDC_Init (&hLtdcHandler);
 
   /* Assert display enable LCD_DISP pin */
-  HAL_GPIO_WritePin(LCD_DISP_GPIO_PORT, LCD_DISP_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin (LCD_DISP_GPIO_PORT, LCD_DISP_PIN, GPIO_PIN_SET);
 
   /* Assert backlight LCD_BL_CTRL pin */
-  HAL_GPIO_WritePin(LCD_BL_CTRL_GPIO_PORT, LCD_BL_CTRL_PIN, GPIO_PIN_SET);
+  HAL_GPIO_WritePin (LCD_BL_CTRL_GPIO_PORT, LCD_BL_CTRL_PIN, GPIO_PIN_SET);
 
-#if !defined(DATA_IN_ExtSDRAM)
-  /* Initialize the SDRAM */
   BSP_SDRAM_Init();
-#endif
 
-  /* Initialize the font */
   BSP_LCD_SetFont (&LCD_DEFAULT_FONT);
+
+  hDma2dHandler.Instance = DMA2D;
 
   return LCD_OK;
   }
 //}}}
 //{{{
-uint8_t BSP_LCD_DeInit()
-{
+uint8_t BSP_LCD_DeInit() {
+
   /* Initialize the hLtdcHandler Instance parameter */
   hLtdcHandler.Instance = LTDC;
 
  /* Disable LTDC block */
-  __HAL_LTDC_DISABLE(&hLtdcHandler);
+  __HAL_LTDC_DISABLE (&hLtdcHandler);
 
   /* DeInit the LTDC */
-  HAL_LTDC_DeInit(&hLtdcHandler);
+  HAL_LTDC_DeInit (&hLtdcHandler);
 
   /* DeInit the LTDC MSP : this __weak function can be rewritten by the application */
-  BSP_LCD_MspDeInit(&hLtdcHandler, NULL);
+  BSP_LCD_MspDeInit (&hLtdcHandler, NULL);
 
   return LCD_OK;
-}
+  }
 //}}}
 //{{{
 uint32_t BSP_LCD_GetXSize()
@@ -326,13 +316,13 @@ void BSP_LCD_LayerRgb565Init (uint16_t LayerIndex, uint32_t FB_Address)
   DrawProp[LayerIndex].TextColor = LCD_COLOR_BLACK;
 }
 //}}}
+
 //{{{
 void BSP_LCD_SelectLayer (uint32_t LayerIndex)
 {
   ActiveLayer = LayerIndex;
 }
 //}}}
-
 //{{{
 void BSP_LCD_SetLayerVisible (uint32_t LayerIndex, FunctionalState State)
 {
@@ -500,12 +490,11 @@ uint32_t BSP_LCD_ReadPixel (uint16_t Xpos, uint16_t Ypos)
 //}}}
 
 //{{{
-void BSP_LCD_Clear (uint32_t Color)
-{
-  /* Clear the LCD */
-  LL_FillBuffer(ActiveLayer, (uint32_t *)(hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress), BSP_LCD_GetXSize(), BSP_LCD_GetYSize(), 0, Color);
-}
+void BSP_LCD_Clear (uint32_t Color) {
+  LL_FillBuffer (ActiveLayer, (uint32_t *)(hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress), BSP_LCD_GetXSize(), BSP_LCD_GetYSize(), 0, Color);
+  }
 //}}}
+
 //{{{
 void BSP_LCD_ClearStringLine (uint32_t Line)
 {
@@ -540,16 +529,16 @@ void BSP_LCD_DisplayStringAt (uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_
   xsize = (BSP_LCD_GetXSize()/DrawProp[ActiveLayer].pFont->Width);
 
   switch (Mode) {
-  case CENTER_MODE:
+    case CENTER_MODE:
       ref_column = Xpos + ((xsize - size)* DrawProp[ActiveLayer].pFont->Width) / 2;
       break;
-  case LEFT_MODE:
+    case LEFT_MODE:
       ref_column = Xpos;
       break;
-  case RIGHT_MODE:
+    case RIGHT_MODE:
       ref_column = - Xpos + ((xsize - size)*DrawProp[ActiveLayer].pFont->Width);
       break;
-  default:
+    default:
       ref_column = Xpos;
       break;
   }
@@ -562,7 +551,7 @@ void BSP_LCD_DisplayStringAt (uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_
   while ((*Text != 0) & (((BSP_LCD_GetXSize() - (i*DrawProp[ActiveLayer].pFont->Width)) & 0xFFFF) >= DrawProp[ActiveLayer].pFont->Width))
   {
     /* Display one character on LCD */
-    BSP_LCD_DisplayChar(ref_column, Ypos, *Text);
+    BSP_LCD_DisplayChar (ref_column, Ypos, *Text);
     /* Decrement the column position by 16 */
     ref_column += DrawProp[ActiveLayer].pFont->Width;
     /* Point on the next character */
@@ -577,6 +566,7 @@ void BSP_LCD_DisplayStringAtLine (uint16_t Line, uint8_t *ptr)
   BSP_LCD_DisplayStringAt(0, LINE(Line), ptr, LEFT_MODE);
 }
 //}}}
+
 //{{{
 void BSP_LCD_DrawHLine (uint16_t Xpos, uint16_t Ypos, uint16_t Length)
 {
@@ -592,7 +582,6 @@ void BSP_LCD_DrawHLine (uint16_t Xpos, uint16_t Ypos, uint16_t Length)
   LL_FillBuffer(ActiveLayer, (uint32_t *)Xaddress, Length, 1, 0, DrawProp[ActiveLayer].TextColor);
 }
 //}}}
-
 //{{{
 void BSP_LCD_DrawVLine (uint16_t Xpos, uint16_t Ypos, uint16_t Length)
 {
@@ -833,6 +822,7 @@ void BSP_LCD_FillRect (uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t He
     x_address = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 2*(BSP_LCD_GetXSize()*Ypos + Xpos);
   else
     x_address = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 4*(BSP_LCD_GetXSize()*Ypos + Xpos);
+
   /* Fill the rectangle */
   LL_FillBuffer(ActiveLayer, (uint32_t *)x_address, Width, Height, (BSP_LCD_GetXSize() - Width), DrawProp[ActiveLayer].TextColor);
 }
