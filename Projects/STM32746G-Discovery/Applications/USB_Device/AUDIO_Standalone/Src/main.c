@@ -78,7 +78,8 @@ static void initGraphics() {
 
   BSP_LCD_Init();
 
-  BSP_LCD_LayerDefaultInit (0, LCD_FB_START_ADDRESS);
+  //BSP_LCD_LayerDefaultInit (0, LCD_FB_START_ADDRESS);
+  BSP_LCD_LayerRgb565Init (0, LCD_FB_START_ADDRESS);
   BSP_LCD_SelectLayer(0);
   BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
   BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
@@ -86,7 +87,7 @@ static void initGraphics() {
   BSP_LCD_SetFont (&Font16);
   BSP_LCD_SetLayerVisible (0, ENABLE);
 
-  BSP_LCD_LayerDefaultInit (1, LCD_FB_START_ADDRESS + (BSP_LCD_GetXSize() * BSP_LCD_GetYSize() * 4));
+  BSP_LCD_LayerDefaultInit (1, LCD_FB_START_ADDRESS + (BSP_LCD_GetXSize() * BSP_LCD_GetYSize() * 2));
   BSP_LCD_SelectLayer(1);
   BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
   BSP_LCD_SetTextColor (LCD_COLOR_WHITE);

@@ -6,7 +6,6 @@
 C_SRCS += \
 C:/projects/STM32F7Cube/Drivers/BSP/Components/ft5336/ft5336.c \
 C:/projects/STM32F7Cube/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery.c \
-C:/projects/STM32F7Cube/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_lcd.c \
 C:/projects/STM32F7Cube/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_sdram.c \
 C:/projects/STM32F7Cube/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_ts.c \
 C:/projects/STM32F7Cube/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c \
@@ -16,7 +15,6 @@ C:/projects/STM32F7Cube/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_io
 OBJS += \
 ./Drivers/ft5336.o \
 ./Drivers/stm32746g_discovery.o \
-./Drivers/stm32746g_discovery_lcd.o \
 ./Drivers/stm32746g_discovery_sdram.o \
 ./Drivers/stm32746g_discovery_ts.o \
 ./Drivers/usbd_core.o \
@@ -26,7 +24,6 @@ OBJS += \
 C_DEPS += \
 ./Drivers/ft5336.d \
 ./Drivers/stm32746g_discovery.d \
-./Drivers/stm32746g_discovery_lcd.d \
 ./Drivers/stm32746g_discovery_sdram.d \
 ./Drivers/stm32746g_discovery_ts.d \
 ./Drivers/usbd_core.d \
@@ -44,14 +41,6 @@ Drivers/ft5336.o: C:/projects/STM32F7Cube/Drivers/BSP/Components/ft5336/ft5336.c
 	@echo ' '
 
 Drivers/stm32746g_discovery.o: C:/projects/STM32F7Cube/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery.c
-	@echo 'Building file: $<'
-	@echo 'Invoking: MCU GCC Compiler'
-	@echo $(PWD)
-	arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -std=c11 -DUSE_HAL_DRIVER -DSTM32F746xx -DUSE_STM32746G_DISCO -DUSE_IOEXPANDER -I"C:/projects/STM32F7Cube/Middlewares/ST/STM32_USB_Device_Library/Core/Inc" -I"C:/projects/STM32F7Cube/Middlewares/ST/STM32_USB_Device_Library/Class/AUDIO/Inc" -I"C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/projects/STM32F7Cube/Drivers/BSP/STM32746G-Discovery" -I"C:/projects/STM32F7Cube/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/projects/STM32F7Cube/Drivers/CMSIS/Include" -I"C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src"  -Os -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
-	@echo 'Finished building: $<'
-	@echo ' '
-
-Drivers/stm32746g_discovery_lcd.o: C:/projects/STM32F7Cube/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_lcd.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)

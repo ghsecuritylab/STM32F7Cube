@@ -36,11 +36,6 @@
 			<locationURI>PARENT-7-PROJECT_LOC/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/stm32746g_discovery_lcd.c</name>
-			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_lcd.c</locationURI>
-		</link>
-		<link>
 			<name>Drivers/stm32746g_discovery_sdram.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_sdram.c</locationURI>
@@ -79,6 +74,11 @@
 			<name>app/stm32746g_discovery_audio.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Src/stm32746g_discovery_audio.c</locationURI>
+		</link>
+		<link>
+			<name>app/stm32746g_discovery_lcd.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Src/stm32746g_discovery_lcd.c</locationURI>
 		</link>
 		<link>
 			<name>app/system_stm32f7xx.c</name>
