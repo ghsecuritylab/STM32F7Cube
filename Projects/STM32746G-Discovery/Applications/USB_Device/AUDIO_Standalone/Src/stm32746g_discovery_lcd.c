@@ -1,3 +1,4 @@
+//
 //{{{  includes
 #include "stm32746g_discovery_lcd.h"
 #include "../../../Utilities/Fonts/fonts.h"
@@ -21,13 +22,14 @@ static LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
 //{{{
 static void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t *c) {
 
-  uint16_t height = DrawProp[ActiveLayer].pFont->Height;
   uint16_t width  = DrawProp[ActiveLayer].pFont->Width;
-
   uint8_t offset =  8 *((width+7)/8) -  width ;
 
+  uint32_t colour = DrawProp[ActiveLayer].TextColor;
+  uint32_t* add = ((uint32_t*)hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + Xpos;
+
   uint32_t line;
-  for (int i = 0; i < height; i++) {
+  for (int i = 0; i < DrawProp[ActiveLayer].pFont->Height; i++) {
     uint8_t* pchar = ((uint8_t*)c + (width+7)/8 * i);
 
     switch (((width+7)/8)) {
@@ -43,18 +45,9 @@ static void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t *c) {
         break;
       }
 
-    if (hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565) {
-      for (int j = 0; j < width; j++)
-        if (line & (1 << (width- j + offset- 1)))
-          *(uint16_t*)(hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress +
-                        2 * (Ypos*BSP_LCD_GetXSize() + Xpos + j)) = (uint16_t)DrawProp[ActiveLayer].TextColor;
-      }
-    else {
-      for (int j = 0; j < width; j++)
-        if (line & (1 << (width- j + offset- 1)))
-          *(uint32_t*)(hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress +
-                        4 * (Ypos*BSP_LCD_GetXSize() + Xpos + j)) = DrawProp[ActiveLayer].TextColor;
-      }
+    for (int j = 0; j < width; j++)
+      if (line & (1 << (width- j + offset- 1)))
+        *(add + Ypos * BSP_LCD_GetXSize() + j) = colour;
 
     Ypos++;
     }
@@ -459,7 +452,7 @@ void BSP_LCD_SetFont (sFONT *fonts)
 
 //}}}
 //{{{
-sFONT *BSP_LCD_GetFont()
+sFONT* BSP_LCD_GetFont()
 {
   return DrawProp[ActiveLayer].pFont;
 }
@@ -1041,7 +1034,7 @@ __weak void BSP_LCD_MspInit (LTDC_HandleTypeDef *hltdc, void *Params)
   gpio_init_structure.Pin       = LCD_BL_CTRL_PIN;  /* LCD_BL_CTRL pin has to be manually controlled */
   gpio_init_structure.Mode      = GPIO_MODE_OUTPUT_PP;
   HAL_GPIO_Init(LCD_BL_CTRL_GPIO_PORT, &gpio_init_structure);
-}
+  }
 //}}}
 //{{{
 __weak void BSP_LCD_MspDeInit (LTDC_HandleTypeDef *hltdc, void *Params)
@@ -1049,41 +1042,41 @@ __weak void BSP_LCD_MspDeInit (LTDC_HandleTypeDef *hltdc, void *Params)
   GPIO_InitTypeDef  gpio_init_structure;
 
   /* Disable LTDC block */
-  __HAL_LTDC_DISABLE(hltdc);
+  __HAL_LTDC_DISABLE (hltdc);
 
   /* LTDC Pins deactivation */
 
   /* GPIOE deactivation */
   gpio_init_structure.Pin       = GPIO_PIN_4;
-  HAL_GPIO_DeInit(GPIOE, gpio_init_structure.Pin);
+  HAL_GPIO_DeInit (GPIOE, gpio_init_structure.Pin);
 
   /* GPIOG deactivation */
   gpio_init_structure.Pin       = GPIO_PIN_12;
-  HAL_GPIO_DeInit(GPIOG, gpio_init_structure.Pin);
+  HAL_GPIO_DeInit (GPIOG, gpio_init_structure.Pin);
 
   /* GPIOI deactivation */
   gpio_init_structure.Pin       = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_12 | \
                                   GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-  HAL_GPIO_DeInit(GPIOI, gpio_init_structure.Pin);
+  HAL_GPIO_DeInit (GPIOI, gpio_init_structure.Pin);
 
   /* GPIOJ deactivation */
   gpio_init_structure.Pin       = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | \
                                   GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 | \
                                   GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | \
                                   GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
-  HAL_GPIO_DeInit(GPIOJ, gpio_init_structure.Pin);
+  HAL_GPIO_DeInit (GPIOJ, gpio_init_structure.Pin);
 
   /* GPIOK deactivation */
   gpio_init_structure.Pin       = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_4 | \
                                   GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7;
-  HAL_GPIO_DeInit(GPIOK, gpio_init_structure.Pin);
+  HAL_GPIO_DeInit (GPIOK, gpio_init_structure.Pin);
 
   /* Disable LTDC clock */
   __HAL_RCC_LTDC_CLK_DISABLE();
 
   /* GPIO pins clock can be shut down in the application
      by surcharging this __weak function */
-}
+  }
 //}}}
 //{{{
 __weak void BSP_LCD_ClockConfig (LTDC_HandleTypeDef *hltdc, void *Params)
