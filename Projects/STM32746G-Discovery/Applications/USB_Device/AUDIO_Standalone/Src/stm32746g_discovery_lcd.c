@@ -1,4 +1,3 @@
-//
 //{{{  includes
 #include "stm32746g_discovery_lcd.h"
 #include "../../../Utilities/Fonts/fonts.h"
@@ -22,16 +21,16 @@ static LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
 //{{{
 static void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t *c) {
 
-  uint16_t width  = DrawProp[ActiveLayer].pFont->Width;
-  uint8_t offset =  8 *((width+7)/8) -  width ;
+  uint16_t width = DrawProp[ActiveLayer].pFont->Width;
+  uint8_t offset = 8 *((width+7)/8) -  width;
 
   uint32_t colour = DrawProp[ActiveLayer].TextColor;
   uint32_t* add = ((uint32_t*)hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + Xpos;
 
-  uint32_t line;
   for (int i = 0; i < DrawProp[ActiveLayer].pFont->Height; i++) {
     uint8_t* pchar = ((uint8_t*)c + (width+7)/8 * i);
 
+    uint32_t line;
     switch (((width+7)/8)) {
       case 1:
         line =  pchar[0];
@@ -554,9 +553,15 @@ void BSP_LCD_DisplayStringAt (uint16_t Xpos, uint16_t Ypos, uint8_t *Text, Text_
 }
 //}}}
 //{{{
-void BSP_LCD_DisplayStringAtLine (uint16_t Line, uint8_t *ptr)
+void BSP_LCD_DisplayStringAtLine (uint16_t line, uint8_t *ptr)
 {
-  BSP_LCD_DisplayStringAt(0, LINE(Line), ptr, LEFT_MODE);
+  BSP_LCD_DisplayStringAt(0, LINE(line), ptr, LEFT_MODE);
+}
+//}}}
+//{{{
+void BSP_LCD_DisplayStringAtLineColumn (uint16_t line, uint16_t column, char* ptr) {
+  BSP_LCD_DisplayStringAt (column * BSP_LCD_GetFont()->Width, line * BSP_LCD_GetFont()->Height,
+                           (uint8_t*)ptr, LEFT_MODE);
 }
 //}}}
 

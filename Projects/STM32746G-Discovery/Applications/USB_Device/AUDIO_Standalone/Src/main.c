@@ -45,11 +45,13 @@ static int gLayer = 1;
 static int gTick = 0;
 
 // debug
-#define DEBUG_LINES 16
+#define DEBUG_MAX_LINES 1000
+#define DEBUG_DISPLAY_LINES 16
 #define DEBUG_STRING_SIZE 40
 static uint16_t gDebugLine = 0;
-static char* gDebugStr[DEBUG_LINES];
-static uint32_t gDebugColour[DEBUG_LINES];
+static char* gDebugStr[DEBUG_MAX_LINES];
+static uint32_t gDebugTicks[DEBUG_MAX_LINES];
+static uint32_t gDebugColour[DEBUG_MAX_LINES];
 
 // waveform
 static uint16_t gPackets = 0;
@@ -95,9 +97,6 @@ static void initGraphics() {
   BSP_LCD_SetLayerVisible (1, ENABLE);
 
   BSP_LCD_DisplayOn();
-
-  for (int i = 0; i < DEBUG_LINES; i++)
-    gDebugStr[i] = (char*)malloc (DEBUG_STRING_SIZE);
   }
 //}}}
 //{{{
@@ -115,10 +114,14 @@ static void flipGraphics() {
   BSP_LCD_SetTextColor (gFaster ? LCD_COLOR_MAGENTA : LCD_COLOR_YELLOW);
   BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
 
-  for (int i = 0; i < DEBUG_LINES; i++) {
-    uint16_t j = (gDebugLine + i) % DEBUG_LINES;
-    BSP_LCD_SetTextColor (gDebugColour[j]);
-    BSP_LCD_DisplayStringAtLine (1+i, (uint8_t*)gDebugStr[j]);
+  for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
+    int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ? displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine;
+    BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+    char tickStr[20];
+    sprintf (tickStr, "%2d.%03d", (int)gDebugTicks[debugLine] / 1000, (int)gDebugTicks[debugLine] % 1000);
+    BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 0, tickStr);
+    BSP_LCD_SetTextColor (gDebugColour[debugLine]);
+    BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 7, gDebugStr[debugLine]);
     }
 
   BSP_LCD_SetTextColor (LCD_COLOR_GREEN);
@@ -142,13 +145,16 @@ static void flipGraphics() {
 static void debug (uint32_t colour, const char* format, ... ) {
 
   gDebugColour[gDebugLine] = colour;
+  gDebugTicks[gDebugLine] = HAL_GetTick();
+  gDebugStr[gDebugLine] = (char*)malloc (DEBUG_STRING_SIZE);
 
   va_list args;
   va_start (args, format);
   vsnprintf (gDebugStr[gDebugLine], DEBUG_STRING_SIZE, format, args);
   va_end (args);
 
-  gDebugLine = (gDebugLine+1) % DEBUG_LINES;
+  if (gDebugLine < DEBUG_MAX_LINES)
+    gDebugLine++;
   }
 //}}}
 
