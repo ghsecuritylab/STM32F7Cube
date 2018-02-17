@@ -42,7 +42,6 @@ static int gLastY = 0;
 static int gScroll = 0;
 //}}}
 static TS_StateTypeDef gTS_State;
-static uint8_t HID_Buffer[4];
 
 //{{{
 static int getScrollScale() {
@@ -160,10 +159,10 @@ static void debug (uint32_t colour, const char* format, ... ) {
 #define USBD_CONFIGURATION_FS_STRING  "HID Config"
 #define USBD_INTERFACE_FS_STRING      "HID Interface"
 
-#define         DEVICE_ID1          (0x1FFF7A10)
-#define         DEVICE_ID2          (0x1FFF7A14)
-#define         DEVICE_ID3          (0x1FFF7A18)
-#define  USB_SIZ_STRING_SERIAL       0x1A
+#define DEVICE_ID1            (0x1FFF7A10)
+#define DEVICE_ID2            (0x1FFF7A14)
+#define DEVICE_ID3            (0x1FFF7A18)
+#define USB_SIZ_STRING_SERIAL 0x1A
 
 //{{{
 __ALIGN_BEGIN static const uint8_t USBD_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
@@ -189,8 +188,7 @@ __ALIGN_BEGIN static const uint8_t USBD_DeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END
 __ALIGN_BEGIN static const uint8_t USBD_LangIDDesc[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
   USB_LEN_LANGID_STR_DESC,
   USB_DESC_TYPE_STRING,
-  LOBYTE(USBD_LANGID_STRING),
-  HIBYTE(USBD_LANGID_STRING),
+  LOBYTE(USBD_LANGID_STRING), HIBYTE(USBD_LANGID_STRING),
   };
 //}}}
 //{{{
@@ -401,53 +399,53 @@ __ALIGN_BEGIN static const uint8_t hidDeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_
   };
 //}}}
 //{{{
-__ALIGN_BEGIN static const uint8_t hidMOUSE_ReportDesc[74] __ALIGN_END = {
-  0x05,   0x01,
-  0x09,   0x02,
-  0xA1,   0x01,
-  0x09,   0x01,
+__ALIGN_BEGIN static const uint8_t hidMouseReportDesc[74] __ALIGN_END = {
+  0x05, 0x01,
+  0x09, 0x02,
+  0xA1, 0x01,
+  0x09, 0x01,
 
-  0xA1,   0x00,
-  0x05,   0x09,
-  0x19,   0x01,
-  0x29,   0x03,
+  0xA1, 0x00,
+  0x05, 0x09,
+  0x19, 0x01,
+  0x29, 0x03,
 
-  0x15,   0x00,
-  0x25,   0x01,
-  0x95,   0x03,
-  0x75,   0x01,
+  0x15, 0x00,
+  0x25, 0x01,
+  0x95, 0x03,
+  0x75, 0x01,
 
-  0x81,   0x02,
-  0x95,   0x01,
-  0x75,   0x05,
-  0x81,   0x01,
+  0x81, 0x02,
+  0x95, 0x01,
+  0x75, 0x05,
+  0x81, 0x01,
 
-  0x05,   0x01,
-  0x09,   0x30,
-  0x09,   0x31,
-  0x09,   0x38,
+  0x05, 0x01,
+  0x09, 0x30,
+  0x09, 0x31,
+  0x09, 0x38,
 
-  0x15,   0x81,
-  0x25,   0x7F,
-  0x75,   0x08,
-  0x95,   0x03,
+  0x15, 0x81,
+  0x25, 0x7F,
+  0x75, 0x08,
+  0x95, 0x03,
 
-  0x81,   0x06,
-  0xC0,   0x09,
-  0x3c,   0x05,
-  0xff,   0x09,
+  0x81, 0x06,
+  0xC0, 0x09,
+  0x3c, 0x05,
+  0xff, 0x09,
 
-  0x01,   0x15,
-  0x00,   0x25,
-  0x01,   0x75,
-  0x01,   0x95,
+  0x01, 0x15,
+  0x00, 0x25,
+  0x01, 0x75,
+  0x01, 0x95,
 
-  0x02,   0xb1,
-  0x22,   0x75,
-  0x06,   0x95,
-  0x01,   0xb1,
+  0x02, 0xb1,
+  0x22, 0x75,
+  0x06, 0x95,
+  0x01, 0xb1,
 
-  0x01,   0xc0
+  0x01, 0xc0
   };
 //}}}
 
@@ -486,36 +484,55 @@ static uint8_t hidDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 //{{{
 static uint8_t hidSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
-  uint16_t len = 0;
-  uint8_t* pbuf = NULL;
-  tHidData* hhid = (tHidData*) device->pClassData;
+  tHidData* hidData = (tHidData*)device->pClassData;
+  debug (LCD_COLOR_YELLOW, "setup bmReq%d req:%d value:%d", req->bmRequest, req->bRequest, req->wValue);
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
     case USB_REQ_TYPE_CLASS :
       switch (req->bRequest) {
-        case HID_REQ_SET_PROTOCOL: hhid->Protocol = (uint8_t)(req->wValue); break;
-        case HID_REQ_GET_PROTOCOL: USBD_CtlSendData (device, (uint8_t *)&hhid->Protocol, 1); break;
-        case HID_REQ_SET_IDLE: hhid->IdleState = (uint8_t)(req->wValue >> 8); break;
-        case HID_REQ_GET_IDLE: USBD_CtlSendData (device, (uint8_t *)&hhid->IdleState, 1); break;
-        default: USBD_CtlError (device, req); return USBD_FAIL;
+        case HID_REQ_SET_PROTOCOL:
+          hidData->Protocol = (uint8_t)(req->wValue);
+          debug (LCD_COLOR_GREEN, "- setProtocol %d", req->wValue);
+          break;
+        case HID_REQ_GET_PROTOCOL:
+          USBD_CtlSendData (device, (uint8_t*)&hidData->Protocol, 1);
+          debug (LCD_COLOR_GREEN, "- getProtocol %d", hidData->Protocol);
+          break;
+        case HID_REQ_SET_IDLE:
+          hidData->IdleState = (uint8_t)(req->wValue >> 8);
+          debug (LCD_COLOR_GREEN, "- setIdle %d", req->wValue);
+          break;
+        case HID_REQ_GET_IDLE:
+          USBD_CtlSendData (device, (uint8_t*)&hidData->IdleState, 1);
+          debug (LCD_COLOR_GREEN, "- getIdle %d", hidData->IdleState);
+          break;
+        default:
+          USBD_CtlError (device, req);
+          return USBD_FAIL;
         }
       break;
 
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest) {
-        case USB_REQ_GET_DESCRIPTOR:
+        case USB_REQ_GET_DESCRIPTOR: {
           if (req->wValue >> 8 == HID_REPORT_DESC) {
-            len = MIN (74, req->wLength);
-            pbuf = (uint8_t*)hidMOUSE_ReportDesc;
+            debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
+            USBD_CtlSendData (device, (uint8_t*)hidMouseReportDesc, MIN (74, req->wLength));
             }
-          else if( req->wValue >> 8 == HID_DESCRIPTOR_TYPE) {
-            pbuf = (uint8_t*)hidDesc;
-            len = MIN(9 , req->wLength);
+          else if (req->wValue >> 8 == HID_DESCRIPTOR_TYPE) {
+            debug (LCD_COLOR_GREEN, "- getDescriptor hid");
+            USBD_CtlSendData (device, (uint8_t*)hidDesc, MIN(9 , req->wLength));
             }
-          USBD_CtlSendData (device, pbuf, len);
           break;
-        case USB_REQ_GET_INTERFACE : USBD_CtlSendData (device, (uint8_t *)&hhid->AltSetting, 1); break;
-        case USB_REQ_SET_INTERFACE : hhid->AltSetting = (uint8_t)(req->wValue); break;
+          }
+        case USB_REQ_GET_INTERFACE :
+          debug (LCD_COLOR_GREEN, "- getInterface");
+          USBD_CtlSendData (device, (uint8_t*)&hidData->AltSetting, 1);
+          break;
+        case USB_REQ_SET_INTERFACE :
+          debug (LCD_COLOR_GREEN, "- setInterface");
+          hidData->AltSetting = (uint8_t)(req->wValue);
+          break;
         }
       }
 
@@ -845,20 +862,14 @@ void USBD_LL_Delay (uint32_t Delay) {
 //{{{
 static void onPress (int x, int y) {
 
-  HID_Buffer[0] = 1;
-  HID_Buffer[1] = 0;
-  HID_Buffer[2] = 0;
-  HID_Buffer[3] = 0;
+  uint8_t HID_Buffer[4] = { 1,0,0,0 };
   hidSendReport (&gUsbDevice, HID_Buffer, 4);
   }
 //}}}
 //{{{
 static void onMove (int x, int y) {
 
-  HID_Buffer[0] = 1;
-  HID_Buffer[1] = x;
-  HID_Buffer[2] = y;
-  HID_Buffer[3] = 0;
+  uint8_t HID_Buffer[4] = { 1,x,y,0 };
   hidSendReport (&gUsbDevice, HID_Buffer, 4);
 
   //gScroll += y;
@@ -868,10 +879,7 @@ static void onMove (int x, int y) {
 //{{{
 static void onRelease (int x, int y) {
 
-  HID_Buffer[0] = 0;
-  HID_Buffer[1] = 0;
-  HID_Buffer[2] = 0;
-  HID_Buffer[3] = 0;
+  uint8_t HID_Buffer[4] = { 0,0,0,0 };
   hidSendReport (&gUsbDevice, HID_Buffer, 4);
   }
 //}}}
@@ -965,8 +973,6 @@ int main() {
   BSP_TS_Init (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
   gCentreX = BSP_LCD_GetXSize()/2;
   gCentreY = BSP_LCD_GetYSize()/2;
-
-  debug (LCD_COLOR_YELLOW, "hello colin");
 
   BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
 
