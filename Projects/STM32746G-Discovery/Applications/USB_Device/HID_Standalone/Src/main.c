@@ -476,7 +476,7 @@ static uint8_t hidDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   /* FRee allocated memory */
   if(device->pClassData != NULL) {
-    USBD_free(device->pClassData);
+    free(device->pClassData);
     device->pClassData = NULL;
     }
 
