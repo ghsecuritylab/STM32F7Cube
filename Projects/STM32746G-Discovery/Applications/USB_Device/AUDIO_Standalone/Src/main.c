@@ -32,14 +32,6 @@ char* kVersion = "USB audio 16/2/18";
 #define SLOTS_PACKET_SIZE     (SLOTS * BYTES_PER_SAMPLE * PACKET_SAMPLES)
 #define SLOTS_PACKET_BUF_SIZE (PACKETS * SLOTS_PACKET_SIZE)
 //}}}
-//{{{  descriptor defines
-#define USBD_VID              0x0483
-#define USBD_PID              0x5730
-#define USBD_LANGID_STRING    0x409
-#define USB_SIZ_STRING_SERIAL 0x1A
-
-#define AUDIO_OUT_EP          1
-//}}}
 
 //{{{  global debug vars
 #define DEBUG_STRING_SIZE   40
@@ -554,6 +546,9 @@ void USBD_LL_Delay (uint32_t Delay) {
 //}}}
 
 //{{{  device descriptor
+#define USBD_VID  0x0483
+#define USBD_PID  0x5730
+
 __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12, USB_DESC_TYPE_DEVICE,
   0x01, 0x01,                          // bcdUSB 1.1
@@ -571,7 +566,9 @@ __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_E
   };
 //}}}
 //{{{  configuration descriptor
-#define CONFIG_DESC_SIZ 109
+#define CONFIG_DESC_SIZ     109
+#define AUDIO_OUT_ENDPOINT  1
+
 __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_END = {
   // Configuration Descriptor
   9, USB_DESC_TYPE_CONFIGURATION,
@@ -665,7 +662,7 @@ __ALIGN_BEGIN static const uint8_t kConfigDescriptor[CONFIG_DESC_SIZ] __ALIGN_EN
 
   // Standard AS Isochronous Synch Endpoint Descriptor - out endPoint 1
   9, USB_DESC_TYPE_ENDPOINT,
-  AUDIO_OUT_EP, // bEndpointAddress - out endpoint 1
+  AUDIO_OUT_ENDPOINT, // bEndpointAddress - out endpoint 1
   5,            // bmAttributes - isochronous,asynchronous
   PACKET_SIZE & 0xFF, (PACKET_SIZE >> 8) & 0xFF, // wMaxPacketSize bytes
   1,            // bInterval
@@ -692,6 +689,8 @@ __ALIGN_BEGIN static const uint8_t kDeviceQualifierDescriptor[USB_LEN_DEV_QUALIF
   };
 //}}}
 //{{{  language id descriptor
+#define USBD_LANGID_STRING    0x409
+
 __ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
   USB_LEN_LANGID_STR_DESC,
   USB_DESC_TYPE_STRING,
@@ -699,6 +698,8 @@ __ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __
   };
 //}}}
 //{{{  serial string descriptor
+#define USB_SIZ_STRING_SERIAL 0x1A
+
 __ALIGN_BEGIN static uint8_t kStringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
   USB_SIZ_STRING_SERIAL,
   USB_DESC_TYPE_STRING,
@@ -820,7 +821,7 @@ typedef struct {
 static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   // Open EP OUT
-  USBD_LL_OpenEP (device, AUDIO_OUT_EP, USBD_EP_TYPE_ISOC, PACKET_SIZE);
+  USBD_LL_OpenEP (device, AUDIO_OUT_ENDPOINT, USBD_EP_TYPE_ISOC, PACKET_SIZE);
 
   // allocate audioData
   tAudioData* audioData = malloc (sizeof (tAudioData));
@@ -840,7 +841,7 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
 
   // Prepare Out endpoint to receive 1st packet
-  USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, audioData->mBuffer, PACKET_SIZE);
+  USBD_LL_PrepareReceive (device, AUDIO_OUT_ENDPOINT, audioData->mBuffer, PACKET_SIZE);
 
   return USBD_OK;
   }
@@ -849,7 +850,7 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 static uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   // close out ep
-  USBD_LL_CloseEP (device, AUDIO_OUT_EP);
+  USBD_LL_CloseEP (device, AUDIO_OUT_ENDPOINT);
 
   // stop audio
   BSP_AUDIO_OUT_Stop (CODEC_PDWN_SW);
@@ -1021,7 +1022,7 @@ static uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epNum) {
 //{{{
 static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
 
-  if (epNum == AUDIO_OUT_EP) {
+  if (epNum == AUDIO_OUT_ENDPOINT) {
     tAudioData* audioData = (tAudioData*)device->pClassData;
     if (!audioData->mPlayStarted && (audioData->mWritePtr >= SLOTS_PACKET_BUF_SIZE/2)) {
       //{{{  start playing
@@ -1063,7 +1064,7 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
     audioData->mWritePtr += SLOTS_PACKET_SIZE;
     if (audioData->mWritePtr >= SLOTS_PACKET_BUF_SIZE)
       audioData->mWritePtr = 0;
-    USBD_LL_PrepareReceive (device, AUDIO_OUT_EP, &audioData->mBuffer[audioData->mWritePtr], PACKET_SIZE);
+    USBD_LL_PrepareReceive (device, AUDIO_OUT_ENDPOINT, &audioData->mBuffer[audioData->mWritePtr], PACKET_SIZE);
     }
 
   return USBD_OK;
