@@ -464,13 +464,13 @@ void BSP_LCD_DisplayChar (uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
 }
 //}}}
 //{{{
-void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, uint8_t* text, Text_AlignModeTypdef mode) {
+void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, char* text, Text_AlignModeTypdef mode) {
 
   uint16_t column = 1;
   switch (mode) {
     case CENTER_MODE:  {
       uint32_t xSize = BSP_LCD_GetXSize() / DrawProp[ActiveLayer].pFont->Width;
-      uint8_t* ptr = text;
+      char* ptr = text;
       uint32_t size = 0;
       while (*ptr++)
         size++;
@@ -480,7 +480,7 @@ void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, uint8_t* text, Text_
 
     case RIGHT_MODE: {
      uint32_t xSize = BSP_LCD_GetXSize() / DrawProp[ActiveLayer].pFont->Width;
-      uint8_t* ptr = text;
+     char* ptr = text;
       uint32_t size = 0;
       while (*ptr++)
         size++;
@@ -504,15 +504,14 @@ void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, uint8_t* text, Text_
   }
 //}}}
 //{{{
-void BSP_LCD_DisplayStringAtLine (uint16_t line, uint8_t *ptr) {
-  BSP_LCD_DisplayStringAt(0, LINE(line), ptr, LEFT_MODE);
+void BSP_LCD_DisplayStringAtLine (uint16_t line, char* ptr) {
+  BSP_LCD_DisplayStringAt (0, LINE(line), ptr, LEFT_MODE);
   }
 //}}}
 //{{{
 void BSP_LCD_DisplayStringAtLineColumn (uint16_t line, uint16_t column, char* ptr) {
-  BSP_LCD_DisplayStringAt (column * BSP_LCD_GetFont()->Width, line * BSP_LCD_GetFont()->Height,
-                           (uint8_t*)ptr, LEFT_MODE);
-}
+  BSP_LCD_DisplayStringAt (column * BSP_LCD_GetFont()->Width, line * BSP_LCD_GetFont()->Height, ptr, LEFT_MODE);
+  }
 //}}}
 
 //{{{

@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB audio 14/2/18";
+char* kVersion = "USB audio 16/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -103,7 +103,7 @@ static void setScrollValue (int scroll) {
   }
 //}}}
 //{{{
-static void initGraphics() {
+static void initLcd() {
 
   BSP_LCD_Init();
 
@@ -132,7 +132,7 @@ static void initGraphics() {
   }
 //}}}
 //{{{
-static void showGraphics() {
+static void showLcd() {
 
   BSP_LCD_SelectLayer (gLayer);
   BSP_LCD_Clear (LCD_COLOR_BLACK);
@@ -143,10 +143,10 @@ static void showGraphics() {
 
   char str1[40];
   sprintf (str1, "%s %s %d %d %d", kVersion, gFaster ? "fast" : "slow", writePtrOnRead, (int)gTick, (int)wait);
-  BSP_LCD_SetTextColor (gFaster ? LCD_COLOR_MAGENTA : LCD_COLOR_YELLOW);
-  BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
+  BSP_LCD_SetTextColor (gFaster ? LCD_COLOR_WHITE : LCD_COLOR_YELLOW);
+  BSP_LCD_DisplayStringAtLine (0, str1);
 
-  if (gHit || BSP_PB_GetState (BUTTON_KEY)) {
+  if (!BSP_PB_GetState (BUTTON_KEY)) {
     for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
       int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ?
                         displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine - getScrollLines();
@@ -744,7 +744,7 @@ static uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   }
 //}}}
 //{{{
-static uint8_t* langIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t* length) {
+static uint8_t* langIDStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   *length = sizeof(kLangIdDescriptor);
   return (uint8_t*)kLangIdDescriptor;
   }
@@ -1169,7 +1169,7 @@ int main() {
   SCB_EnableICache();
   SCB_EnableDCache();
   HAL_Init();
-  //{{{  configure system clock
+  //{{{  config system clock
   // System Clock source            = PLL (HSE)
   // SYSCLK(Hz)                     = 216000000
   // HCLK(Hz)                       = 216000000
@@ -1186,10 +1186,8 @@ int main() {
   // Main regulator output voltage  = Scale1 mode
   // Flash Latency(WS)              = 7
 
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-
   // Enable HSE Oscillator and activate PLL with HSE as source
+  RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.HSIState = RCC_HSI_OFF;
@@ -1200,13 +1198,14 @@ int main() {
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 9;
   if (HAL_RCC_OscConfig (&RCC_OscInitStruct) != HAL_OK)
-    while(1) {}
+    while (1) {}
 
   // Activate the OverDrive to reach the 216 Mhz Frequency
   if (HAL_PWREx_EnableOverDrive() != HAL_OK)
-    while(1) {}
+    while (1) {}
 
   // Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 clocks dividers
+  RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK |
                                  RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -1214,13 +1213,13 @@ int main() {
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
   if (HAL_RCC_ClockConfig (&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK)
-    while(1) {}
+    while (1) {}
   //}}}
 
   BSP_LED_Init (LED1);
   BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
 
-  initGraphics();
+  initLcd();
   BSP_TS_Init (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
   gCentreX = BSP_LCD_GetXSize()/2;
   gCentreY = BSP_LCD_GetYSize()/2;
@@ -1233,7 +1232,7 @@ int main() {
 
   while (1) {
     touch();
-    showGraphics();
+    showLcd();
     }
   }
 //}}}
