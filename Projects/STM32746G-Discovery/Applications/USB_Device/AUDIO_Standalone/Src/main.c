@@ -146,16 +146,18 @@ static void showGraphics() {
   BSP_LCD_SetTextColor (gFaster ? LCD_COLOR_MAGENTA : LCD_COLOR_YELLOW);
   BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
 
-  for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
-    int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ?
-                      displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine - getScrollLines();
-    debugLine = debugLine % DEBUG_MAX_LINES;
-    BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-    char tickStr[20];
-    sprintf (tickStr, "%2d.%03d", (int)gDebugTicks[debugLine] / 1000, (int)gDebugTicks[debugLine] % 1000);
-    BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 0, tickStr);
-    BSP_LCD_SetTextColor (gDebugColour[debugLine]);
-    BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 7, gDebugStr[debugLine]);
+  if (gHit || BSP_PB_GetState (BUTTON_KEY)) {
+    for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
+      int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ?
+                        displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine - getScrollLines();
+      debugLine = debugLine % DEBUG_MAX_LINES;
+      BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+      char tickStr[20];
+      sprintf (tickStr, "%2d.%03d", (int)gDebugTicks[debugLine] / 1000, (int)gDebugTicks[debugLine] % 1000);
+      BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 0, tickStr);
+      BSP_LCD_SetTextColor (gDebugColour[debugLine]);
+      BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 7, gDebugStr[debugLine]);
+      }
     }
 
   BSP_LCD_SetTextColor (LCD_COLOR_GREEN);
@@ -1216,6 +1218,7 @@ int main() {
   //}}}
 
   BSP_LED_Init (LED1);
+  BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
 
   initGraphics();
   BSP_TS_Init (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
