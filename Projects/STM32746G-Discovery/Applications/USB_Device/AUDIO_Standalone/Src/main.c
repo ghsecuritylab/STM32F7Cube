@@ -42,9 +42,9 @@ char* kVersion = "USB audio 14/2/18";
 //}}}
 
 //{{{  global debug vars
-#define DEBUG_STRING_SIZE 40
+#define DEBUG_STRING_SIZE   40
 #define DEBUG_DISPLAY_LINES 16
-#define DEBUG_MAX_LINES 1000
+#define DEBUG_MAX_LINES     1000
 
 static int gTick = 0;
 static int gLayer = 1;
@@ -53,6 +53,14 @@ static uint16_t gDebugLine = 0;
 static char* gDebugStr[DEBUG_MAX_LINES];
 static uint32_t gDebugTicks[DEBUG_MAX_LINES];
 static uint32_t gDebugColour[DEBUG_MAX_LINES];
+
+static int gHit = 0;
+static int gHitX = 0;
+static int gHitY = 0;
+static int gLastX = 0;
+static int gLastY = 0;
+
+static int gScroll = 0;
 //}}}
 //{{{  global waveform vars
 // waveform
@@ -73,6 +81,27 @@ static int gFaster = 1;
 static int writePtrOnRead = 0;
 static TS_StateTypeDef gTS_State;
 
+//{{{
+static int getScrollScale() {
+  return BSP_LCD_GetFont()->Height / 3;
+  }
+//}}}
+//{{{
+static int getScrollLines() {
+  return gScroll / getScrollScale();
+  }
+//}}}
+//{{{
+static void setScrollValue (int scroll) {
+
+  gScroll = scroll;
+
+  if (scroll < 0)
+    gScroll = 0;
+  else if (getScrollLines() >  gDebugLine - DEBUG_DISPLAY_LINES)
+    gScroll = (gDebugLine - DEBUG_DISPLAY_LINES) * getScrollScale();
+  }
+//}}}
 //{{{
 static void initGraphics() {
 
@@ -97,10 +126,13 @@ static void initGraphics() {
   BSP_LCD_SetTransparency (1, 0);
 
   BSP_LCD_DisplayOn();
+
+  for (int i = 0; i < DEBUG_MAX_LINES; i++)
+    gDebugStr[i] = NULL;
   }
 //}}}
 //{{{
-static void flipGraphics() {
+static void showGraphics() {
 
   BSP_LCD_SelectLayer (gLayer);
   BSP_LCD_Clear (LCD_COLOR_BLACK);
@@ -115,7 +147,8 @@ static void flipGraphics() {
   BSP_LCD_DisplayStringAtLine (0, (uint8_t*)str1);
 
   for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
-    int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ? displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine;
+    int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ?
+                      displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine - getScrollLines();
     debugLine = debugLine % DEBUG_MAX_LINES;
     BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
     char tickStr[20];
@@ -134,7 +167,7 @@ static void flipGraphics() {
 
   for (int i = 0; i < gTS_State.touchDetected; i++) {
     BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
-    BSP_LCD_FillCircle (gTS_State.touchX[i], gTS_State.touchY[i], 20);
+    BSP_LCD_FillCircle (gTS_State.touchX[i], gTS_State.touchY[i], 10);
     }
 
   BSP_LCD_SetTransparency (gLayer, 255);
@@ -148,15 +181,59 @@ static void debug (uint32_t colour, const char* format, ... ) {
   gDebugColour[gDebugLine] = colour;
   gDebugTicks[gDebugLine] = HAL_GetTick();
 
-  // could determine size dynamically
-  gDebugStr[gDebugLine] = (char*)malloc (DEBUG_STRING_SIZE);
-
   va_list args;
   va_start (args, format);
+  free (gDebugStr[gDebugLine]);
+  gDebugStr[gDebugLine] = (char*)malloc (vsnprintf (NULL, 0, format, args) + 1);
   vsnprintf (gDebugStr[gDebugLine], DEBUG_STRING_SIZE, format, args);
   va_end (args);
 
   gDebugLine = (gDebugLine+1) % DEBUG_MAX_LINES;
+  }
+//}}}
+//{{{
+static void onPress (int x, int y) {
+  }
+//}}}
+//{{{
+static void onMove (int x, int y) {
+
+  gScroll += y;
+  setScrollValue (gScroll + y);
+  }
+//}}}
+//{{{
+static void onRelease (int x, int y) {
+  }
+//}}}
+//{{{
+static void touch() {
+
+  BSP_TS_GetState (&gTS_State);
+
+  if (gTS_State.touchDetected) {
+    // pressed
+    if (gHit) {
+      int x = gTS_State.touchX[0];
+      int y = gTS_State.touchY[0];
+      onMove (x - gLastX, y - gLastY);
+      gLastX = x;
+      gLastY = y;
+      }
+    else {
+      gHitX = gTS_State.touchX[0];
+      gHitY = gTS_State.touchY[0];
+      onPress (gHitX, gHitY);
+      gLastX = gHitX;
+      gLastY = gHitY;
+      }
+    gHit = 1;
+    }
+  else if (gHit) {
+    // released
+    onRelease (gLastX, gLastY);
+    gHit = 0;
+    }
   }
 //}}}
 
@@ -1142,7 +1219,6 @@ int main() {
 
   initGraphics();
   BSP_TS_Init (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-
   gCentreX = BSP_LCD_GetXSize()/2;
   gCentreY = BSP_LCD_GetYSize()/2;
 
@@ -1153,8 +1229,8 @@ int main() {
   USBD_Start (&gUsbDevice);
 
   while (1) {
-    BSP_TS_GetState (&gTS_State);
-    flipGraphics();
+    touch();
+    showGraphics();
     }
   }
 //}}}
