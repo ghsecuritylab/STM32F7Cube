@@ -147,7 +147,7 @@ static void debug (uint32_t colour, const char* format, ... ) {
   }
 //}}}
 
-//{{{  hid descriptor
+//{{{  hid descriptors
 #define USBD_VID                      0x0483
 #define USBD_PID                      0x5710
 #define USBD_LANGID_STRING            0x409
@@ -294,6 +294,9 @@ USBD_DescriptorsTypeDef hidDescriptor = {
   };
 //}}}
 //{{{  hid handlers
+#define HID_EPIN_ADDR                0x81
+#define HID_EPIN_SIZE                0x04
+
 typedef enum { HID_IDLE = 0, HID_BUSY, } hidStateTypeDef;
 //{{{  tHidData
 typedef struct {
@@ -304,97 +307,57 @@ typedef struct {
   } tHidData;
 //}}}
 
-//{{{  defines
-#define HID_EPIN_ADDR                0x81
-#define HID_EPIN_SIZE                0x04
-
-#define HID_DESCRIPTOR_TYPE          0x21
-#define HID_REPORT_DESC              0x22
-#define HID_HS_BINTERVAL             0x07
-#define HID_FS_BINTERVAL             0x0A
-#define HID_POLLING_INTERVAL         0x0A
-#define HID_REQ_SET_PROTOCOL         0x0B
-#define HID_REQ_GET_PROTOCOL         0x03
-#define HID_REQ_SET_IDLE             0x0A
-#define HID_REQ_GET_IDLE             0x02
-#define HID_REQ_SET_REPORT           0x09
-#define HID_REQ_GET_REPORT           0x01
-//}}}
 //{{{
 /* USB HID device Configuration Descriptor */
-__ALIGN_BEGIN static const uint8_t hidCfgDesc[34] __ALIGN_END =
-{
-  0x09, /* bLength: Configuration Descriptor size */
-  USB_DESC_TYPE_CONFIGURATION, /* bDescriptorType: Configuration */
-  34, /* wTotalLength: Bytes returned */
+__ALIGN_BEGIN static const uint8_t hidCfgDesc[34] __ALIGN_END = {
+  0x09, USB_DESC_TYPE_CONFIGURATION,
+  34,          /* wTotalLength: Bytes returned */
   0x00,
-  0x01,         /*bNumInterfaces: 1 interface*/
-  0x01,         /*bConfigurationValue: Configuration value*/
-  0x00,         /*iConfiguration: Index of string descriptor describing
-  the configuration*/
-  0xE0,         /*bmAttributes: bus powered and Support Remote Wake-up */
-  0x32,         /*MaxPower 100 mA: this current is used for detecting Vbus*/
+  0x01,        /*bNumInterfaces: 1 interface*/
+  0x01,        /*bConfigurationValue: Configuration value*/
+  0x00,        /*iConfiguration: Index of string descriptor describing the configuration*/
+  0xE0,        /*bmAttributes: bus powered and Support Remote Wake-up */
+  0x32,        /*MaxPower 100 mA: this current is used for detecting Vbus*/
 
-  /************** Descriptor of Joystick Mouse interface ****************/
-  0x09,         /*bLength: Interface Descriptor size*/
-  USB_DESC_TYPE_INTERFACE,/*bDescriptorType: Interface descriptor type*/
-  0x00,         /*bInterfaceNumber: Number of Interface*/
-  0x00,         /*bAlternateSetting: Alternate setting*/
-  0x01,         /*bNumEndpoints*/
-  0x03,         /*bInterfaceClass: HID*/
-  0x01,         /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
-  0x02,         /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
-  0,            /*iInterface: Index of string descriptor*/
+  // Joystick Mouse interface Descriptor
+  0x09, USB_DESC_TYPE_INTERFACE,
+  0x00,        /*bInterfaceNumber: Number of Interface*/
+  0x00,        /*bAlternateSetting: Alternate setting*/
+  0x01,        /*bNumEndpoints*/
+  0x03,        /*bInterfaceClass: HID*/
+  0x01,        /*bInterfaceSubClass : 1=BOOT, 0=no boot*/
+  0x02,        /*nInterfaceProtocol : 0=none, 1=keyboard, 2=mouse*/
+  0,           /*iInterface: Index of string descriptor*/
 
-  /******************** Descriptor of Joystick Mouse HID ********************/
-  0x09,         /*bLength: HID Descriptor size*/
-  HID_DESCRIPTOR_TYPE, /*bDescriptorType: HID*/
-  0x11,         /*bcdHID: HID Class Spec release number*/
+  // Joystick Mouse HID Descriptor
+  0x09, 0x21, /*bDescriptorType: HID*/
+  0x11,       /*bcdHID: HID Class Spec release number*/
   0x01,
-  0x00,         /*bCountryCode: Hardware target country*/
-  0x01,         /*bNumDescriptors: Number of HID class descriptors to follow*/
-  0x22,         /*bDescriptorType*/
-  74,/*wItemLength: Total length of Report descriptor*/
+  0x00,       /*bCountryCode: Hardware target country*/
+  0x01,       /*bNumDescriptors: Number of HID class descriptors to follow*/
+  0x22,       /*bDescriptorType*/
+  74,         /*wItemLength: Total length of Report descriptor*/
   0x00,
 
-  /******************** Descriptor of Mouse endpoint ********************/
-  0x07,          /*bLength: Endpoint Descriptor size*/
-  USB_DESC_TYPE_ENDPOINT, /*bDescriptorType:*/
-
-  HID_EPIN_ADDR,     /*bEndpointAddress: Endpoint Address (IN)*/
-  0x03,          /*bmAttributes: Interrupt endpoint*/
-  HID_EPIN_SIZE, /*wMaxPacketSize: 4 Byte max */
+  // Mouse endpoint Descriptor
+  0x07, USB_DESC_TYPE_ENDPOINT,
+  HID_EPIN_ADDR,  /*bEndpointAddress: Endpoint Address (IN)*/
+  0x03,           /*bmAttributes: Interrupt endpoint*/
+  HID_EPIN_SIZE,  /*wMaxPacketSize: 4 Byte max */
   0x00,
-  HID_FS_BINTERVAL,          /*bInterval: Polling Interval (10 ms)*/
+  10,             /*bInterval: Polling Interval (10 ms)*/
   };
 //}}}
 //{{{
 /* USB HID device Configuration Descriptor */
 __ALIGN_BEGIN static const uint8_t hidDesc[9] __ALIGN_END = {
-  /* 18 */
-  0x09,         /*bLength: HID Descriptor size*/
-  HID_DESCRIPTOR_TYPE, /*bDescriptorType: HID*/
-  0x11,         /*bcdHID: HID Class Spec release number*/
+  0x09, 0x21, // hid config desriptor
+  0x11,  /*bcdHID: HID Class Spec release number*/
   0x01,
-  0x00,         /*bCountryCode: Hardware target country*/
-  0x01,         /*bNumDescriptors: Number of HID class descriptors to follow*/
-  0x22,         /*bDescriptorType*/
-  74,/*wItemLength: Total length of Report descriptor*/
-  0x00,
-  };
-//}}}
-//{{{
-/* USB Standard Device Descriptor */
-__ALIGN_BEGIN static const uint8_t hidDeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
-  USB_LEN_DEV_QUALIFIER_DESC,
-  USB_DESC_TYPE_DEVICE_QUALIFIER,
-  0x00,
-  0x02,
-  0x00,
-  0x00,
-  0x00,
-  0x40,
-  0x01,
+  0x00,  /*bCountryCode: Hardware target country*/
+  0x01,  /*bNumDescriptors: Number of HID class descriptors to follow*/
+  0x22,  /*bDescriptorType*/
+  74,    /*wItemLength: Total length of Report descriptor*/
   0x00,
   };
 //}}}
@@ -448,6 +411,21 @@ __ALIGN_BEGIN static const uint8_t hidMouseReportDesc[74] __ALIGN_END = {
   0x01, 0xc0
   };
 //}}}
+//{{{
+/* USB Standard Device Descriptor */
+__ALIGN_BEGIN static const uint8_t hidDeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
+  USB_LEN_DEV_QUALIFIER_DESC,
+  USB_DESC_TYPE_DEVICE_QUALIFIER,
+  0x00,
+  0x02,
+  0x00,
+  0x00,
+  0x00,
+  0x40,
+  0x01,
+  0x00,
+  };
+//}}}
 
 //{{{
 static uint8_t hidInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
@@ -455,7 +433,7 @@ static uint8_t hidInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   uint8_t ret = 0;
 
   /* Open EP IN */
-  USBD_LL_OpenEP(device, HID_EPIN_ADDR, USBD_EP_TYPE_INTR, HID_EPIN_SIZE);
+  USBD_LL_OpenEP (device, HID_EPIN_ADDR, USBD_EP_TYPE_INTR, HID_EPIN_SIZE);
 
   device->pClassData = malloc (sizeof (tHidData));
 
@@ -470,7 +448,7 @@ static uint8_t hidInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 static uint8_t hidDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   /* Close HID EPs */
-  USBD_LL_CloseEP(device, HID_EPIN_ADDR);
+  USBD_LL_CloseEP (device, HID_EPIN_ADDR);
 
   /* FRee allocated memory */
   if(device->pClassData != NULL) {
@@ -491,11 +469,11 @@ static uint8_t hidSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest) {
         case USB_REQ_GET_DESCRIPTOR: {
-          if (req->wValue >> 8 == HID_REPORT_DESC) {
+          if (req->wValue >> 8 == 0x22) { // hidReportDescriptor
             debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
             USBD_CtlSendData (device, (uint8_t*)hidMouseReportDesc, MIN (74, req->wLength));
             }
-          else if (req->wValue >> 8 == HID_DESCRIPTOR_TYPE) {
+          else if (req->wValue >> 8 == 0x21) { // hidDescriptor
             debug (LCD_COLOR_GREEN, "- getDescriptor hid");
             USBD_CtlSendData (device, (uint8_t*)hidDesc, MIN(9 , req->wLength));
             }
@@ -514,19 +492,19 @@ static uint8_t hidSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 
     case USB_REQ_TYPE_CLASS :
       switch (req->bRequest) {
-        case HID_REQ_SET_PROTOCOL:
+        case 0x0B: // HID_REQ_SET_PROTOCOL:
           hidData->Protocol = (uint8_t)(req->wValue);
           debug (LCD_COLOR_GREEN, "- setProtocol %d", req->wValue);
           break;
-        case HID_REQ_GET_PROTOCOL:
+        case 0x03: // HID_REQ_GET_PROTOCOL:
           USBD_CtlSendData (device, (uint8_t*)&hidData->Protocol, 1);
           debug (LCD_COLOR_GREEN, "- getProtocol %d", hidData->Protocol);
           break;
-        case HID_REQ_SET_IDLE:
+        case 0x0A: // reqSetIdle
           hidData->IdleState = (uint8_t)(req->wValue >> 8);
           debug (LCD_COLOR_GREEN, "- setIdle %d", req->wValue);
           break;
-        case HID_REQ_GET_IDLE:
+        case 0x02: // reqGetIdle
           USBD_CtlSendData (device, (uint8_t*)&hidData->IdleState, 1);
           debug (LCD_COLOR_GREEN, "- getIdle %d", hidData->IdleState);
           break;
@@ -565,10 +543,10 @@ static uint8_t* hidGetDeviceQualifierDesc (uint16_t* length) {
 //{{{
 uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report, uint16_t len) {
 
-  tHidData* hhid = (tHidData*)device->pClassData;
-  if (device->dev_state == USBD_STATE_CONFIGURED ) {
-    if(hhid->state == HID_IDLE) {
-      hhid->state = HID_BUSY;
+  tHidData* hidData = (tHidData*)device->pClassData;
+  if (device->dev_state == USBD_STATE_CONFIGURED) {
+    if (hidData->state == HID_IDLE) {
+      hidData->state = HID_BUSY;
       USBD_LL_Transmit (device, HID_EPIN_ADDR, report, len);
     }
   }
@@ -582,14 +560,11 @@ uint32_t hidGetPollingInterval (USBD_HandleTypeDef* device)
 
   /* HIGH-speed endpoints */
   if(device->dev_speed == USBD_SPEED_HIGH)
-   /* Sets the data transfer polling interval for high speed transfers.
-    Values between 1..16 are allowed. Values correspond to interval
-    of 2 ^ (bInterval-1). This option (8 ms, corresponds to HID_HS_BINTERVAL */
-    polling_interval = (((1 <<(HID_HS_BINTERVAL - 1)))/8);
-  else   /* LOW and FULL-speed endpoints */
-    /* Sets the data transfer polling interval for low and full
-    speed transfers */
-    polling_interval =  HID_FS_BINTERVAL;
+   // Sets the data transfer polling interval for high speed transfers.
+   // Values between 1..16 are allowed. Values correspond to interval/ of 2 ^ (bInterval-1).
+    polling_interval = (((1 << (7 - 1)))/8);
+  else // LOW and FULL-speed endpoints,  Sets the data transfer polling interval for low and full speed transfers */
+    polling_interval = 10;
 
   return ((uint32_t)(polling_interval));
   }
