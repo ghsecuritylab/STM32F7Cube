@@ -1,8 +1,5 @@
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USBD_CONF_H
-#define __USBD_CONF_H
+#pragma once
 
-/* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,6 +46,3 @@
 #else
 #define USBD_DbgLog(...)
 #endif
-
-
-#endif /* __USBD_CONF_H */
