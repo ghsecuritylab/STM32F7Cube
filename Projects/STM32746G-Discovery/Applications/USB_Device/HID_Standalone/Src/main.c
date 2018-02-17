@@ -485,9 +485,33 @@ static uint8_t hidDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 static uint8_t hidSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   tHidData* hidData = (tHidData*)device->pClassData;
-  debug (LCD_COLOR_YELLOW, "setup bmReq%d req:%d value:%d", req->bmRequest, req->bRequest, req->wValue);
+  debug (LCD_COLOR_YELLOW, "setup bmReq%d req:%d value:%x", req->bmRequest, req->bRequest, req->wValue);
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
+    case USB_REQ_TYPE_STANDARD:
+      switch (req->bRequest) {
+        case USB_REQ_GET_DESCRIPTOR: {
+          if (req->wValue >> 8 == HID_REPORT_DESC) {
+            debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
+            USBD_CtlSendData (device, (uint8_t*)hidMouseReportDesc, MIN (74, req->wLength));
+            }
+          else if (req->wValue >> 8 == HID_DESCRIPTOR_TYPE) {
+            debug (LCD_COLOR_GREEN, "- getDescriptor hid");
+            USBD_CtlSendData (device, (uint8_t*)hidDesc, MIN(9 , req->wLength));
+            }
+          break;
+          }
+        case USB_REQ_GET_INTERFACE :
+          debug (LCD_COLOR_GREEN, "- getInterface");
+          USBD_CtlSendData (device, (uint8_t*)&hidData->AltSetting, 1);
+          break;
+        case USB_REQ_SET_INTERFACE :
+          debug (LCD_COLOR_GREEN, "- setInterface");
+          hidData->AltSetting = (uint8_t)(req->wValue);
+          break;
+        }
+      break;
+
     case USB_REQ_TYPE_CLASS :
       switch (req->bRequest) {
         case HID_REQ_SET_PROTOCOL:
@@ -511,29 +535,6 @@ static uint8_t hidSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
           return USBD_FAIL;
         }
       break;
-
-    case USB_REQ_TYPE_STANDARD:
-      switch (req->bRequest) {
-        case USB_REQ_GET_DESCRIPTOR: {
-          if (req->wValue >> 8 == HID_REPORT_DESC) {
-            debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
-            USBD_CtlSendData (device, (uint8_t*)hidMouseReportDesc, MIN (74, req->wLength));
-            }
-          else if (req->wValue >> 8 == HID_DESCRIPTOR_TYPE) {
-            debug (LCD_COLOR_GREEN, "- getDescriptor hid");
-            USBD_CtlSendData (device, (uint8_t*)hidDesc, MIN(9 , req->wLength));
-            }
-          break;
-          }
-        case USB_REQ_GET_INTERFACE :
-          debug (LCD_COLOR_GREEN, "- getInterface");
-          USBD_CtlSendData (device, (uint8_t*)&hidData->AltSetting, 1);
-          break;
-        case USB_REQ_SET_INTERFACE :
-          debug (LCD_COLOR_GREEN, "- setInterface");
-          hidData->AltSetting = (uint8_t)(req->wValue);
-          break;
-        }
       }
 
   return USBD_OK;
