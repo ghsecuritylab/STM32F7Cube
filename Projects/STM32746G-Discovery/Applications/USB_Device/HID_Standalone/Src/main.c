@@ -189,7 +189,7 @@ void HAL_PCD_MspInit (PCD_HandleTypeDef* pcdHandle) {
 //{{{
 void HAL_PCD_MspDeInit (PCD_HandleTypeDef* pcdHandle) {
 
-  /* Disable USB FS Clock */
+  // Disable USB FS Clock
   __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
   __HAL_RCC_SYSCFG_CLK_DISABLE();
   }
@@ -219,33 +219,35 @@ void HAL_PCD_ResetCallback (PCD_HandleTypeDef* pcdHandle) {
 
   USBD_SpeedTypeDef speed = USBD_SPEED_FULL;
 
-  /* Set USB Current Speed */
+  // Set USB Current Speed
   switch (pcdHandle->Init.speed) {
     case PCD_SPEED_HIGH: speed = USBD_SPEED_HIGH; break;
     case PCD_SPEED_FULL: speed = USBD_SPEED_FULL; break;
     default: speed = USBD_SPEED_FULL; break;
     }
 
-  /* Reset Device */
+  // Reset Device
   USBD_LL_Reset (pcdHandle->pData);
   USBD_LL_SetSpeed (pcdHandle->pData, speed);
   }
 //}}}
 //{{{
 void HAL_PCD_SuspendCallback (PCD_HandleTypeDef* pcdHandle) {
-  USBD_LL_Suspend(pcdHandle->pData);
+
+  USBD_LL_Suspend (pcdHandle->pData);
   __HAL_PCD_GATE_PHYCLOCK (pcdHandle);
   }
 //}}}
 //{{{
 void HAL_PCD_ResumeCallback (PCD_HandleTypeDef* pcdHandle) {
-  __HAL_PCD_UNGATE_PHYCLOCK(pcdHandle);
-  USBD_LL_Resume(pcdHandle->pData);
+
+  __HAL_PCD_UNGATE_PHYCLOCK (pcdHandle);
+  USBD_LL_Resume (pcdHandle->pData);
   }
 //}}}
 //{{{
 void HAL_PCD_ConnectCallback (PCD_HandleTypeDef* pcdHandle) {
-  USBD_LL_DevConnected(pcdHandle->pData);
+  USBD_LL_DevConnected (pcdHandle->pData);
   }
 //}}}
 //{{{
@@ -267,7 +269,7 @@ void HAL_PCD_ISOINIncompleteCallback (PCD_HandleTypeDef* pcdHandle, uint8_t epnu
 //{{{
 USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device) {
 
-  /* Set LL Driver parameters */
+  // Set LL Driver parameters
   gPcdHandle.Instance = USB_OTG_FS;
   gPcdHandle.Init.dev_endpoints = 4;
   gPcdHandle.Init.use_dedicated_ep1 = 0;
@@ -280,11 +282,11 @@ USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device) {
   gPcdHandle.Init.vbus_sensing_enable = 0;
   gPcdHandle.Init.lpm_enable = 0;
 
-  /* Link The driver to the stack */
+  // Link The driver to the stack
   gPcdHandle.pData = device;
   device->pData = &gPcdHandle;
 
-  /* Initialize LL Driver */
+  // Initialize LL Driver
   HAL_PCD_Init (&gPcdHandle);
   HAL_PCDEx_SetRxFiFo (&gPcdHandle, 0x80);
   HAL_PCDEx_SetTxFiFo (&gPcdHandle, 0, 0x40);
@@ -295,54 +297,63 @@ USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device) {
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_DeInit (USBD_HandleTypeDef* device) {
+
   HAL_PCD_DeInit (device->pData);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_Start (USBD_HandleTypeDef* device) {
+
   HAL_PCD_Start (device->pData);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_Stop (USBD_HandleTypeDef* device) {
+
   HAL_PCD_Stop (device->pData);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_OpenEP (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps) {
+
   HAL_PCD_EP_Open (device->pData, ep_addr, ep_mps, ep_type);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_CloseEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
   HAL_PCD_EP_Close (device->pData, ep_addr);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_FlushEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
   HAL_PCD_EP_Flush (device->pData, ep_addr);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_StallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
   HAL_PCD_EP_SetStall (device->pData, ep_addr);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_ClearStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
   HAL_PCD_EP_ClrStall (device->pData, ep_addr);
   return USBD_OK;
   }
 //}}}
 //{{{
 uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
   PCD_HandleTypeDef* pcdHandle = device->pData;
   if ((ep_addr & 0x80) == 0x80)
     return pcdHandle->IN_ep[ep_addr & 0x7F].is_stall;
@@ -352,29 +363,34 @@ uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_SetUSBAddress (USBD_HandleTypeDef* device, uint8_t device_addr) {
+
   HAL_PCD_SetAddress (device->pData, device_addr);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_Transmit (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t *pbuf, uint16_t size) {
+
   HAL_PCD_EP_Transmit (device->pData, ep_addr, pbuf, size);
   return USBD_OK;
   }
 //}}}
 //{{{
 USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t* pbuf, uint16_t size) {
+
   HAL_PCD_EP_Receive (device->pData, ep_addr, pbuf, size);
   return USBD_OK;
   }
 //}}}
 //{{{
 uint32_t USBD_LL_GetRxDataSize (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
   return HAL_PCD_EP_GetRxCount (device->pData, ep_addr);
   }
 //}}}
 //{{{
 void USBD_LL_Delay (uint32_t Delay) {
+
   HAL_Delay (Delay);
   }
 //}}}

@@ -10,9 +10,10 @@
 ]>
 
 <targetDefinitions>
-  <board id="stm32746g-discovery_usbd">
-    <name>STM32746G-DISCOVERY_USBD</name>
+  <board id="stm32f746g-disco">
+    <name>STM32F746G-DISCO</name>
     <dbgIF>JTAG</dbgIF>
+    <dbgIF>SWD</dbgIF>
     <dbgDEV>ST-Link</dbgDEV>
     <mcuId>stm32f746nghx</mcuId>
   </board>
