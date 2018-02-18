@@ -1,8 +1,9 @@
 #pragma once
-
+//{{{
 #ifdef __cplusplus
   extern "C" {
 #endif
+//}}}
 
 //{{{  module enabled defines
 #define HAL_MODULE_ENABLED
@@ -97,8 +98,7 @@
 #define PHY_MISR_LINK_INT_EN            ((uint16_t)0x0020U)  /*!< Enable Interrupt on change of link status       */
 #define PHY_LINK_INTERRUPT              ((uint16_t)0x2000U)  /*!< PHY link status interrupt mask                  */
 //}}}
-#define USE_SPI_CRC                     1U
-
+#define USE_SPI_CRC                  1U
 //{{{  module enabled includes
 #ifdef HAL_RCC_MODULE_ENABLED
   #include "stm32f7xx_hal_rcc.h"
@@ -294,8 +294,10 @@
   void assert_failed(uint8_t* file, uint32_t line);
 #else
   #define assert_param(expr) ((void)0U)
-#endif /* USE_FULL_ASSERT */
+#endif
 
+//{{{
 #ifdef __cplusplus
   }
 #endif
+//}}}

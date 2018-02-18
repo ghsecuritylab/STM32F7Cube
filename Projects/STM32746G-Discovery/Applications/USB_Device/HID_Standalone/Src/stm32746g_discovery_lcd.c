@@ -22,9 +22,9 @@
 #define  RK043FN48H_FREQUENCY_DIVIDER    5            /* LCD Frequency divider      */
 //}}}
 
-LTDC_HandleTypeDef         hLtdcHandler;
+LTDC_HandleTypeDef hLtdcHandler;
 static DMA2D_HandleTypeDef hDma2dHandler;
-static uint32_t            ActiveLayer = 0;
+static uint32_t ActiveLayer = 0;
 static LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
 
 //{{{
