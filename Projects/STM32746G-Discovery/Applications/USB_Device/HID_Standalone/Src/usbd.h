@@ -208,7 +208,7 @@ typedef struct _USBD_HandleTypeDef {
   } USBD_HandleTypeDef;
 //}}}
 
-// USBD handler declarations
+//{{{  USBD handler declarations
 USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device);
 USBD_StatusTypeDef USBD_LL_DeInit (USBD_HandleTypeDef* device);
 USBD_StatusTypeDef USBD_LL_Start(USBD_HandleTypeDef* device);
@@ -224,6 +224,11 @@ USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t e
 uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
 uint32_t USBD_LL_GetRxDataSize (USBD_HandleTypeDef* device, uint8_t ep_addr);
 void USBD_LL_Delay (uint32_t Delay);
+//}}}
+
+USBD_HandleTypeDef gUsbDevice;
+PCD_HandleTypeDef gPcdHandle;
+void OTG_FS_IRQHandler() { HAL_PCD_IRQHandler (&gPcdHandle); }
 
 //{{{
 inline void USBD_CtlError (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
@@ -951,6 +956,111 @@ inline USBD_StatusTypeDef USBD_LL_DevDisconnected (USBD_HandleTypeDef* device) {
   device->dev_state = USBD_STATE_DEFAULT;
   device->pClass->DeInit (device, device->dev_config);
   return USBD_OK;
+  }
+//}}}
+
+//{{{
+void HAL_PCD_MspInit (PCD_HandleTypeDef* pcdHandle) {
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /* Configure DM DP Pins */
+  GPIO_InitStruct.Pin = (GPIO_PIN_11 | GPIO_PIN_12);
+  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+  GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
+  HAL_GPIO_Init (GPIOA, &GPIO_InitStruct);
+
+  /* Enable USB FS Clock */
+  __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
+
+  /* Set USBFS Interrupt priority */
+  HAL_NVIC_SetPriority (OTG_FS_IRQn, 5, 0);
+
+  /* Enable USBFS Interrupt */
+  HAL_NVIC_EnableIRQ (OTG_FS_IRQn);
+  }
+//}}}
+//{{{
+void HAL_PCD_MspDeInit (PCD_HandleTypeDef* pcdHandle) {
+
+  // Disable USB FS Clock
+  __HAL_RCC_USB_OTG_FS_CLK_DISABLE();
+  __HAL_RCC_SYSCFG_CLK_DISABLE();
+  }
+//}}}
+//{{{
+void HAL_PCD_SetupStageCallback (PCD_HandleTypeDef* pcdHandle) {
+  USBD_LL_SetupStage (pcdHandle->pData, (uint8_t*)pcdHandle->Setup);
+  }
+//}}}
+//{{{
+void HAL_PCD_DataOutStageCallback (PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
+  USBD_LL_DataOutStage (pcdHandle->pData, epnum, pcdHandle->OUT_ep[epnum].xfer_buff);
+  }
+//}}}
+//{{{
+void HAL_PCD_DataInStageCallback( PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
+  USBD_LL_DataInStage (pcdHandle->pData, epnum, pcdHandle->IN_ep[epnum].xfer_buff);
+  }
+//}}}
+//{{{
+void HAL_PCD_SOFCallback (PCD_HandleTypeDef* pcdHandle) {
+  USBD_LL_SOF (pcdHandle->pData);
+  }
+//}}}
+//{{{
+void HAL_PCD_ResetCallback (PCD_HandleTypeDef* pcdHandle) {
+
+  USBD_SpeedTypeDef speed = USBD_SPEED_FULL;
+
+  // Set USB Current Speed
+  switch (pcdHandle->Init.speed) {
+    case PCD_SPEED_HIGH: speed = USBD_SPEED_HIGH; break;
+    case PCD_SPEED_FULL: speed = USBD_SPEED_FULL; break;
+    default: speed = USBD_SPEED_FULL; break;
+    }
+
+  // Reset Device
+  USBD_LL_Reset (pcdHandle->pData);
+  USBD_LL_SetSpeed (pcdHandle->pData, speed);
+  }
+//}}}
+//{{{
+void HAL_PCD_SuspendCallback (PCD_HandleTypeDef* pcdHandle) {
+
+  USBD_LL_Suspend (pcdHandle->pData);
+  __HAL_PCD_GATE_PHYCLOCK (pcdHandle);
+  }
+//}}}
+//{{{
+void HAL_PCD_ResumeCallback (PCD_HandleTypeDef* pcdHandle) {
+
+  __HAL_PCD_UNGATE_PHYCLOCK (pcdHandle);
+  USBD_LL_Resume (pcdHandle->pData);
+  }
+//}}}
+//{{{
+void HAL_PCD_ConnectCallback (PCD_HandleTypeDef* pcdHandle) {
+  USBD_LL_DevConnected (pcdHandle->pData);
+  }
+//}}}
+//{{{
+void HAL_PCD_DisconnectCallback (PCD_HandleTypeDef* pcdHandle) {
+  USBD_LL_DevDisconnected (pcdHandle->pData);
+  }
+//}}}
+//{{{
+void HAL_PCD_ISOOUTIncompleteCallback (PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
+  USBD_LL_IsoOUTIncomplete (pcdHandle->pData, epnum);
+  }
+//}}}
+//{{{
+void HAL_PCD_ISOINIncompleteCallback (PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
+  USBD_LL_IsoINIncomplete (pcdHandle->pData, epnum);
   }
 //}}}
 
