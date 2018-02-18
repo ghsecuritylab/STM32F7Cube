@@ -71,11 +71,6 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Src/system_stm32f7xx.c</locationURI>
 		</link>
 		<link>
-			<name>app/usbd.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Src/usbd.c</locationURI>
-		</link>
-		<link>
 			<name>app/wm8994.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Src/wm8994.c</locationURI>
@@ -189,11 +184,6 @@
 			<name>Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_uart.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_usart.c</name>
-			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/STM32F7xx_HAL_Driver/stm32f7xx_ll_fmc.c</name>

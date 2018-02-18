@@ -26,7 +26,6 @@ C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sdram.c \
 C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim.c \
 C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.c \
 C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c \
-C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.c \
 C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_fmc.c \
 C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_usb.c 
 
@@ -53,7 +52,6 @@ OBJS += \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_tim.o \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_tim_ex.o \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_uart.o \
-./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_usart.o \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_ll_fmc.o \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_ll_usb.o 
 
@@ -80,7 +78,6 @@ C_DEPS += \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_tim.d \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_tim_ex.d \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_uart.d \
-./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_usart.d \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_ll_fmc.d \
 ./Drivers/STM32F7xx_HAL_Driver/stm32f7xx_ll_usb.d 
 
@@ -255,14 +252,6 @@ Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_tim_ex.o: C:/projects/STM32F7Cube/Dri
 	@echo ' '
 
 Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_uart.o: C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c
-	@echo 'Building file: $<'
-	@echo 'Invoking: MCU GCC Compiler'
-	@echo $(PWD)
-	arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -std=c11 -DUSE_HAL_DRIVER -DSTM32F746xx -DUSE_STM32746G_DISCO -DUSE_IOEXPANDER -I"C:/projects/STM32F7Cube/Middlewares/ST/STM32_USB_Device_Library/Core/Inc" -I"C:/projects/STM32F7Cube/Middlewares/ST/STM32_USB_Device_Library/Class/AUDIO/Inc" -I"C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/projects/STM32F7Cube/Drivers/BSP/STM32746G-Discovery" -I"C:/projects/STM32F7Cube/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/projects/STM32F7Cube/Drivers/CMSIS/Include" -I"C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src"  -O3 -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
-	@echo 'Finished building: $<'
-	@echo ' '
-
-Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_usart.o: C:/projects/STM32F7Cube/Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_usart.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)

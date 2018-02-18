@@ -20,7 +20,6 @@
 "Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_tim.o"
 "Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_tim_ex.o"
 "Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_uart.o"
-"Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal_usart.o"
 "Drivers/STM32F7xx_HAL_Driver/stm32f7xx_ll_fmc.o"
 "Drivers/STM32F7xx_HAL_Driver/stm32f7xx_ll_usb.o"
 "Drivers/ft5336.o"
@@ -32,5 +31,4 @@
 "app/stm32746g_discovery_audio.o"
 "app/stm32746g_discovery_lcd.o"
 "app/system_stm32f7xx.o"
-"app/usbd.o"
 "app/wm8994.o"
