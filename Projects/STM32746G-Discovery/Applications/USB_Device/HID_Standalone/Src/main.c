@@ -194,13 +194,11 @@ void HAL_PCD_MspDeInit (PCD_HandleTypeDef* pcdHandle) {
   __HAL_RCC_SYSCFG_CLK_DISABLE();
   }
 //}}}
-
 //{{{
 void HAL_PCD_SetupStageCallback (PCD_HandleTypeDef* pcdHandle) {
   USBD_LL_SetupStage (pcdHandle->pData, (uint8_t*)pcdHandle->Setup);
   }
 //}}}
-
 //{{{
 void HAL_PCD_DataOutStageCallback (PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
   USBD_LL_DataOutStage (pcdHandle->pData, epnum, pcdHandle->OUT_ep[epnum].xfer_buff);
@@ -211,7 +209,6 @@ void HAL_PCD_DataInStageCallback( PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
   USBD_LL_DataInStage (pcdHandle->pData, epnum, pcdHandle->IN_ep[epnum].xfer_buff);
   }
 //}}}
-
 //{{{
 void HAL_PCD_SOFCallback (PCD_HandleTypeDef* pcdHandle) {
   USBD_LL_SOF (pcdHandle->pData);
@@ -234,7 +231,6 @@ void HAL_PCD_ResetCallback (PCD_HandleTypeDef* pcdHandle) {
   USBD_LL_SetSpeed (pcdHandle->pData, speed);
   }
 //}}}
-
 //{{{
 void HAL_PCD_SuspendCallback (PCD_HandleTypeDef* pcdHandle) {
   USBD_LL_Suspend(pcdHandle->pData);
@@ -247,7 +243,6 @@ void HAL_PCD_ResumeCallback (PCD_HandleTypeDef* pcdHandle) {
   USBD_LL_Resume(pcdHandle->pData);
   }
 //}}}
-
 //{{{
 void HAL_PCD_ConnectCallback (PCD_HandleTypeDef* pcdHandle) {
   USBD_LL_DevConnected(pcdHandle->pData);
@@ -258,7 +253,6 @@ void HAL_PCD_DisconnectCallback (PCD_HandleTypeDef* pcdHandle) {
   USBD_LL_DevDisconnected (pcdHandle->pData);
   }
 //}}}
-
 //{{{
 void HAL_PCD_ISOOUTIncompleteCallback (PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
   USBD_LL_IsoOUTIncomplete (pcdHandle->pData, epnum);
@@ -317,7 +311,6 @@ USBD_StatusTypeDef USBD_LL_Stop (USBD_HandleTypeDef* device) {
   return USBD_OK;
   }
 //}}}
-
 //{{{
 USBD_StatusTypeDef USBD_LL_OpenEP (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps) {
   HAL_PCD_EP_Open (device->pData, ep_addr, ep_mps, ep_type);
@@ -357,7 +350,6 @@ uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
     return pcdHandle->OUT_ep[ep_addr & 0x7F].is_stall;
   }
 //}}}
-
 //{{{
 USBD_StatusTypeDef USBD_LL_SetUSBAddress (USBD_HandleTypeDef* device, uint8_t device_addr) {
   HAL_PCD_SetAddress (device->pData, device_addr);
@@ -370,7 +362,6 @@ USBD_StatusTypeDef USBD_LL_Transmit (USBD_HandleTypeDef* device, uint8_t ep_addr
   return USBD_OK;
   }
 //}}}
-
 //{{{
 USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t* pbuf, uint16_t size) {
   HAL_PCD_EP_Receive (device->pData, ep_addr, pbuf, size);
@@ -382,7 +373,6 @@ uint32_t USBD_LL_GetRxDataSize (USBD_HandleTypeDef* device, uint8_t ep_addr) {
   return HAL_PCD_EP_GetRxCount (device->pData, ep_addr);
   }
 //}}}
-
 //{{{
 void USBD_LL_Delay (uint32_t Delay) {
   HAL_Delay (Delay);
