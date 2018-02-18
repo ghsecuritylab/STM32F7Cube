@@ -787,15 +787,15 @@ USBD_ClassTypeDef hidClass = {
   };
 //}}}
 //{{{
-static uint32_t hidGetPollingInterval (USBD_HandleTypeDef* device) {
+//static uint32_t hidGetPollingInterval (USBD_HandleTypeDef* device) {
 
-  if (device->dev_speed == USBD_SPEED_HIGH)
-    // high speed endpoints, values between 1..16 are allowed. Values correspond to interval/ of 2 ^ (bInterval-1).
-    return (uint32_t)(((1 << (7 - 1)))/8);
-  else
-    // low, full speed endpoints
-    return (uint32_t)10;
-  }
+  //if (device->dev_speed == USBD_SPEED_HIGH)
+    //// high speed endpoints, values between 1..16 are allowed. Values correspond to interval/ of 2 ^ (bInterval-1).
+    //return (uint32_t)(((1 << (7 - 1)))/8);
+  //else
+    //// low, full speed endpoints
+    //return (uint32_t)10;
+  //}
 //}}}
 //{{{
 static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report, uint16_t len) {
@@ -870,7 +870,7 @@ static void touch() {
   if (gTsState.touchDetected) {
     // pressed
     if (gTsState.touchDetected > 1) {
-      gHit == eScroll;
+      gHit = eScroll;
       onScroll (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
       }
     else if (gHit == ePressed)
