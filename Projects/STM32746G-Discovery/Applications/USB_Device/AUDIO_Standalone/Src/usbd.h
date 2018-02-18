@@ -5,8 +5,6 @@
 #endif
 //}}}
 //{{{  includes
-#include "stm32f7xx_hal.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
