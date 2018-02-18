@@ -118,7 +118,7 @@ static void showLcd() {
 
   for (int i = 0; i < gTS_State.touchDetected; i++) {
     BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
-    BSP_LCD_FillCircle (gTS_State.touchX[i], gTS_State.touchY[i], 
+    BSP_LCD_FillCircle (gTS_State.touchX[i], gTS_State.touchY[i],
                         gTS_State.touchWeight[i] ? gTS_State.touchWeight[i] : 1);
     }
 
@@ -794,6 +794,8 @@ static uint32_t hidGetPollingInterval (USBD_HandleTypeDef* device) {
 //{{{
 static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report, uint16_t len) {
 
+  return USBD_OK;
+
   tHidData* hidData = (tHidData*)device->pClassData;
   if (device->dev_state == USBD_STATE_CONFIGURED) {
     if (hidData->mState == HID_IDLE) {
@@ -807,17 +809,24 @@ static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report, uint1
 //}}}
 
 //{{{
+static void onProx (int x, int y) {
+
+  uint8_t HID_Buffer[4] = { 1,x,y,0 };
+  hidSendReport (&gUsbDevice, HID_Buffer, 4);
+  }
+//}}}
+//{{{
 static void onPress (int x, int y) {
 
-  //uint8_t HID_Buffer[4] = { 1,0,0,0 };
-  //hidSendReport (&gUsbDevice, HID_Buffer, 4);
+  uint8_t HID_Buffer[4] = { 1,0,0,0 };
+  hidSendReport (&gUsbDevice, HID_Buffer, 4);
   }
 //}}}
 //{{{
 static void onMove (int x, int y) {
 
-  //uint8_t HID_Buffer[4] = { 1,x,y,0 };
-  //hidSendReport (&gUsbDevice, HID_Buffer, 4);
+  uint8_t HID_Buffer[4] = { 1,x,y,0 };
+  hidSendReport (&gUsbDevice, HID_Buffer, 4);
 
   //gScroll += y;
   //setScrollValue (gScroll + y);
@@ -826,37 +835,41 @@ static void onMove (int x, int y) {
 //{{{
 static void onRelease (int x, int y) {
 
-  //uint8_t HID_Buffer[4] = { 0,0,0,0 };
-  //hidSendReport (&gUsbDevice, HID_Buffer, 4);
+  uint8_t HID_Buffer[4] = { 0,0,0,0 };
+  hidSendReport (&gUsbDevice, HID_Buffer, 4);
   }
 //}}}
 //{{{
 static void touch() {
 
   BSP_TS_GetState (&gTS_State);
+
   if (gTS_State.touchDetected)
-  debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d %d",
-         gTS_State.touchDetected, gTS_State.touchX[0],gTS_State.touchY[0],
-         gTS_State.touchWeight[0], gTS_State.touchEventId[0], gTS_State.touchArea[0],
-         gTS_State.gestureId);
+    debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d g:%d",
+           gTS_State.touchDetected, gTS_State.touchX[0],gTS_State.touchY[0], gTS_State.touchWeight[0],
+           gTS_State.touchEventId[0], gTS_State.touchArea[0],
+           gTS_State.gestureId);
 
   if (gTS_State.touchDetected) {
     // pressed
     if (gHit) {
-      int x = gTS_State.touchX[0];
-      int y = gTS_State.touchY[0];
-      onMove (x - gLastX, y - gLastY);
-      gLastX = x;
-      gLastY = y;
+      onMove (gTS_State.touchX[0] - gLastX, gTS_State.touchY[0] - gLastY);
+      gLastX = gTS_State.touchX[0];
+      gLastY = gTS_State.touchY[0];
       }
-    else {
+    else if (gTS_State.touchWeight[0] > 50) {
       gHitX = gTS_State.touchX[0];
       gHitY = gTS_State.touchY[0];
       onPress (gHitX, gHitY);
       gLastX = gHitX;
       gLastY = gHitY;
+      gHit = 1;
       }
-    gHit = 1;
+    else {
+      onProx (gTS_State.touchX[0] - gLastX, gTS_State.touchY[0] - gLastY);
+      gLastX = gTS_State.touchX[0];
+      gLastY = gTS_State.touchY[0];
+      }
     }
   else if (gHit) {
     // released
