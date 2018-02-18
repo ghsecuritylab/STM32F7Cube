@@ -955,7 +955,7 @@ int main() {
   while (1) {
     touch();
     showLcd();
-    HAL_Delay (20);
+    HAL_Delay (10);
     }
   }
 //}}}
