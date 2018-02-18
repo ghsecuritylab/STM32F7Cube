@@ -20,9 +20,7 @@ char* kVersion = "USB audio 16/2/18";
 static USBD_HandleTypeDef gUsbDevice;
 static PCD_HandleTypeDef gPcdHandle;
 static TS_StateTypeDef gTsState;
-
 //{{{  global debug vars
-#define DEBUG_STRING_SIZE   40
 #define DEBUG_DISPLAY_LINES 16
 #define DEBUG_MAX_LINES     1000
 
@@ -34,7 +32,8 @@ static char* gDebugStr[DEBUG_MAX_LINES];
 static uint32_t gDebugTicks[DEBUG_MAX_LINES];
 static uint32_t gDebugColour[DEBUG_MAX_LINES];
 
-static int gHit = 0;
+enum eHit { eReleased, eProx, ePressed };
+static enum eHit gHit = eReleased;
 static int gHitX = 0;
 static int gHitY = 0;
 static int gLastX = 0;
@@ -187,6 +186,11 @@ static void debug (uint32_t colour, const char* format, ... ) {
   gDebugLine = (gDebugLine+1) % DEBUG_MAX_LINES;
   }
 //}}}
+
+//{{{
+static void onProx (int x, int y) {
+  }
+//}}}
 //{{{
 static void onPress (int x, int y) {
   }
@@ -207,28 +211,39 @@ static void touch() {
 
   BSP_TS_GetState (&gTsState);
 
+  if (gTsState.touchDetected)
+    debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d g:%d",
+           gTsState.touchDetected, gTsState.touchX[0],gTsState.touchY[0], gTsState.touchWeight[0],
+           gTsState.touchEventId[0], gTsState.touchArea[0],
+           gTsState.gestureId);
+
   if (gTsState.touchDetected) {
     // pressed
-    if (gHit) {
-      int x = gTsState.touchX[0];
-      int y = gTsState.touchY[0];
-      onMove (x - gLastX, y - gLastY);
-      gLastX = x;
-      gLastY = y;
+    if (gHit == ePressed) {
+      onMove (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY);
+      gLastX = gTsState.touchX[0];
+      gLastY = gTsState.touchY[0];
       }
-    else {
+    else if (gTsState.touchWeight[0] > 50) {
       gHitX = gTsState.touchX[0];
       gHitY = gTsState.touchY[0];
       onPress (gHitX, gHitY);
       gLastX = gHitX;
       gLastY = gHitY;
+      gHit = ePressed;
       }
-    gHit = 1;
+    else {
+      if (gHit == eProx)
+        onProx (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY);
+      gLastX = gTsState.touchX[0];
+      gLastY = gTsState.touchY[0];
+      gHit = eProx;
+      }
     }
   else if (gHit) {
     // released
     onRelease (gLastX, gLastY);
-    gHit = 0;
+    gHit = eReleased;
     }
   }
 //}}}
