@@ -41,11 +41,6 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Src/stm32746g_discovery_lcd.c</locationURI>
 		</link>
 		<link>
-			<name>Application/system_stm32f7xx.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Src/system_stm32f7xx.c</locationURI>
-		</link>
-		<link>
 			<name>Drivers/ft5336.c</name>
 			<type>1</type>
 			<locationURI>PARENT-7-PROJECT_LOC/Drivers/BSP/Components/ft5336/ft5336.c</locationURI>
