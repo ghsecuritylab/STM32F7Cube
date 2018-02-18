@@ -125,52 +125,52 @@
 //}}}
 //}}}
 
-typedef enum { USBD_OK = 0, USBD_BUSY, USBD_FAIL,} USBD_StatusTypeDef;
+typedef enum { USBD_OK = 0, USBD_BUSY, USBD_FAIL, } USBD_StatusTypeDef;
 typedef enum { USBD_SPEED_HIGH = 0, USBD_SPEED_FULL= 1, USBD_SPEED_LOW = 2, } USBD_SpeedTypeDef;
 //{{{  struct USBD_SetupReqTypedef
 typedef struct usb_setup_req {
-  uint8_t   bmRequest;
-  uint8_t   bRequest;
-  uint16_t  wValue;
-  uint16_t  wIndex;
-  uint16_t  wLength;
+  uint8_t bmRequest;
+  uint8_t bRequest;
+  uint16_t wValue;
+  uint16_t wIndex;
+  uint16_t wLength;
   } USBD_SetupReqTypedef;
 //}}}
 //{{{  struct USBD_ClassTypeDef
 struct _USBD_HandleTypeDef;
 
 typedef struct _Device_cb {
-  uint8_t  (*Init)             (struct _USBD_HandleTypeDef *device , uint8_t cfgidx);
-  uint8_t  (*DeInit)           (struct _USBD_HandleTypeDef *device , uint8_t cfgidx);
+  uint8_t (*Init)             (struct _USBD_HandleTypeDef* device, uint8_t cfgidx);
+  uint8_t (*DeInit)           (struct _USBD_HandleTypeDef* device, uint8_t cfgidx);
 
  /* Control Endpoints*/
-  uint8_t  (*Setup)            (struct _USBD_HandleTypeDef *device , USBD_SetupReqTypedef  *req);
-  uint8_t  (*EP0_TxSent)       (struct _USBD_HandleTypeDef *device );
-  uint8_t  (*EP0_RxReady)      (struct _USBD_HandleTypeDef *device );
+  uint8_t (*Setup)            (struct _USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req);
+  uint8_t (*EP0_TxSent)       (struct _USBD_HandleTypeDef* device);
+  uint8_t (*EP0_RxReady)      (struct _USBD_HandleTypeDef* device);
 
   /* Class Specific Endpoints*/
-  uint8_t  (*DataIn)           (struct _USBD_HandleTypeDef *device , uint8_t epnum);
-  uint8_t  (*DataOut)          (struct _USBD_HandleTypeDef *device , uint8_t epnum);
-  uint8_t  (*SOF)              (struct _USBD_HandleTypeDef *device);
-  uint8_t  (*IsoINIncomplete)  (struct _USBD_HandleTypeDef *device , uint8_t epnum);
-  uint8_t  (*IsoOUTIncomplete) (struct _USBD_HandleTypeDef *device , uint8_t epnum);
+  uint8_t (*DataIn)           (struct _USBD_HandleTypeDef* device, uint8_t epnum);
+  uint8_t (*DataOut)          (struct _USBD_HandleTypeDef* device, uint8_t epnum);
+  uint8_t (*SOF)              (struct _USBD_HandleTypeDef* device);
+  uint8_t (*IsoINIncomplete)  (struct _USBD_HandleTypeDef* device, uint8_t epnum);
+  uint8_t (*IsoOUTIncomplete) (struct _USBD_HandleTypeDef* device, uint8_t epnum);
 
-  uint8_t  *(*GetHSConfigDescriptor)(uint16_t *length);
-  uint8_t  *(*GetFSConfigDescriptor)(uint16_t *length);
-  uint8_t  *(*GetOtherSpeedConfigDescriptor)(uint16_t *length);
-  uint8_t  *(*GetDeviceQualifierDescriptor)(uint16_t *length);
+  uint8_t* (*GetHSConfigDescriptor)(uint16_t* length);
+  uint8_t* (*GetFSConfigDescriptor)(uint16_t* length);
+  uint8_t* (*GetOtherSpeedConfigDescriptor)(uint16_t* length);
+  uint8_t* (*GetDeviceQualifierDescriptor)(uint16_t* length);
   } USBD_ClassTypeDef;
 //}}}
 //{{{  struct USBD_DescriptorsTypeDef
 /* USB Device descriptors structure */
 typedef struct {
-  uint8_t  *(*GetDeviceDescriptor)( USBD_SpeedTypeDef speed , uint16_t *length);
-  uint8_t  *(*GetLangIDStrDescriptor)( USBD_SpeedTypeDef speed , uint16_t *length);
-  uint8_t  *(*GetManufacturerStrDescriptor)( USBD_SpeedTypeDef speed , uint16_t *length);
-  uint8_t  *(*GetProductStrDescriptor)( USBD_SpeedTypeDef speed , uint16_t *length);
-  uint8_t  *(*GetSerialStrDescriptor)( USBD_SpeedTypeDef speed , uint16_t *length);
-  uint8_t  *(*GetConfigurationStrDescriptor)( USBD_SpeedTypeDef speed , uint16_t *length);
-  uint8_t  *(*GetInterfaceStrDescriptor)( USBD_SpeedTypeDef speed , uint16_t *length);
+  uint8_t* (*GetDeviceDescriptor)(USBD_SpeedTypeDef speed, uint16_t* length);
+  uint8_t* (*GetLangIDStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t* length);
+  uint8_t* (*GetManufacturerStrDescriptor)(USBD_SpeedTypeDef speed , uint16_t* length);
+  uint8_t* (*GetProductStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t* length);
+  uint8_t* (*GetSerialStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t* length);
+  uint8_t* (*GetConfigurationStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t* length);
+  uint8_t* (*GetInterfaceStrDescriptor)(USBD_SpeedTypeDef speed, uint16_t* length);
   } USBD_DescriptorsTypeDef;
 //}}}
 //{{{  struct USBD_EndpointTypeDef
@@ -212,8 +212,8 @@ typedef struct _USBD_HandleTypeDef {
 USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device);
 USBD_StatusTypeDef USBD_LL_DeInit (USBD_HandleTypeDef* device);
 USBD_StatusTypeDef USBD_LL_Start(USBD_HandleTypeDef* device);
-USBD_StatusTypeDef USBD_LL_Stop (USBD_HandleTypeDef* device);
-USBD_StatusTypeDef USBD_LL_OpenEP  (USBD_HandleTypeDef* device, uint8_t  ep_addr, uint8_t  ep_type, uint16_t ep_mps);
+USBD_StatusTypeDef USBD_LL_Stop(USBD_HandleTypeDef* device);
+USBD_StatusTypeDef USBD_LL_OpenEP (USBD_HandleTypeDef* device, uint8_t  ep_addr, uint8_t  ep_type, uint16_t ep_mps);
 USBD_StatusTypeDef USBD_LL_CloseEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
 USBD_StatusTypeDef USBD_LL_FlushEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
 USBD_StatusTypeDef USBD_LL_StallEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
@@ -222,7 +222,7 @@ USBD_StatusTypeDef USBD_LL_SetUSBAddress (USBD_HandleTypeDef* device, uint8_t de
 USBD_StatusTypeDef USBD_LL_Transmit (USBD_HandleTypeDef* device, uint8_t  ep_addr, uint8_t* pbuf, uint16_t  size);
 USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t* pbuf, uint16_t size);
 uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
-uint32_t USBD_LL_GetRxDataSize  (USBD_HandleTypeDef* device, uint8_t ep_addr);
+uint32_t USBD_LL_GetRxDataSize (USBD_HandleTypeDef* device, uint8_t ep_addr);
 void USBD_LL_Delay (uint32_t Delay);
 
 //{{{
