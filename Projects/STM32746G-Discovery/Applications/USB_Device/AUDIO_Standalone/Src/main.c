@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB audio 16/2/18";
+char* kVersion = "USB audio 18/2/18";
 //{{{  includes
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,10 +8,7 @@ char* kVersion = "USB audio 16/2/18";
 
 #include "stm32f7xx_hal.h"
 
-#include "usbd_conf.h"
-#include "usbd_def.h"
-#include "usbd_core.h"
-#include "usbd_ioreq.h"
+#include "usbd.h"
 
 #include "stm32746g_discovery_lcd.h"
 #include "stm32746g_discovery_ts.h"
@@ -199,7 +196,7 @@ static void debug (uint32_t colour, const char* format, ... ) {
   va_start (args, format);
   free (gDebugStr[gDebugLine]);
   gDebugStr[gDebugLine] = (char*)malloc (vsnprintf (NULL, 0, format, args) + 1);
-  vsnprintf (gDebugStr[gDebugLine], DEBUG_STRING_SIZE, format, args);
+  vsnprintf (gDebugStr[gDebugLine], 40, format, args);
   va_end (args);
 
   gDebugLine = (gDebugLine+1) % DEBUG_MAX_LINES;
@@ -1083,7 +1080,7 @@ static void touch() {
   if (gTsState.touchDetected) {
     // pressed
     if (gTsState.touchDetected > 1) {
-      gHit == eScroll;
+      gHit = eScroll;
       onScroll (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
       }
     else if (gHit == ePressed)

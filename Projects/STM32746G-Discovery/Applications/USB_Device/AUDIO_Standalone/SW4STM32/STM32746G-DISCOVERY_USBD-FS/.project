@@ -46,21 +46,6 @@
 			<locationURI>PARENT-7-PROJECT_LOC/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_ts.c</locationURI>
 		</link>
 		<link>
-			<name>Drivers/usbd_core.c</name>
-			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/usbd_ctlreq.c</name>
-			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/usbd_ioreq.c</name>
-			<type>1</type>
-			<locationURI>PARENT-7-PROJECT_LOC/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ioreq.c</locationURI>
-		</link>
-		<link>
 			<name>app/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Src/main.c</locationURI>
@@ -84,6 +69,11 @@
 			<name>app/system_stm32f7xx.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Src/system_stm32f7xx.c</locationURI>
+		</link>
+		<link>
+			<name>app/usbd.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Src/usbd.c</locationURI>
 		</link>
 		<link>
 			<name>app/wm8994.c</name>
