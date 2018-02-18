@@ -17,12 +17,28 @@ char* kVersion = "USB HID 16/2/18";
 #include "stm32746g_discovery_ts.h"
 //}}}
 
+static TS_StateTypeDef gTsState;
 static USBD_HandleTypeDef gUsbDevice;
 static PCD_HandleTypeDef gPcdHandle;
-static TS_StateTypeDef gTsState;
+//{{{  interrupt, system handlers
+void NMI_Handler() {}
+void SVC_Handler() {}
+void PendSV_Handler() {}
+void DebugMon_Handler() {}
+
+void BusFault_Handler() { while (1) {} }
+void HardFault_Handler() { while (1) {} }
+void MemManage_Handler() { while (1) {} }
+void UsageFault_Handler() { while (1) {} }
+
+void SysTick_Handler() { HAL_IncTick(); }
+
+void OTG_FS_IRQHandler() { HAL_PCD_IRQHandler (&gPcdHandle); }
+//}}}
+
 //{{{  global debug vars
-#define DEBUG_DISPLAY_LINES 16
-#define DEBUG_MAX_LINES     1000
+#define DEBUG_DISPLAY_LINES  16
+#define DEBUG_MAX_LINES      200
 
 static int gTick = 0;
 static int gLayer = 1;
@@ -147,21 +163,6 @@ static void debug (uint32_t colour, const char* format, ... ) {
   }
 //}}}
 
-//{{{  interrupt, system handlers
-void NMI_Handler() {}
-void SVC_Handler() {}
-void PendSV_Handler() {}
-void DebugMon_Handler() {}
-
-void BusFault_Handler() { while (1) {} }
-void HardFault_Handler() { while (1) {} }
-void MemManage_Handler() { while (1) {} }
-void UsageFault_Handler() { while (1) {} }
-
-void SysTick_Handler() { HAL_IncTick(); }
-
-void OTG_FS_IRQHandler() { HAL_PCD_IRQHandler (&gPcdHandle); }
-//}}}
 //{{{  usbd pcd handler
 //{{{
 void HAL_PCD_MspInit (PCD_HandleTypeDef* pcdHandle) {
@@ -809,12 +810,13 @@ static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report, uint1
 //}}}
 
 //{{{
-static void onProx (int x, int y) {
+static void onProx (int x, int y, int z) {
 
-  uint8_t HID_Buffer[4] = { 0,x,y,0 };
-  hidSendReport (&gUsbDevice, HID_Buffer, 4);
-
-  debug (LCD_COLOR_MAGENTA, "onProx %d %d", x, y);
+  if (x || y) {
+    uint8_t HID_Buffer[4] = { 0,x,y,0 };
+    hidSendReport (&gUsbDevice, HID_Buffer, 4);
+    debug (LCD_COLOR_MAGENTA, "onProx %d %d %d", x, y, z);
+    }
   }
 //}}}
 //{{{
@@ -827,15 +829,16 @@ static void onPress (int x, int y) {
   }
 //}}}
 //{{{
-static void onMove (int x, int y) {
-
-  uint8_t HID_Buffer[4] = { 1,x,y,0 };
-  hidSendReport (&gUsbDevice, HID_Buffer, 4);
+static void onMove (int x, int y, int z) {
 
   //gScroll += y;
   //setScrollValue (gScroll + y);
 
-  debug (LCD_COLOR_GREEN, "onMove %d %d", x, y);
+  if (x || y) {
+    uint8_t HID_Buffer[4] = { 1,x,y,0 };
+    hidSendReport (&gUsbDevice, HID_Buffer, 4);
+    debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
+    }
   }
 //}}}
 //{{{
@@ -852,20 +855,21 @@ static void touch() {
 
   BSP_TS_GetState (&gTsState);
 
-  if (gTsState.touchDetected)
-    debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d g:%d",
-           gTsState.touchDetected, gTsState.touchX[0],gTsState.touchY[0], gTsState.touchWeight[0],
-           gTsState.touchEventId[0], gTsState.touchArea[0],
-           gTsState.gestureId);
+  //if (gTsState.touchDetected)
+  //  debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d g:%d",
+  //         gTsState.touchDetected, gTsState.touchX[0],gTsState.touchY[0], gTsState.touchWeight[0],
+  //         gTsState.touchEventId[0], gTsState.touchArea[0], gTsState.gestureId);
 
   if (gTsState.touchDetected) {
     // pressed
     if (gHit == ePressed) {
-      onMove (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY);
+      // move
+      onMove (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
       gLastX = gTsState.touchX[0];
       gLastY = gTsState.touchY[0];
       }
-    else if (gTsState.touchWeight[0] > 50) {
+    else if ((gHit == eReleased) && (gTsState.touchWeight[0] > 50)) {
+      // press
       gHitX = gTsState.touchX[0];
       gHitY = gTsState.touchY[0];
       onPress (gHitX, gHitY);
@@ -874,16 +878,18 @@ static void touch() {
       gHit = ePressed;
       }
     else {
+      // prox
       if (gHit == eProx)
-        onProx (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY);
+        onProx (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
       gLastX = gTsState.touchX[0];
       gLastY = gTsState.touchY[0];
       gHit = eProx;
       }
     }
-  else if (gHit) {
-    // released
-    onRelease (gLastX, gLastY);
+  else {
+    // release
+    if (gHit == ePressed)
+      onRelease (gLastX, gLastY);
     gHit = eReleased;
     }
   }

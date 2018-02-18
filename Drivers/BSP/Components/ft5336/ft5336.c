@@ -68,7 +68,7 @@ static void init (uint16_t deviceAddr) {
   }
 //}}}
 //{{{
-static uint16_t readID (uint16_t deviceAddr) {
+static uint16_t readId (uint16_t deviceAddr) {
 
   volatile uint8_t ucReadId = 0;
   uint8_t nbReadAttempts = 0;
@@ -89,7 +89,7 @@ static uint16_t readID (uint16_t deviceAddr) {
     }
 
   /* Return the device ID value */
-  return (ucReadId);
+  return ucReadId;
   }
 //}}}
 static void reset (uint16_t deviceAddr) {}
@@ -383,7 +383,7 @@ void ft5336_TS_GetGestureID (uint16_t deviceAddr, uint32_t* pGestureId) {
 
 TS_DrvTypeDef ft5336_ts_drv = {
   init,
-  readID,
+  readId,
   reset,
   tsStart,
   tsDetectTouch,
