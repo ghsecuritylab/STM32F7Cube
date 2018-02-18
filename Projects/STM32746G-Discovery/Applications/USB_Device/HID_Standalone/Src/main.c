@@ -396,11 +396,13 @@ void USBD_LL_Delay (uint32_t Delay) {
 //{{{  defines
 #define VID                      0x0483
 #define PID                      0x5710
+
 #define LANGID_STRING            0x409
 #define MANUFACTURER_STRING      "Colin"
 #define PRODUCT_FS_STRING        "fs hid mouse"
 #define INTERFACE_FS_STRING      "hid fs interface"
 #define CONFIGURATION_FS_STRING  "hid fs config"
+
 #define DEVICE_ID1               (0x1FFF7A10)
 #define DEVICE_ID2               (0x1FFF7A14)
 #define DEVICE_ID3               (0x1FFF7A18)
@@ -411,7 +413,7 @@ void USBD_LL_Delay (uint32_t Delay) {
 //}}}
 
 //{{{
-__ALIGN_BEGIN static const uint8_t kDeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12, USB_DESC_TYPE_DEVICE,
   0x00,                       // bcdUSB
   0x02,
@@ -430,7 +432,7 @@ __ALIGN_BEGIN static const uint8_t kDeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
 //}}}
 //{{{
 // USB Standard Device Descriptor
-__ALIGN_BEGIN static const uint8_t kLangIDDesc[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
   USB_LEN_LANGID_STR_DESC,
   USB_DESC_TYPE_STRING,
   LOBYTE(LANGID_STRING), HIBYTE(LANGID_STRING),
@@ -442,10 +444,10 @@ __ALIGN_BEGIN static uint8_t stringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
   USB_DESC_TYPE_STRING,
   };
 //}}}
-__ALIGN_BEGIN uint8_t strDesc[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
+__ALIGN_BEGIN uint8_t stringDescriptor[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
 //{{{
 // USB HID device Configuration Descriptor
-__ALIGN_BEGIN static const uint8_t kHidCfgDesc[34] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
   0x09, USB_DESC_TYPE_CONFIGURATION,
   34,    // wTotalLength: Bytes returned
   0x00,
@@ -486,7 +488,7 @@ __ALIGN_BEGIN static const uint8_t kHidCfgDesc[34] __ALIGN_END = {
 //}}}
 //{{{
 // USB HID device Configuration Descriptor
-__ALIGN_BEGIN static const uint8_t kHidDesc[9] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kHidDescriptor[9] __ALIGN_END = {
   0x09, 0x21, // hid config desriptor
   0x11,1, // bcdHID: HID Class Spec release number
   0x00,   // bCountryCode: Hardware target country
@@ -496,7 +498,7 @@ __ALIGN_BEGIN static const uint8_t kHidDesc[9] __ALIGN_END = {
   };
 //}}}
 //{{{
-__ALIGN_BEGIN static const uint8_t kHidMouseReportDesc[74] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kHidMouseReportDescriptor[74] __ALIGN_END = {
   0x05, 0x01, // Usage Page (Generic Desktop),
   0x09, 0x02, // Usage (Mouse),
   0xA1, 0x01, // Collection (Application),
@@ -546,7 +548,7 @@ __ALIGN_BEGIN static const uint8_t kHidMouseReportDesc[74] __ALIGN_END = {
 //}}}
 //{{{
 // USB Standard Device Descriptor
-__ALIGN_BEGIN static const uint8_t kHidDeviceQualifierDesc[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
+__ALIGN_BEGIN static const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
   USB_LEN_DEV_QUALIFIER_DESC, USB_DESC_TYPE_DEVICE_QUALIFIER,
   0x00,
   0x02,
@@ -597,57 +599,57 @@ static void getSerialNum() {
 
 //{{{
 static uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  *length = sizeof(kDeviceDesc);
-  return (uint8_t*)kDeviceDesc;
+  *length = sizeof(kDeviceDescriptor);
+  return (uint8_t*)kDeviceDescriptor;
   }
 //}}}
 //{{{
-static uint8_t* langIDStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  *length = sizeof(kLangIDDesc);
-  return (uint8_t*)kLangIDDesc;
+static uint8_t* langIdStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  *length = sizeof(kLangIdDescriptor);
+  return (uint8_t*)kLangIdDescriptor;
   }
 //}}}
 //{{{
-static uint8_t* productStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  USBD_GetString ((uint8_t*)PRODUCT_FS_STRING, strDesc, length);
-  return strDesc;
+static uint8_t* productStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  USBD_GetString ((uint8_t*)PRODUCT_FS_STRING, stringDescriptor, length);
+  return stringDescriptor;
   }
 //}}}
 //{{{
-static uint8_t* manufacturerStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  USBD_GetString ((uint8_t*)MANUFACTURER_STRING, strDesc, length);
-  return strDesc;
+static uint8_t* manufacturerStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  USBD_GetString ((uint8_t*)MANUFACTURER_STRING, stringDescriptor, length);
+  return stringDescriptor;
   }
 //}}}
 //{{{
-static uint8_t* serialStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+static uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   *length = USB_SIZ_STRING_SERIAL;
   getSerialNum();
   return (uint8_t*)stringSerial;
   }
 //}}}
 //{{{
-static uint8_t* configStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  USBD_GetString ((uint8_t*)CONFIGURATION_FS_STRING, strDesc, length);
-  return strDesc;
+static uint8_t* configurationStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  USBD_GetString ((uint8_t*)CONFIGURATION_FS_STRING, stringDescriptor, length);
+  return stringDescriptor;
   }
 //}}}
 //{{{
-static uint8_t* interfaceStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  USBD_GetString ((uint8_t*)INTERFACE_FS_STRING, strDesc, length);
-  return strDesc;
+static uint8_t* interfaceStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  USBD_GetString ((uint8_t*)INTERFACE_FS_STRING, stringDescriptor, length);
+  return stringDescriptor;
   }
 
 //}}}
 
 USBD_DescriptorsTypeDef hidDescriptor = {
   deviceDescriptor,
-  langIDStrDescriptor,
-  manufacturerStrDescriptor,
-  productStrDescriptor,
-  serialStrDescriptor,
-  configStrDescriptor,
-  interfaceStrDescriptor,
+  langIdStringDescriptor,
+  manufacturerStringDescriptor,
+  productStringDescriptor,
+  serialStringDescriptor,
+  configurationStringDescriptor,
+  interfaceStringDescriptor,
   };
 //}}}
 //{{{  hidClass handlers
@@ -694,11 +696,11 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
         case USB_REQ_GET_DESCRIPTOR: {
           if (req->wValue >> 8 == 0x22) { // hidReportDescriptor
             debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
-            USBD_CtlSendData (device, (uint8_t*)kHidMouseReportDesc, 74);
+            USBD_CtlSendData (device, (uint8_t*)kHidMouseReportDescriptor, 74);
             }
           else if (req->wValue >> 8 == 0x21) { // hidDescriptor
             debug (LCD_COLOR_GREEN, "- getDescriptor hid");
-            USBD_CtlSendData (device, (uint8_t*)kHidDesc, 9);
+            USBD_CtlSendData (device, (uint8_t*)kHidDescriptor, 9);
             }
           break;
           }
@@ -743,9 +745,9 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 //}}}
 
 //{{{
-static uint8_t* usbGetCfgDesc (uint16_t* length) {
-  *length = sizeof(kHidCfgDesc);
-  return (uint8_t*)kHidCfgDesc;
+static uint8_t* usbGetConfigurationDescriptor (uint16_t* length) {
+  *length = sizeof(kHidConfigurationDescriptor);
+  return (uint8_t*)kHidConfigurationDescriptor;
   }
 //}}}
 //{{{
@@ -757,9 +759,9 @@ static uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epnum) {
   }
 //}}}
 //{{{
-static uint8_t* usbGetDeviceQualifierDesc (uint16_t* length) {
-  *length = sizeof (kHidDeviceQualifierDesc);
-  return (uint8_t*)kHidDeviceQualifierDesc;
+static uint8_t* usbGetDeviceQualifierDescriptor (uint16_t* length) {
+  *length = sizeof (kHidDeviceQualifierDescriptor);
+  return (uint8_t*)kHidDeviceQualifierDescriptor;
   }
 //}}}
 
@@ -774,10 +776,10 @@ USBD_ClassTypeDef hidClass = {
   NULL, // SOF
   NULL,
   NULL,
-  usbGetCfgDesc,
-  usbGetCfgDesc,
-  usbGetCfgDesc,
-  usbGetDeviceQualifierDesc,
+  usbGetConfigurationDescriptor,
+  usbGetConfigurationDescriptor,
+  usbGetConfigurationDescriptor,
+  usbGetDeviceQualifierDescriptor,
   };
 //}}}
 //{{{
@@ -793,8 +795,6 @@ static uint32_t hidGetPollingInterval (USBD_HandleTypeDef* device) {
 //}}}
 //{{{
 static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report, uint16_t len) {
-
-  //return USBD_OK;
 
   tHidData* hidData = (tHidData*)device->pClassData;
   if (device->dev_state == USBD_STATE_CONFIGURED) {
