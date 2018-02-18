@@ -17,21 +17,9 @@ char* kVersion = "USB audio 16/2/18";
 #include "stm32746g_discovery_ts.h"
 #include "stm32746g_discovery_audio.h"
 //}}}
-
-//{{{  packet defines
-#define CHANNELS              4
-#define SAMPLE_RATE           48000
-#define BYTES_PER_SAMPLE      2
-
-#define PACKETS_PER_SECOND    1000
-#define PACKETS               8
-#define PACKET_SAMPLES        (SAMPLE_RATE / PACKETS_PER_SECOND)
-#define PACKET_SIZE           (CHANNELS * PACKET_SAMPLES * BYTES_PER_SAMPLE)
-
-#define SLOTS                 4
-#define SLOTS_PACKET_SIZE     (SLOTS * BYTES_PER_SAMPLE * PACKET_SAMPLES)
-#define SLOTS_PACKET_BUF_SIZE (PACKETS * SLOTS_PACKET_SIZE)
-//}}}
+static USBD_HandleTypeDef gUsbDevice;
+static PCD_HandleTypeDef gPcdHandle;
+static TS_StateTypeDef gTsState;
 
 //{{{  global debug vars
 #define DEBUG_STRING_SIZE   40
@@ -54,25 +42,6 @@ static int gLastY = 0;
 
 static int gScroll = 0;
 //}}}
-//{{{  global waveform vars
-// waveform
-static uint16_t gPackets = 0;
-static uint16_t gSample = 0;
-static uint16_t gCentreX = 0;
-static uint16_t gCentreY = 0;
-static unsigned sumFL = 0;
-static unsigned sumFR = 0;
-static unsigned sumRL = 0;
-static unsigned sumRR = 0;
-static uint16_t gFL[240];
-static uint16_t gFR[240];
-static uint16_t gRL[240];
-static uint16_t gRR[240];
-//}}}
-static int gFaster = 1;
-static int writePtrOnRead = 0;
-static TS_StateTypeDef gTS_State;
-
 //{{{
 static int getScrollScale() {
   return BSP_LCD_GetFont()->Height / 3;
@@ -94,6 +63,39 @@ static void setScrollValue (int scroll) {
     gScroll = (gDebugLine - DEBUG_DISPLAY_LINES) * getScrollScale();
   }
 //}}}
+
+//{{{  packet defines
+#define CHANNELS              4
+#define SAMPLE_RATE           48000
+#define BYTES_PER_SAMPLE      2
+
+#define PACKETS_PER_SECOND    1000
+#define PACKETS               8
+#define PACKET_SAMPLES        (SAMPLE_RATE / PACKETS_PER_SECOND)
+#define PACKET_SIZE           (CHANNELS * PACKET_SAMPLES * BYTES_PER_SAMPLE)
+
+#define SLOTS                 4
+#define SLOTS_PACKET_SIZE     (SLOTS * BYTES_PER_SAMPLE * PACKET_SAMPLES)
+#define SLOTS_PACKET_BUF_SIZE (PACKETS * SLOTS_PACKET_SIZE)
+//}}}
+//{{{  global waveform vars
+// waveform
+static uint16_t gPackets = 0;
+static uint16_t gSample = 0;
+static uint16_t gCentreX = 0;
+static uint16_t gCentreY = 0;
+static unsigned sumFL = 0;
+static unsigned sumFR = 0;
+static unsigned sumRL = 0;
+static unsigned sumRR = 0;
+static uint16_t gFL[240];
+static uint16_t gFR[240];
+static uint16_t gRL[240];
+static uint16_t gRR[240];
+//}}}
+static int gFaster = 1;
+static int writePtrOnRead = 0;
+
 //{{{
 static void initLcd() {
 
@@ -159,9 +161,9 @@ static void showLcd() {
     BSP_LCD_FillRect (i*2, gCentreY - gFL[sample], 2, gFL[sample]+gFR[sample]);
     }
 
-  for (int i = 0; i < gTS_State.touchDetected; i++) {
+  for (int i = 0; i < gTsState.touchDetected; i++) {
     BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
-    BSP_LCD_FillCircle (gTS_State.touchX[i], gTS_State.touchY[i], 10);
+    BSP_LCD_FillCircle (gTsState.touchX[i], gTsState.touchY[i], 10);
     }
 
   BSP_LCD_SetTransparency (gLayer, 255);
@@ -203,20 +205,20 @@ static void onRelease (int x, int y) {
 //{{{
 static void touch() {
 
-  BSP_TS_GetState (&gTS_State);
+  BSP_TS_GetState (&gTsState);
 
-  if (gTS_State.touchDetected) {
+  if (gTsState.touchDetected) {
     // pressed
     if (gHit) {
-      int x = gTS_State.touchX[0];
-      int y = gTS_State.touchY[0];
+      int x = gTsState.touchX[0];
+      int y = gTsState.touchY[0];
       onMove (x - gLastX, y - gLastY);
       gLastX = x;
       gLastY = y;
       }
     else {
-      gHitX = gTS_State.touchX[0];
-      gHitY = gTS_State.touchY[0];
+      gHitX = gTsState.touchX[0];
+      gHitY = gTsState.touchY[0];
       onPress (gHitX, gHitY);
       gLastX = gHitX;
       gLastY = gHitY;
@@ -231,8 +233,6 @@ static void touch() {
   }
 //}}}
 
-USBD_HandleTypeDef gUsbDevice;
-PCD_HandleTypeDef gPcdHandle;
 //{{{  interrupt, system handlers
 void NMI_Handler() {}
 void SVC_Handler() {}
