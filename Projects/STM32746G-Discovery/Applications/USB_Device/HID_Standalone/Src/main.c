@@ -118,7 +118,8 @@ static void showLcd() {
 
   for (int i = 0; i < gTS_State.touchDetected; i++) {
     BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
-    BSP_LCD_FillCircle (gTS_State.touchX[i], gTS_State.touchY[i], 10);
+    BSP_LCD_FillCircle (gTS_State.touchX[i], gTS_State.touchY[i], 
+                        gTS_State.touchWeight[i] ? gTS_State.touchWeight[i] : 1);
     }
 
   BSP_LCD_SetTransparency (gLayer, 255);
@@ -392,21 +393,22 @@ void USBD_LL_Delay (uint32_t Delay) {
 //}}}
 
 //{{{  hidDescriptor handler
+//{{{  defines
 #define VID                      0x0483
 #define PID                      0x5710
 #define LANGID_STRING            0x409
-#define MANUFACTURER_STRING      "STMicroelectronics"
-#define PRODUCT_FS_STRING        "HID Joystick in FS Mode"
-#define INTERFACE_FS_STRING      "HID Interface"
-#define CONFIGURATION_FS_STRING  "HID Config"
+#define MANUFACTURER_STRING      "Colin"
+#define PRODUCT_FS_STRING        "fs hid mouse"
+#define INTERFACE_FS_STRING      "hid fs interface"
+#define CONFIGURATION_FS_STRING  "hid fs config"
+#define DEVICE_ID1               (0x1FFF7A10)
+#define DEVICE_ID2               (0x1FFF7A14)
+#define DEVICE_ID3               (0x1FFF7A18)
+#define USB_SIZ_STRING_SERIAL    0x1A
 
 #define HID_EPIN_ADDR  0x81
 #define HID_EPIN_SIZE  0x04
-
-#define DEVICE_ID1            (0x1FFF7A10)
-#define DEVICE_ID2            (0x1FFF7A14)
-#define DEVICE_ID3            (0x1FFF7A18)
-#define USB_SIZ_STRING_SERIAL 0x1A
+//}}}
 
 //{{{
 __ALIGN_BEGIN static const uint8_t kDeviceDesc[USB_LEN_DEV_DESC] __ALIGN_END = {
@@ -526,7 +528,7 @@ __ALIGN_BEGIN static const uint8_t kHidMouseReportDesc[74] __ALIGN_END = {
       0x95, 0x03, // Report Count (3),
 
       0x81, 0x06, // Input (Data, Variable, Relative), ;2 position bytes (X & Y)
-    0xC0,       // end collection
+    0xC0,       // end collection - Physical
 
     0x09, 0x3c, // usage
     0x05, 0xff,
@@ -539,7 +541,7 @@ __ALIGN_BEGIN static const uint8_t kHidMouseReportDesc[74] __ALIGN_END = {
     0x75, 0x06,
     0x95, 0x01,
     0xb1, 0x01,
-  0xC0        // end collection
+  0xC0        // end collection - Application
   };
 //}}}
 //{{{
@@ -558,7 +560,7 @@ __ALIGN_BEGIN static const uint8_t kHidDeviceQualifierDesc[USB_LEN_DEV_QUALIFIER
 //}}}
 
 //{{{
-static void intToUnicode (uint32_t value , uint8_t *pbuf , uint8_t len) {
+static void intToUnicode (uint32_t value , uint8_t* pbuf , uint8_t len) {
   uint8_t idx = 0;
 
   for( idx = 0 ; idx < len ; idx ++)
@@ -594,44 +596,44 @@ static void getSerialNum() {
 //}}}
 
 //{{{
-static uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t *length) {
+static uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   *length = sizeof(kDeviceDesc);
   return (uint8_t*)kDeviceDesc;
   }
 //}}}
 //{{{
-static uint8_t* langIDStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length) {
+static uint8_t* langIDStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   *length = sizeof(kLangIDDesc);
   return (uint8_t*)kLangIDDesc;
   }
 //}}}
 //{{{
-static uint8_t* productStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length) {
+static uint8_t* productStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)PRODUCT_FS_STRING, strDesc, length);
   return strDesc;
   }
 //}}}
 //{{{
-static uint8_t* manufacturerStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length) {
+static uint8_t* manufacturerStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)MANUFACTURER_STRING, strDesc, length);
   return strDesc;
   }
 //}}}
 //{{{
-static uint8_t* serialStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length) {
+static uint8_t* serialStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   *length = USB_SIZ_STRING_SERIAL;
   getSerialNum();
   return (uint8_t*)stringSerial;
   }
 //}}}
 //{{{
-static uint8_t* configStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length) {
+static uint8_t* configStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)CONFIGURATION_FS_STRING, strDesc, length);
   return strDesc;
   }
 //}}}
 //{{{
-static uint8_t* interfaceStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length) {
+static uint8_t* interfaceStrDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)INTERFACE_FS_STRING, strDesc, length);
   return strDesc;
   }
@@ -807,15 +809,15 @@ static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report, uint1
 //{{{
 static void onPress (int x, int y) {
 
-  uint8_t HID_Buffer[4] = { 1,0,0,0 };
-  hidSendReport (&gUsbDevice, HID_Buffer, 4);
+  //uint8_t HID_Buffer[4] = { 1,0,0,0 };
+  //hidSendReport (&gUsbDevice, HID_Buffer, 4);
   }
 //}}}
 //{{{
 static void onMove (int x, int y) {
 
-  uint8_t HID_Buffer[4] = { 1,x,y,0 };
-  hidSendReport (&gUsbDevice, HID_Buffer, 4);
+  //uint8_t HID_Buffer[4] = { 1,x,y,0 };
+  //hidSendReport (&gUsbDevice, HID_Buffer, 4);
 
   //gScroll += y;
   //setScrollValue (gScroll + y);
@@ -824,14 +826,19 @@ static void onMove (int x, int y) {
 //{{{
 static void onRelease (int x, int y) {
 
-  uint8_t HID_Buffer[4] = { 0,0,0,0 };
-  hidSendReport (&gUsbDevice, HID_Buffer, 4);
+  //uint8_t HID_Buffer[4] = { 0,0,0,0 };
+  //hidSendReport (&gUsbDevice, HID_Buffer, 4);
   }
 //}}}
 //{{{
 static void touch() {
 
   BSP_TS_GetState (&gTS_State);
+  if (gTS_State.touchDetected)
+  debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d %d",
+         gTS_State.touchDetected, gTS_State.touchX[0],gTS_State.touchY[0],
+         gTS_State.touchWeight[0], gTS_State.touchEventId[0], gTS_State.touchArea[0],
+         gTS_State.gestureId);
 
   if (gTS_State.touchDetected) {
     // pressed
@@ -925,6 +932,7 @@ int main() {
   while (1) {
     touch();
     showLcd();
+    HAL_Delay (20);
     }
   }
 //}}}

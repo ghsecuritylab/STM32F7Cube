@@ -1,3 +1,4 @@
+//{{{
 /**
   ******************************************************************************
   * @file    ft5336.h
@@ -33,44 +34,22 @@
   *
   ******************************************************************************
   */
-
-/* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __FT5336_H
-#define __FT5336_H
-
+//}}}
+#pragma once
+//{{{
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* Set Multi-touch as supported */
-#if !defined(TS_MONO_TOUCH_SUPPORTED)
-#define TS_MULTI_TOUCH_SUPPORTED        1
-#endif /* TS_MONO_TOUCH_SUPPORTED */
-
-/* Includes ------------------------------------------------------------------*/
+//}}}
 #include "../Common/ts.h"
 
-/* Macros --------------------------------------------------------------------*/
-
 #if defined(FT5336_ENABLE_ASSERT)
-/* Assert activated */
-#define FT5336_ASSERT(__condition__)      do { if(__condition__) \
-                                               {  \
-                                                 while(1);  \
-                                               } \
-                                          }while(0)
+  #define FT5336_ASSERT(__condition__) do { if(__condition__) { while(1); } } while(0)
 #else
-/* Assert not activated : macro has no effect */
-#define FT5336_ASSERT(__condition__)    do { if(__condition__) \
-                                             {  \
-                                                ;  \
-                                             } \
-                                            }while(0)
-#endif /* FT5336_ENABLE_ASSERT == 1 */
+  #define FT5336_ASSERT(__condition__) do { if(__condition__) { ; } } while(0)
+#endif
 
-/** @typedef ft5336_handle_TypeDef
- *  ft5336 Handle definition.
- */
+//{{{
 typedef struct
 {
   uint8_t i2cInitialized;
@@ -82,32 +61,9 @@ typedef struct
   uint8_t currActiveTouchIdx;
 
 } ft5336_handle_TypeDef;
-
-  /** @addtogroup BSP
-   * @{
-   */
-
-  /** @addtogroup Component
-   * @{
-   */
-
-  /** @defgroup FT5336
-   * @{
-   */
-
-  /* Exported types ------------------------------------------------------------*/
-
-  /** @defgroup FT5336_Exported_Types
-   * @{
-   */
-
-  /* Exported constants --------------------------------------------------------*/
-
-  /** @defgroup FT5336_Exported_Constants
-   * @{
-   */
-
-  /* I2C Slave address of touchscreen FocalTech FT5336 */
+//}}}
+//{{{  defines
+/* I2C Slave address of touchscreen FocalTech FT5336 */
 #define FT5336_I2C_SLAVE_ADDRESS            ((uint8_t)0x70)
 
   /* Maximum border values of the touchscreen pad */
@@ -124,10 +80,6 @@ typedef struct
 
   /* Max detectable simultaneous touches */
 #define FT5336_MAX_DETECTABLE_TOUCH         ((uint8_t)0x05)
-
-  /**
-   * @brief : Definitions for FT5336 I2C register addresses on 8 bit
-   **/
 
   /* Current mode register of the FT5336 (R/W) */
 #define FT5336_DEV_MODE_REG                 ((uint8_t)0x00)
@@ -344,195 +296,20 @@ typedef struct
 
   /* Current operating mode the FT5336 system is in (R) */
 #define FT5336_STATE_REG                    ((uint8_t)0xBC)
+//}}}
 
-  /**
-   * @}
-   */
+void ft5336_TS_GetGestureID (uint16_t DeviceAddr, uint32_t* pGestureId);
+void ft5336_TS_GetTouchInfo (uint16_t DeviceAddr, uint32_t touchIdx, uint32_t* pWeight, uint32_t* pArea, uint32_t* pEvent);
 
-  /* Exported macro ------------------------------------------------------------*/
-
-  /** @defgroup ft5336_Exported_Macros
-   * @{
-   */
-
-  /* Exported functions --------------------------------------------------------*/
-
-  /** @defgroup ft5336_Exported_Functions
-   * @{
-   */
-
-  /**
-   * @brief ft5336 Control functions
-   */
-
-
-/**
- * @brief  Initialize the ft5336 communication bus
- *         from MCU to FT5336 : ie I2C channel initialization (if required).
- * @param  DeviceAddr: Device address on communication Bus (I2C slave address of FT5336).
- * @retval None
- */
-void ft5336_Init(uint16_t DeviceAddr);
-
-/**
- * @brief  Software Reset the ft5336.
- * @param  DeviceAddr: Device address on communication Bus (I2C slave address of FT5336).
- * @retval None
- */
-void ft5336_Reset(uint16_t DeviceAddr);
-
-/**
- * @brief  Read the ft5336 device ID, pre initialize I2C in case of need to be
- *         able to read the FT5336 device ID, and verify this is a FT5336.
- * @param  DeviceAddr: I2C FT5336 Slave address.
- * @retval The Device ID (two bytes).
- */
-uint16_t ft5336_ReadID(uint16_t DeviceAddr);
-
-/**
- * @brief  Configures the touch Screen IC device to start detecting touches
- * @param  DeviceAddr: Device address on communication Bus (I2C slave address).
- * @retval None.
- */
-void ft5336_TS_Start(uint16_t DeviceAddr);
-
-/**
- * @brief  Return if there is touches detected or not.
- *         Try to detect new touches and forget the old ones (reset internal global
- *         variables).
- * @param  DeviceAddr: Device address on communication Bus.
- * @retval : Number of active touches detected (can be 0, 1 or 2).
- */
-uint8_t ft5336_TS_DetectTouch(uint16_t DeviceAddr);
-
-/**
- * @brief  Get the touch screen X and Y positions values
- *         Manage multi touch thanks to touch Index global
- *         variable 'ft5336_handle.currActiveTouchIdx'.
- * @param  DeviceAddr: Device address on communication Bus.
- * @param  X: Pointer to X position value
- * @param  Y: Pointer to Y position value
- * @retval None.
- */
-void ft5336_TS_GetXY(uint16_t DeviceAddr, uint16_t *X, uint16_t *Y);
-
-/**
- * @brief  Configure the FT5336 device to generate IT on given INT pin
- *         connected to MCU as EXTI.
- * @param  DeviceAddr: Device address on communication Bus (Slave I2C address of FT5336).
- * @retval None
- */
-void ft5336_TS_EnableIT(uint16_t DeviceAddr);
-
-/**
- * @brief  Configure the FT5336 device to stop generating IT on the given INT pin
- *         connected to MCU as EXTI.
- * @param  DeviceAddr: Device address on communication Bus (Slave I2C address of FT5336).
- * @retval None
- */
-void ft5336_TS_DisableIT(uint16_t DeviceAddr);
-
-/**
- * @brief  Get IT status from FT5336 interrupt status registers
- *         Should be called Following an EXTI coming to the MCU to know the detailed
- *         reason of the interrupt.
- * @param  DeviceAddr: Device address on communication Bus (I2C slave address of FT5336).
- * @retval TS interrupts status
- */
-uint8_t ft5336_TS_ITStatus (uint16_t DeviceAddr);
-
-/**
- * @brief  Clear IT status in FT5336 interrupt status clear registers
- *         Should be called Following an EXTI coming to the MCU.
- * @param  DeviceAddr: Device address on communication Bus (I2C slave address of FT5336).
- * @retval TS interrupts status
- */
-void ft5336_TS_ClearIT (uint16_t DeviceAddr);
-
-/**** NEW FEATURES enabled when Multi-touch support is enabled ****/
-
-#if (TS_MULTI_TOUCH_SUPPORTED == 1)
-
-/**
- * @brief  Get the last touch gesture identification (zoom, move up/down...).
- * @param  DeviceAddr: Device address on communication Bus (I2C slave address of FT5336).
- * @param  pGestureId : Pointer to get last touch gesture Identification.
- * @retval None.
- */
-void ft5336_TS_GetGestureID(uint16_t DeviceAddr, uint32_t * pGestureId);
-
-/**
- * @brief  Get the touch detailed informations on touch number 'touchIdx' (0..1)
- *         This touch detailed information contains :
- *         - weight that was applied to this touch
- *         - sub-area of the touch in the touch panel
- *         - event of linked to the touch (press down, lift up, ...)
- * @param  DeviceAddr: Device address on communication Bus (I2C slave address of FT5336).
- * @param  touchIdx : Passed index of the touch (0..1) on which we want to get the
- *                    detailed information.
- * @param  pWeight : Pointer to to get the weight information of 'touchIdx'.
- * @param  pArea   : Pointer to to get the sub-area information of 'touchIdx'.
- * @param  pEvent  : Pointer to to get the event information of 'touchIdx'.
-
- * @retval None.
- */
-void ft5336_TS_GetTouchInfo(uint16_t   DeviceAddr,
-                            uint32_t   touchIdx,
-                            uint32_t * pWeight,
-                            uint32_t * pArea,
-                            uint32_t * pEvent);
-
-#endif /* TS_MULTI_TOUCH_SUPPORTED == 1 */
-
-/* Imported TS IO functions --------------------------------------------------------*/
-
-/** @defgroup ft5336_Imported_Functions
- * @{
- */
-
-/* TouchScreen (TS) external IO functions */
-extern void     TS_IO_Init(void);
-extern void    TS_IO_Write(uint8_t Addr, uint8_t Reg, uint8_t Value);
-extern uint8_t TS_IO_Read(uint8_t Addr, uint8_t Reg);
-extern void    TS_IO_Delay(uint32_t Delay);
-
-  /**
-   * @}
-   */
-
-  /* Imported global variables --------------------------------------------------------*/
-
-  /** @defgroup ft5336_Imported_Globals
-   * @{
-   */
-
-
-/* Touch screen driver structure */
+// TouchScreen external IO functions
+extern void TS_IO_Init();
+extern void TS_IO_Write (uint8_t Addr, uint8_t Reg, uint8_t Value);
+extern uint8_t TS_IO_Read( uint8_t Addr, uint8_t Reg);
+extern void TS_IO_Delay (uint32_t Delay);
 extern TS_DrvTypeDef ft5336_ts_drv;
 
-  /**
-   * @}
-   */
-
+//{{{
 #ifdef __cplusplus
 }
 #endif
-#endif /* __FT5336_H */
-
-
-/**
- * @}
- */
-
-/**
- * @}
- */
-
-/**
- * @}
- */
-
-/**
- * @}
- */
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+//}}}
