@@ -160,7 +160,7 @@ static void debug (uint32_t colour, const char* format, ... ) {
   }
 //}}}
 
-//{{{  usbd pcd handler
+//{{{  usbd handler
 //{{{
 void HAL_PCD_MspInit (PCD_HandleTypeDef* pcdHandle) {
 
@@ -352,16 +352,6 @@ USBD_StatusTypeDef USBD_LL_ClearStallEP (USBD_HandleTypeDef* device, uint8_t ep_
   }
 //}}}
 //{{{
-uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
-
-  PCD_HandleTypeDef* pcdHandle = device->pData;
-  if ((ep_addr & 0x80) == 0x80)
-    return pcdHandle->IN_ep[ep_addr & 0x7F].is_stall;
-  else
-    return pcdHandle->OUT_ep[ep_addr & 0x7F].is_stall;
-  }
-//}}}
-//{{{
 USBD_StatusTypeDef USBD_LL_SetUSBAddress (USBD_HandleTypeDef* device, uint8_t device_addr) {
 
   HAL_PCD_SetAddress (device->pData, device_addr);
@@ -383,6 +373,16 @@ USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t e
   }
 //}}}
 //{{{
+uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
+  PCD_HandleTypeDef* pcdHandle = device->pData;
+  if ((ep_addr & 0x80) == 0x80)
+    return pcdHandle->IN_ep[ep_addr & 0x7F].is_stall;
+  else
+    return pcdHandle->OUT_ep[ep_addr & 0x7F].is_stall;
+  }
+//}}}
+//{{{
 uint32_t USBD_LL_GetRxDataSize (USBD_HandleTypeDef* device, uint8_t ep_addr) {
 
   return HAL_PCD_EP_GetRxCount (device->pData, ep_addr);
@@ -395,7 +395,6 @@ void USBD_LL_Delay (uint32_t Delay) {
   }
 //}}}
 //}}}
-
 //{{{  hidDescriptor handler
 //{{{  defines
 #define VID                      0x0483
