@@ -136,10 +136,12 @@ struct _USBD_HandleTypeDef;
 typedef struct _Device_cb {
   uint8_t  (*Init)             (struct _USBD_HandleTypeDef *pdev , uint8_t cfgidx);
   uint8_t  (*DeInit)           (struct _USBD_HandleTypeDef *pdev , uint8_t cfgidx);
+
  /* Control Endpoints*/
   uint8_t  (*Setup)            (struct _USBD_HandleTypeDef *pdev , USBD_SetupReqTypedef  *req);
   uint8_t  (*EP0_TxSent)       (struct _USBD_HandleTypeDef *pdev );
   uint8_t  (*EP0_RxReady)      (struct _USBD_HandleTypeDef *pdev );
+
   /* Class Specific Endpoints*/
   uint8_t  (*DataIn)           (struct _USBD_HandleTypeDef *pdev , uint8_t epnum);
   uint8_t  (*DataOut)          (struct _USBD_HandleTypeDef *pdev , uint8_t epnum);
@@ -630,7 +632,7 @@ inline USBD_StatusTypeDef USBD_StdDevReq (USBD_HandleTypeDef* pdev , USBD_SetupR
     case USB_REQ_GET_STATUS:        USBD_GetStatus (pdev, req); break;
     case USB_REQ_SET_FEATURE:       USBD_SetFeature (pdev, req); break;
     case USB_REQ_CLEAR_FEATURE:     USBD_ClrFeature (pdev, req); break;
-    default: USBD_CtlError (pdev, req); 
+    default: USBD_CtlError (pdev, req);
     }
 
   return USBD_OK;
