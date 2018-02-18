@@ -51,7 +51,7 @@ static char* gDebugStr[DEBUG_MAX_LINES];
 static uint32_t gDebugTicks[DEBUG_MAX_LINES];
 static uint32_t gDebugColour[DEBUG_MAX_LINES];
 
-enum eHit { eReleased, eProx, ePressed };
+enum eHit { eReleased, eProx, ePressed, eScroll };
 static enum eHit gHit = eReleased;
 static int gHitX = 0;
 static int gHitY = 0;
@@ -1062,6 +1062,13 @@ static void onMove (int x, int y, int z) {
   setScrollValue (gScroll + y);
   }
 //}}}
+//{{{
+static void onScroll (int x, int y, int z) {
+
+  gScroll += y;
+  setScrollValue (gScroll + y);
+  }
+//}}}
 static void onRelease (int x, int y) {}
 //{{{
 static void touch() {
@@ -1075,29 +1082,25 @@ static void touch() {
 
   if (gTsState.touchDetected) {
     // pressed
-    if (gHit == ePressed) {
-      // move
-      onMove (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
-      gLastX = gTsState.touchX[0];
-      gLastY = gTsState.touchY[0];
+    if (gTsState.touchDetected > 1) {
+      gHit == eScroll;
+      onScroll (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
       }
+    else if (gHit == ePressed)
+      onMove (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
     else if ((gHit == eReleased) && (gTsState.touchWeight[0] > 50)) {
       // press
       gHitX = gTsState.touchX[0];
       gHitY = gTsState.touchY[0];
       onPress (gHitX, gHitY);
-      gLastX = gHitX;
-      gLastY = gHitY;
       gHit = ePressed;
       }
-    else {
-      // prox
-      if (gHit == eProx)
-        onProx (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
-      gLastX = gTsState.touchX[0];
-      gLastY = gTsState.touchY[0];
+    else if (gHit == eProx)
+      onProx (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
+    else
       gHit = eProx;
-      }
+    gLastX = gTsState.touchX[0];
+    gLastY = gTsState.touchY[0];
     }
   else {
     // release
@@ -1107,7 +1110,6 @@ static void touch() {
     }
   }
 //}}}
-
 
 //{{{
 int main() {

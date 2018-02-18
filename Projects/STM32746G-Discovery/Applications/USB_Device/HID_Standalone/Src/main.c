@@ -8,10 +8,7 @@ char* kVersion = "USB HID 16/2/18";
 
 #include "stm32f7xx_hal.h"
 
-#include "usbd_conf.h"
-#include "usbd_def.h"
-#include "usbd_core.h"
-#include "usbd_ioreq.h"
+#include "usbd.h"
 
 #include "stm32746g_discovery_lcd.h"
 #include "stm32746g_discovery_ts.h"
@@ -48,7 +45,7 @@ static char* gDebugStr[DEBUG_MAX_LINES];
 static uint32_t gDebugTicks[DEBUG_MAX_LINES];
 static uint32_t gDebugColour[DEBUG_MAX_LINES];
 
-enum eHit { eReleased, eProx, ePressed };
+enum eHit { eReleased, eProx, ePressed, eScroll };
 static enum eHit gHit = eReleased;
 static int gHitX = 0;
 static int gHitY = 0;
@@ -200,7 +197,7 @@ void HAL_PCD_MspDeInit (PCD_HandleTypeDef* pcdHandle) {
 
 //{{{
 void HAL_PCD_SetupStageCallback (PCD_HandleTypeDef* pcdHandle) {
-  USBD_LL_SetupStage(pcdHandle->pData, (uint8_t*)pcdHandle->Setup);
+  USBD_LL_SetupStage (pcdHandle->pData, (uint8_t*)pcdHandle->Setup);
   }
 //}}}
 
@@ -831,14 +828,18 @@ static void onPress (int x, int y) {
 //{{{
 static void onMove (int x, int y, int z) {
 
-  //gScroll += y;
-  //setScrollValue (gScroll + y);
-
   if (x || y) {
     uint8_t HID_Buffer[4] = { 1,x,y,0 };
     hidSendReport (&gUsbDevice, HID_Buffer, 4);
     debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
     }
+  }
+//}}}
+//{{{
+static void onScroll (int x, int y, int z) {
+
+  gScroll += y;
+  setScrollValue (gScroll + y);
   }
 //}}}
 //{{{
@@ -862,29 +863,25 @@ static void touch() {
 
   if (gTsState.touchDetected) {
     // pressed
-    if (gHit == ePressed) {
-      // move
-      onMove (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
-      gLastX = gTsState.touchX[0];
-      gLastY = gTsState.touchY[0];
+    if (gTsState.touchDetected > 1) {
+      gHit == eScroll;
+      onScroll (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
       }
+    else if (gHit == ePressed)
+      onMove (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
     else if ((gHit == eReleased) && (gTsState.touchWeight[0] > 50)) {
       // press
       gHitX = gTsState.touchX[0];
       gHitY = gTsState.touchY[0];
       onPress (gHitX, gHitY);
-      gLastX = gHitX;
-      gLastY = gHitY;
       gHit = ePressed;
       }
-    else {
-      // prox
-      if (gHit == eProx)
-        onProx (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
-      gLastX = gTsState.touchX[0];
-      gLastY = gTsState.touchY[0];
+    else if (gHit == eProx)
+      onProx (gTsState.touchX[0] - gLastX, gTsState.touchY[0] - gLastY, gTsState.touchWeight[0]);
+    else
       gHit = eProx;
-      }
+    gLastX = gTsState.touchX[0];
+    gLastY = gTsState.touchY[0];
     }
   else {
     // release
@@ -961,7 +958,6 @@ int main() {
   while (1) {
     touch();
     showLcd();
-    HAL_Delay (10);
     }
   }
 //}}}
