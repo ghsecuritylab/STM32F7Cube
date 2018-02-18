@@ -811,8 +811,10 @@ static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report, uint1
 //{{{
 static void onProx (int x, int y) {
 
-  uint8_t HID_Buffer[4] = { 1,x,y,0 };
+  uint8_t HID_Buffer[4] = { 0,x,y,0 };
   hidSendReport (&gUsbDevice, HID_Buffer, 4);
+
+  debug (LCD_COLOR_MAGENTA, "onProx %d %d", x, y);
   }
 //}}}
 //{{{
@@ -820,6 +822,8 @@ static void onPress (int x, int y) {
 
   uint8_t HID_Buffer[4] = { 1,0,0,0 };
   hidSendReport (&gUsbDevice, HID_Buffer, 4);
+
+  debug (LCD_COLOR_GREEN, "onPress %d %d", x, y);
   }
 //}}}
 //{{{
@@ -830,6 +834,8 @@ static void onMove (int x, int y) {
 
   //gScroll += y;
   //setScrollValue (gScroll + y);
+
+  debug (LCD_COLOR_GREEN, "onMove %d %d", x, y);
   }
 //}}}
 //{{{
@@ -837,6 +843,8 @@ static void onRelease (int x, int y) {
 
   uint8_t HID_Buffer[4] = { 0,0,0,0 };
   hidSendReport (&gUsbDevice, HID_Buffer, 4);
+
+  debug (LCD_COLOR_GREEN, "onRelease %d %d", x, y);
   }
 //}}}
 //{{{
