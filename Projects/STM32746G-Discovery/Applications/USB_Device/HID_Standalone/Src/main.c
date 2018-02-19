@@ -1,7 +1,7 @@
 // main.c
 char* kVersion = "USB HID 16/2/18";
 //{{{  includes
-#include "debug.h"
+#include "utils.h"
 #include "usbd.h"
 //}}}
 

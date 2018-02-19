@@ -26,11 +26,6 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Application/debug.c</name>
-			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Src/debug.c</locationURI>
-		</link>
-		<link>
 			<name>Application/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Src/main.c</locationURI>
@@ -39,6 +34,11 @@
 			<name>Application/stm32746g_discovery_lcd.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Src/stm32746g_discovery_lcd.c</locationURI>
+		</link>
+		<link>
+			<name>Application/utils.c</name>
+			<type>1</type>
+			<locationURI>PARENT-2-PROJECT_LOC/Src/utils.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/ft5336.c</name>
