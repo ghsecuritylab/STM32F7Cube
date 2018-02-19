@@ -659,11 +659,20 @@ void BSP_AUDIO_OUT_TransferComplete_CallBack() {
   }
 //}}}
 
-void onProx (int x, int y, int z) {}
-void onPress (int x, int y) {}
+//{{{
+void onProx (int x, int y, int z) {
+  debug (LCD_COLOR_MAGENTA, "onProx %d %d %d", x, y, z);
+  }
+//}}}
+//{{{
+void onPress (int x, int y) {
+  debug (LCD_COLOR_GREEN, "onPress %d %d", x, y);
+  }
+//}}}
 //{{{
 void onMove (int x, int y, int z) {
   incScrollValue (y);
+  debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
   }
 //}}}
 //{{{
@@ -671,7 +680,11 @@ void onScroll (int x, int y, int z) {
   incScrollValue (y);
   }
 //}}}
-void onRelease (int x, int y) {}
+//{{{
+void onRelease (int x, int y) {
+  debug (LCD_COLOR_GREEN, "onRelease %d %d", x, y);
+  }
+//}}}
 
 //{{{
 int main() {
