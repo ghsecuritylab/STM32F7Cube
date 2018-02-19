@@ -208,27 +208,87 @@ typedef struct _USBD_HandleTypeDef {
   } USBD_HandleTypeDef;
 //}}}
 
-//{{{  USBD handler declarations
-USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device);
-USBD_StatusTypeDef USBD_LL_DeInit (USBD_HandleTypeDef* device);
-USBD_StatusTypeDef USBD_LL_Start(USBD_HandleTypeDef* device);
-USBD_StatusTypeDef USBD_LL_Stop(USBD_HandleTypeDef* device);
-USBD_StatusTypeDef USBD_LL_OpenEP (USBD_HandleTypeDef* device, uint8_t  ep_addr, uint8_t  ep_type, uint16_t ep_mps);
-USBD_StatusTypeDef USBD_LL_CloseEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
-USBD_StatusTypeDef USBD_LL_FlushEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
-USBD_StatusTypeDef USBD_LL_StallEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
-USBD_StatusTypeDef USBD_LL_ClearStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
-USBD_StatusTypeDef USBD_LL_SetUSBAddress (USBD_HandleTypeDef* device, uint8_t dev_addr);
-USBD_StatusTypeDef USBD_LL_Transmit (USBD_HandleTypeDef* device, uint8_t  ep_addr, uint8_t* pbuf, uint16_t  size);
-USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t* pbuf, uint16_t size);
-uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr);
-uint32_t USBD_LL_GetRxDataSize (USBD_HandleTypeDef* device, uint8_t ep_addr);
-void USBD_LL_Delay (uint32_t Delay);
-//}}}
-
 USBD_HandleTypeDef gUsbDevice;
 PCD_HandleTypeDef gPcdHandle;
 void OTG_FS_IRQHandler() { HAL_PCD_IRQHandler (&gPcdHandle); }
+
+//{{{
+USBD_StatusTypeDef USBD_LL_OpenEP (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps) {
+  HAL_PCD_EP_Open (device->pData, ep_addr, ep_mps, ep_type);
+  return USBD_OK;
+  }
+//}}}
+//{{{
+USBD_StatusTypeDef USBD_LL_CloseEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+  HAL_PCD_EP_Close (device->pData, ep_addr);
+  return USBD_OK;
+  }
+//}}}
+//{{{
+USBD_StatusTypeDef USBD_LL_FlushEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+  HAL_PCD_EP_Flush (device->pData, ep_addr);
+  return USBD_OK;
+  }
+//}}}
+//{{{
+USBD_StatusTypeDef USBD_LL_StallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+  HAL_PCD_EP_SetStall (device->pData, ep_addr);
+  return USBD_OK;
+  }
+//}}}
+//{{{
+USBD_StatusTypeDef USBD_LL_ClearStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+  HAL_PCD_EP_ClrStall (device->pData, ep_addr);
+  return USBD_OK;
+  }
+//}}}
+//{{{
+USBD_StatusTypeDef USBD_LL_Transmit (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t* pbuf, uint16_t size) {
+  HAL_PCD_EP_Transmit (device->pData, ep_addr, pbuf, size);
+  return USBD_OK;
+  }
+//}}}
+//{{{
+USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t* pbuf, uint16_t size) {
+  HAL_PCD_EP_Receive (device->pData, ep_addr, pbuf, size);
+  return USBD_OK;
+  }
+//}}}
+//{{{
+uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
+  PCD_HandleTypeDef* gPcdHandle = device->pData;
+  if ((ep_addr & 0x80) == 0x80)
+    return gPcdHandle->IN_ep[ep_addr & 0x7F].is_stall;
+  else
+    return gPcdHandle->OUT_ep[ep_addr & 0x7F].is_stall;
+  }
+//}}}
+//{{{
+//uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
+  //PCD_HandleTypeDef* pcdHandle = device->pData;
+  //if ((ep_addr & 0x80) == 0x80)
+    //return pcdHandle->IN_ep[ep_addr & 0xF].is_stall;
+  //else
+    //return pcdHandle->OUT_ep[ep_addr & 0xF].is_stall;
+  //}
+//}}}
+//{{{
+//uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
+  //PCD_HandleTypeDef* pcdHandle = device->pData;
+  //if ((ep_addr & 0x80) == 0x80)
+    //return pcdHandle->IN_ep[ep_addr & 0x7F].is_stall;
+  //else
+    //return pcdHandle->OUT_ep[ep_addr & 0x7F].is_stall;
+  //}
+//}}}
+
+// HID
+//  HAL_PCDEx_SetRxFiFo (&gPcdHandle, 0x80);
+//  HAL_PCDEx_SetTxFiFo (&gPcdHandle, 0, 0x40);
+//  HAL_PCDEx_SetTxFiFo (&gPcdHandle, 1, 0x80);
 
 //{{{
 inline void USBD_CtlError (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
@@ -349,7 +409,7 @@ inline USBD_StatusTypeDef USBD_CtlReceiveStatus (USBD_HandleTypeDef* device) {
 //}}}
 //{{{
 inline uint16_t USBD_GetRxCount (USBD_HandleTypeDef* device, uint8_t ep_addr) {
-  return USBD_LL_GetRxDataSize (device, ep_addr);
+  return HAL_PCD_EP_GetRxCount (device->pData, ep_addr);
   }
 //}}}
 
@@ -457,22 +517,22 @@ inline void USBD_GetDescriptor (USBD_HandleTypeDef* device, USBD_SetupReqTypedef
 inline void USBD_SetAddress (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   if ((req->wIndex == 0) && (req->wLength == 0)) {
-    uint8_t dev_addr = (uint8_t)(req->wValue) & 0x7F;
+    uint8_t device_addr = (uint8_t)(req->wValue) & 0x7F;
     if (device->dev_state == USBD_STATE_CONFIGURED)
-      USBD_CtlError (device , req);
+      USBD_CtlError (device, req);
     else {
-      device->dev_address = dev_addr;
-      USBD_LL_SetUSBAddress (device, dev_addr);
+      device->dev_address = device_addr;
+      HAL_PCD_SetAddress (device->pData, device_addr);
       USBD_CtlSendStatus (device);
 
-      if (dev_addr != 0)
+      if (device_addr != 0)
         device->dev_state = USBD_STATE_ADDRESSED;
       else
         device->dev_state = USBD_STATE_DEFAULT;
       }
     }
   else
-    USBD_CtlError (device , req);
+    USBD_CtlError (device, req);
   }
 //}}}
 //{{{
@@ -744,8 +804,29 @@ inline USBD_StatusTypeDef USBD_Init (USBD_HandleTypeDef* device, USBD_Descriptor
   device->dev_state = USBD_STATE_DEFAULT;
   device->id = id;
 
-  // Initialize low level driver
-  USBD_LL_Init (device);
+  /* Set LL Driver parameters */
+  gPcdHandle.Instance = USB_OTG_FS;
+  gPcdHandle.Init.dev_endpoints = 4;
+  gPcdHandle.Init.use_dedicated_ep1 = 0;
+  gPcdHandle.Init.ep0_mps = 0x40;
+  gPcdHandle.Init.dma_enable = 0;
+  gPcdHandle.Init.low_power_enable = 0;
+  gPcdHandle.Init.phy_itface = PCD_PHY_EMBEDDED;
+  gPcdHandle.Init.Sof_enable = 0;
+  gPcdHandle.Init.speed = PCD_SPEED_FULL;
+  gPcdHandle.Init.vbus_sensing_enable = 0;
+  gPcdHandle.Init.lpm_enable = 0;
+
+  // Link The driver to the stack
+  gPcdHandle.pData = device;
+  device->pData = &gPcdHandle;
+
+  // Initialize LL Driver
+  HAL_PCD_Init (&gPcdHandle);
+  HAL_PCDEx_SetRxFiFo (&gPcdHandle, 0x80);
+  //HAL_PCDEx_SetTxFiFo (&gPcdHandle, 0, 0x60);
+  HAL_PCDEx_SetTxFiFo (&gPcdHandle, 0, 0x60);
+  HAL_PCDEx_SetTxFiFo (&gPcdHandle, 1, 0x80);
 
   return USBD_OK;
   }
@@ -760,10 +841,10 @@ inline USBD_StatusTypeDef USBD_DeInit (USBD_HandleTypeDef* device) {
   device->pClass->DeInit (device, device->dev_config);
 
   // Stop the low level driver
-  USBD_LL_Stop (device);
+  HAL_PCD_Stop (device->pData);
 
   // Initialize low level driver
-  USBD_LL_DeInit (device);
+  HAL_PCD_DeInit (device->pData);
 
   return USBD_OK;
   }
@@ -779,8 +860,7 @@ inline USBD_StatusTypeDef USBD_RegisterClass (USBD_HandleTypeDef* device, USBD_C
 //{{{
 inline USBD_StatusTypeDef USBD_Start (USBD_HandleTypeDef* device) {
 
-  // Start the low level driver
-  USBD_LL_Start (device);
+  HAL_PCD_Start (device->pData);
   return USBD_OK;
   }
 //}}}
@@ -791,7 +871,7 @@ inline USBD_StatusTypeDef USBD_Stop (USBD_HandleTypeDef* device) {
   device->pClass->DeInit (device, device->dev_config);
 
   // Stop the low level driver
-  USBD_LL_Stop (device);
+  HAL_PCD_Stop (device->pData);
   return USBD_OK;
   }
 //}}}

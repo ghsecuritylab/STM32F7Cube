@@ -13,7 +13,7 @@ int getScrollScale();
 int getScrollLines();
 void incScrollValue (int inc);
 
-void initLcd();
+void initUtils();
 void showLcd (char* title, int showTouch);
 void flipLcd();
 

@@ -8,24 +8,24 @@ C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUD
 
 C_SRCS += \
 C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/main.c \
-C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/stm32746g_discovery_audio.c \
-C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/stm32746g_discovery_lcd.c \
-C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/system_stm32f7xx.c \
-C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/wm8994.c 
+C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/stm32746g_discovery_audio.c \
+C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/stm32746g_discovery_lcd.c \
+C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/utils.c \
+C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/wm8994.c 
 
 OBJS += \
 ./app/main.o \
 ./app/startup_stm32f746xx.o \
 ./app/stm32746g_discovery_audio.o \
 ./app/stm32746g_discovery_lcd.o \
-./app/system_stm32f7xx.o \
+./app/utils.o \
 ./app/wm8994.o 
 
 C_DEPS += \
 ./app/main.d \
 ./app/stm32746g_discovery_audio.d \
 ./app/stm32746g_discovery_lcd.d \
-./app/system_stm32f7xx.d \
+./app/utils.d \
 ./app/wm8994.d 
 
 
@@ -46,7 +46,7 @@ app/startup_stm32f746xx.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/
 	@echo 'Finished building: $<'
 	@echo ' '
 
-app/stm32746g_discovery_audio.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/stm32746g_discovery_audio.c
+app/stm32746g_discovery_audio.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/stm32746g_discovery_audio.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)
@@ -54,7 +54,7 @@ app/stm32746g_discovery_audio.o: C:/projects/STM32F7Cube/Projects/STM32746G-Disc
 	@echo 'Finished building: $<'
 	@echo ' '
 
-app/stm32746g_discovery_lcd.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/stm32746g_discovery_lcd.c
+app/stm32746g_discovery_lcd.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/stm32746g_discovery_lcd.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)
@@ -62,7 +62,7 @@ app/stm32746g_discovery_lcd.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discov
 	@echo 'Finished building: $<'
 	@echo ' '
 
-app/system_stm32f7xx.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/system_stm32f7xx.c
+app/utils.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/utils.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)
@@ -70,7 +70,7 @@ app/system_stm32f7xx.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/App
 	@echo 'Finished building: $<'
 	@echo ' '
 
-app/wm8994.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/USB_Device/AUDIO_Standalone/Src/wm8994.c
+app/wm8994.o: C:/projects/STM32F7Cube/Projects/STM32746G-Discovery/Applications/wm8994.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)

@@ -58,22 +58,22 @@
 		<link>
 			<name>app/stm32746g_discovery_audio.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Src/stm32746g_discovery_audio.c</locationURI>
+			<locationURI>PARENT-4-PROJECT_LOC/stm32746g_discovery_audio.c</locationURI>
 		</link>
 		<link>
 			<name>app/stm32746g_discovery_lcd.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Src/stm32746g_discovery_lcd.c</locationURI>
+			<locationURI>PARENT-4-PROJECT_LOC/stm32746g_discovery_lcd.c</locationURI>
 		</link>
 		<link>
-			<name>app/system_stm32f7xx.c</name>
+			<name>app/utils.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Src/system_stm32f7xx.c</locationURI>
+			<locationURI>PARENT-4-PROJECT_LOC/utils.c</locationURI>
 		</link>
 		<link>
 			<name>app/wm8994.c</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Src/wm8994.c</locationURI>
+			<locationURI>PARENT-4-PROJECT_LOC/wm8994.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal.c</name>

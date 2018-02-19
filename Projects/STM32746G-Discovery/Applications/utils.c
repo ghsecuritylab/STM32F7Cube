@@ -1,4 +1,4 @@
-// debug.c
+// utils.c
 //{{{  includes
 #include "utils.h"
 #include "stm32f7xx.h"
@@ -68,9 +68,64 @@ void incScrollValue (int inc) {
 //}}}
 
 //{{{
-void initLcd() {
+void initUtils() {
+
+  SCB_EnableICache();
+  SCB_EnableDCache();
+  HAL_Init();
+  //{{{  config system clock
+  // System Clock source            = PLL (HSE)
+  // SYSCLK(Hz)                     = 216000000
+  // HCLK(Hz)                       = 216000000
+  // AHB Prescaler                  = 1
+  // APB1 Prescaler                 = 4
+  // APB2 Prescaler                 = 2
+  // HSE Frequency(Hz)              = 25000000
+  // PLL_M                          = 25
+  // PLL_N                          = 432
+  // PLL_P                          = 2
+  // PLLSAI_N                       = 384
+  // PLLSAI_P                       = 8
+  // VDD(V)                         = 3.3
+  // Main regulator output voltage  = Scale1 mode
+  // Flash Latency(WS)              = 7
+
+  // Enable HSE Oscillator and activate PLL with HSE as source
+  RCC_OscInitTypeDef RCC_OscInitStruct;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSIState = RCC_HSI_OFF;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 25;
+  RCC_OscInitStruct.PLL.PLLN = 432;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = 9;
+  if (HAL_RCC_OscConfig (&RCC_OscInitStruct) != HAL_OK)
+    while (1) {}
+
+  // Activate the OverDrive to reach the 216 Mhz Frequency
+  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
+    while (1) {}
+
+  // Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 clocks dividers
+  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK |
+                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  if (HAL_RCC_ClockConfig (&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK)
+    while (1) {}
+  //}}}
 
   BSP_LCD_Init();
+  BSP_LCD_Init();
+
+  BSP_TS_Init (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+  BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
+  BSP_LED_Init (LED1);
 
   BSP_LCD_LayerDefaultInit (0, LCD_FB_START_ADDRESS);
   BSP_LCD_SelectLayer(0);
@@ -111,17 +166,18 @@ void showLcd (char* title, int showTouch) {
   BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
   BSP_LCD_DisplayStringAtLine (0, str1);
 
-  for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
-    int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ?
-                      displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine - getScrollLines();
-    debugLine = debugLine % DEBUG_MAX_LINES;
-    BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-    char tickStr[20];
-    sprintf (tickStr, "%2d.%03d", (int)gDebugTicks[debugLine] / 1000, (int)gDebugTicks[debugLine] % 1000);
-    BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 0, tickStr);
-    BSP_LCD_SetTextColor (gDebugColour[debugLine]);
-    BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 7, gDebugStr[debugLine]);
-    }
+  if (!BSP_PB_GetState (BUTTON_KEY))
+    for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
+      int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ?
+                        displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine - getScrollLines();
+      debugLine = debugLine % DEBUG_MAX_LINES;
+      BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+      char tickStr[20];
+      sprintf (tickStr, "%2d.%03d", (int)gDebugTicks[debugLine] / 1000, (int)gDebugTicks[debugLine] % 1000);
+      BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 0, tickStr);
+      BSP_LCD_SetTextColor (gDebugColour[debugLine]);
+      BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 7, gDebugStr[debugLine]);
+      }
 
   if (showTouch)
     for (int i = 0; i < gTsState.touchDetected; i++) {

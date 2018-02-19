@@ -6,7 +6,6 @@ char* kVersion = "USB HID 16/2/18";
 //}}}
 
 //{{{  usbd handler
-//usbd handler
 //{{{
 USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device) {
 
@@ -33,6 +32,9 @@ USBD_StatusTypeDef USBD_LL_Init (USBD_HandleTypeDef* device) {
   HAL_PCDEx_SetTxFiFo (&gPcdHandle, 0, 0x40);
   HAL_PCDEx_SetTxFiFo (&gPcdHandle, 1, 0x80);
 
+  // audio
+  //HAL_PCDEx_SetTxFiFo (&gPcdHandle, 0, 0x60);
+
   return USBD_OK;
   }
 //}}}
@@ -43,6 +45,7 @@ USBD_StatusTypeDef USBD_LL_DeInit (USBD_HandleTypeDef* device) {
   return USBD_OK;
   }
 //}}}
+
 //{{{
 USBD_StatusTypeDef USBD_LL_Start (USBD_HandleTypeDef* device) {
 
@@ -57,6 +60,7 @@ USBD_StatusTypeDef USBD_LL_Stop (USBD_HandleTypeDef* device) {
   return USBD_OK;
   }
 //}}}
+
 //{{{
 USBD_StatusTypeDef USBD_LL_OpenEP (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps) {
 
@@ -92,6 +96,7 @@ USBD_StatusTypeDef USBD_LL_ClearStallEP (USBD_HandleTypeDef* device, uint8_t ep_
   return USBD_OK;
   }
 //}}}
+
 //{{{
 USBD_StatusTypeDef USBD_LL_SetUSBAddress (USBD_HandleTypeDef* device, uint8_t device_addr) {
 
@@ -113,6 +118,7 @@ USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t e
   return USBD_OK;
   }
 //}}}
+
 //{{{
 uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
 
@@ -134,6 +140,18 @@ void USBD_LL_Delay (uint32_t Delay) {
 
   HAL_Delay (Delay);
   }
+//}}}
+
+//audio
+//{{{
+//uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
+  //PCD_HandleTypeDef* gPcdHandle = device->pData;
+  //if ((ep_addr & 0x80) == 0x80)
+    //return gPcdHandle->IN_ep[ep_addr & 0xF].is_stall;
+  //else
+    //return gPcdHandle->OUT_ep[ep_addr & 0xF].is_stall;
+  //}
 //}}}
 //}}}
 //{{{  hidDescriptor handler
@@ -652,8 +670,6 @@ int main() {
   BSP_LED_Init (LED1);
 
   initLcd();
-  BSP_TS_Init (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-  BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
 
   USBD_Init (&gUsbDevice, &hidDescriptor, 0);
   USBD_RegisterClass (&gUsbDevice, &hidClass);
