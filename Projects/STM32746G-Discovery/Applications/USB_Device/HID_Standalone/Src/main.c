@@ -5,7 +5,6 @@ char* kVersion = "USB HID 19/2/18";
 #include "../../../usbd.h"
 //}}}
 
-//{{{  hidDescriptor handler
 //{{{  defines
 #define VID                      0x0483
 #define PID                      0x5710
@@ -24,40 +23,23 @@ char* kVersion = "USB HID 19/2/18";
 #define HID_EPIN_ADDR  0x81
 #define HID_EPIN_SIZE  0x04
 //}}}
-
 //{{{
 __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12, USB_DESC_TYPE_DEVICE,
-  0x00,                       // bcdUSB
-  0x02,
-  0x00,                       // bDeviceClass
-  0x00,                       // bDeviceSubClass
-  0x00,                       // bDeviceProtocol
-  USB_MAX_EP0_SIZE,           // bMaxPacketSize
-  LOBYTE(VID), HIBYTE(VID), // idVendor
-  LOBYTE(PID), HIBYTE(PID), // idVendor
-  0x00, 0x02,                 // bcdDevice rel. 2.00
-  USBD_IDX_MFC_STR,           // Index of manufacturer string
-  USBD_IDX_PRODUCT_STR,       // Index of product string
-  USBD_IDX_SERIAL_STR,        // Index of serial number string
-  USBD_MAX_NUM_CONFIGURATION  // bNumConfigurations
+  0,2,                       // bcdUSB
+  0x00,                      // bDeviceClass
+  0x00,                      // bDeviceSubClass
+  0x00,                      // bDeviceProtocol
+  USB_MAX_EP0_SIZE,          // bMaxPacketSize
+  LOBYTE(VID), HIBYTE(VID),  // idVendor
+  LOBYTE(PID), HIBYTE(PID),  // idVendor
+  0, 2,                      // bcdDevice rel. 2.00
+  USBD_IDX_MFC_STR,          // Index of manufacturer string
+  USBD_IDX_PRODUCT_STR,      // Index of product string
+  USBD_IDX_SERIAL_STR,       // Index of serial number string
+  USBD_MAX_NUM_CONFIGURATION // bNumConfigurations
   };
 //}}}
-//{{{
-// USB Standard Device Descriptor
-__ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
-  USB_LEN_LANGID_STR_DESC,
-  USB_DESC_TYPE_STRING,
-  LOBYTE(LANGID_STRING), HIBYTE(LANGID_STRING),
-  };
-//}}}
-//{{{
-__ALIGN_BEGIN static uint8_t stringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
-  USB_SIZ_STRING_SERIAL,
-  USB_DESC_TYPE_STRING,
-  };
-//}}}
-__ALIGN_BEGIN uint8_t stringDescriptor[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
 //{{{
 // USB HID device Configuration Descriptor
 __ALIGN_BEGIN static const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
@@ -102,7 +84,7 @@ __ALIGN_BEGIN static const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END =
 //{{{
 // USB HID device Configuration Descriptor
 __ALIGN_BEGIN static const uint8_t kHidDescriptor[9] __ALIGN_END = {
-  0x09, 0x21, // hid config desriptor
+  0x09, 0x21,
   0x11,1, // bcdHID: HID Class Spec release number
   0x00,   // bCountryCode: Hardware target country
   0x01,   // bNumDescriptors: Number of HID class descriptors to follow
@@ -159,6 +141,8 @@ __ALIGN_BEGIN static const uint8_t kHidMouseReportDescriptor[74] __ALIGN_END = {
   0xC0        // end collection - Application
   };
 //}}}
+
+//{{{  hidDescriptor handler
 //{{{
 // USB Standard Device Descriptor
 __ALIGN_BEGIN static const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
@@ -173,6 +157,21 @@ __ALIGN_BEGIN static const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUA
   0x00,
   };
 //}}}
+//{{{
+// USB Standard Device Descriptor
+__ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
+  USB_LEN_LANGID_STR_DESC,
+  USB_DESC_TYPE_STRING,
+  LOBYTE(LANGID_STRING), HIBYTE(LANGID_STRING),
+  };
+//}}}
+//{{{
+__ALIGN_BEGIN static uint8_t stringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
+  USB_SIZ_STRING_SERIAL,
+  USB_DESC_TYPE_STRING,
+  };
+//}}}
+__ALIGN_BEGIN uint8_t stringDescriptor[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
 
 //{{{
 static void intToUnicode (uint32_t value , uint8_t* pbuf , uint8_t len) {

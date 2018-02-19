@@ -6,8 +6,6 @@ char* kVersion = "USB audio 19/2/18";
 #include "../../../stm32746g_discovery_audio.h"
 //}}}
 
-//extern SAI_HandleTypeDef haudio_out_sai;
-
 //{{{  packet defines
 #define CHANNELS              4
 #define SAMPLE_RATE           48000
