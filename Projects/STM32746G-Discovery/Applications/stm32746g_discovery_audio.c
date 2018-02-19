@@ -2,24 +2,25 @@
 #include "stm32746g_discovery_audio.h"
 
 AUDIO_DrvTypeDef* audio_drv;
-SAI_HandleTypeDef haudio_out_sai = {0};
-SAI_HandleTypeDef haudio_in_sai = {0};
-TIM_HandleTypeDef haudio_tim;
-
 uint16_t __IO AudioInVolume = DEFAULT_AUDIO_IN_VOLUME;
+
+static SAI_HandleTypeDef haudio_out_sai = {0};
+static SAI_HandleTypeDef haudio_in_sai = {0};
+
+void DMA2_Stream4_IRQHandler() { HAL_DMA_IRQHandler (haudio_out_sai.hdmatx); }
 
 //{{{
 static void SAIx_Out_Init (uint32_t AudioFreq) {
 
-  /* Initialize the haudio_out_sai Instance parameter */
+  // Initialize the haudio_out_sai Instance parameter
   haudio_out_sai.Instance = AUDIO_OUT_SAIx;
 
-  /* Disable SAI peripheral to allow access to SAI internal registers */
+  // Disable SAI peripheral to allow access to SAI internal registers
   __HAL_SAI_DISABLE(&haudio_out_sai);
 
-  /* Configure SAI_Block_x
-  LSBFirst: Disabled
-  DataSize: 16 */
+  // Configure SAI_Block_x
+  // LSBFirst: Disabled
+  // DataSize: 16
   haudio_out_sai.Init.AudioFrequency = AudioFreq;
   haudio_out_sai.Init.AudioMode = SAI_MODEMASTER_TX;
   haudio_out_sai.Init.NoDivider = SAI_MASTERDIVIDER_ENABLED;
@@ -31,23 +32,23 @@ static void SAIx_Out_Init (uint32_t AudioFreq) {
   haudio_out_sai.Init.OutputDrive = SAI_OUTPUTDRIVE_ENABLED;
   haudio_out_sai.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_1QF;
 
-  /* Configure SAI_Block_x Frame
-  Frame Length: 64
-  Frame active Length: 32
-  FS Definition: Start frame + Channel Side identification
-  FS Polarity: FS active Low
-  FS Offset: FS asserted one bit before the first bit of slot 0 */
+  // Configure SAI_Block_x Frame
+  // Frame Length: 64
+  // Frame active Length: 32
+  // FS Definition: Start frame + Channel Side identification
+  // FS Polarity: FS active Low
+  // FS Offset: FS asserted one bit before the first bit of slot 0
   haudio_out_sai.FrameInit.FrameLength = 64;
   haudio_out_sai.FrameInit.ActiveFrameLength = 32;
   haudio_out_sai.FrameInit.FSDefinition = SAI_FS_CHANNEL_IDENTIFICATION;
   haudio_out_sai.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
   haudio_out_sai.FrameInit.FSOffset = SAI_FS_BEFOREFIRSTBIT;
 
-  /* Configure SAI Block_x Slot
-  Slot First Bit Offset: 0
-  Slot Size  : 16
-  Slot Number: 4
-  Slot Active: All slot actives */
+  // Configure SAI Block_x Slot
+  // Slot First Bit Offset: 0
+  // Slot Size  : 16
+  // Slot Number: 4
+  // Slot Active: All slot actives
   haudio_out_sai.SlotInit.FirstBitOffset = 0;
   haudio_out_sai.SlotInit.SlotSize = SAI_SLOTSIZE_DATASIZE;
   haudio_out_sai.SlotInit.SlotNumber = 4;
@@ -55,35 +56,34 @@ static void SAIx_Out_Init (uint32_t AudioFreq) {
 
   HAL_SAI_Init(&haudio_out_sai);
 
-  /* Enable SAI peripheral to generate MCLK */
+  // Enable SAI peripheral to generate MCLK */
   __HAL_SAI_ENABLE(&haudio_out_sai);
   }
 //}}}
 //{{{
 static void SAIx_Out_DeInit() {
 
-  /* Initialize the haudio_out_sai Instance parameter */
+  // Initialize the haudio_out_sai Instance parameter
   haudio_out_sai.Instance = AUDIO_OUT_SAIx;
 
-  /* Disable SAI peripheral */
-  __HAL_SAI_DISABLE(&haudio_out_sai);
-
-  HAL_SAI_DeInit(&haudio_out_sai);
+  // Disable SAI peripheral
+  __HAL_SAI_DISABLE (&haudio_out_sai);
+  HAL_SAI_DeInit (&haudio_out_sai);
   }
 //}}}
 //{{{
 static void SAIx_In_Init (uint32_t SaiOutMode, uint32_t SlotActive, uint32_t AudioFreq) {
 
-  /* Initialize SAI2 block A in MASTER RX */
-  /* Initialize the haudio_out_sai Instance parameter */
+  // Initialize SAI2 block A in MASTER RX
+  // Initialize the haudio_out_sai Instance parameter
   haudio_out_sai.Instance = AUDIO_OUT_SAIx;
 
-  /* Disable SAI peripheral to allow access to SAI internal registers */
+  // Disable SAI peripheral to allow access to SAI internal registers
   __HAL_SAI_DISABLE(&haudio_out_sai);
 
-  /* Configure SAI_Block_x
-  LSBFirst: Disabled
-  DataSize: 16 */
+  // Configure SAI_Block_x
+  // LSBFirst: Disabled
+  // DataSize: 16
   haudio_out_sai.Init.AudioFrequency = AudioFreq;
   haudio_out_sai.Init.AudioMode = SaiOutMode;
   haudio_out_sai.Init.NoDivider = SAI_MASTERDIVIDER_ENABLED;
@@ -95,23 +95,23 @@ static void SAIx_In_Init (uint32_t SaiOutMode, uint32_t SlotActive, uint32_t Aud
   haudio_out_sai.Init.OutputDrive = SAI_OUTPUTDRIVE_ENABLED;
   haudio_out_sai.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_1QF;
 
-  /* Configure SAI_Block_x Frame
-  Frame Length: 64
-  Frame active Length: 32
-  FS Definition: Start frame + Channel Side identification
-  FS Polarity: FS active Low
-  FS Offset: FS asserted one bit before the first bit of slot 0 */
+  // Configure SAI_Block_x Frame
+  // Frame Length: 64
+  // Frame active Length: 32
+  // FS Definition: Start frame + Channel Side identification
+  // FS Polarity: FS active Low
+  // FS Offset: FS asserted one bit before the first bit of slot 0
   haudio_out_sai.FrameInit.FrameLength = 64;
   haudio_out_sai.FrameInit.ActiveFrameLength = 32;
   haudio_out_sai.FrameInit.FSDefinition = SAI_FS_CHANNEL_IDENTIFICATION;
   haudio_out_sai.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
   haudio_out_sai.FrameInit.FSOffset = SAI_FS_BEFOREFIRSTBIT;
 
-  /* Configure SAI Block_x Slot
-  Slot First Bit Offset: 0
-  Slot Size  : 16
-  Slot Number: 4
-  Slot Active: All slot actives */
+  // Configure SAI Block_x Slot
+  // Slot First Bit Offset: 0
+  // Slot Size  : 16
+  // Slot Number: 4
+  // Slot Active: All slot actives
   haudio_out_sai.SlotInit.FirstBitOffset = 0;
   haudio_out_sai.SlotInit.SlotSize = SAI_SLOTSIZE_DATASIZE;
   haudio_out_sai.SlotInit.SlotNumber = 4;
@@ -119,16 +119,14 @@ static void SAIx_In_Init (uint32_t SaiOutMode, uint32_t SlotActive, uint32_t Aud
 
   HAL_SAI_Init(&haudio_out_sai);
 
-  /* Initialize SAI2 block B in SLAVE RX synchronous from SAI2 block A */
-  /* Initialize the haudio_in_sai Instance parameter */
+  // Initialize SAI2 block B in SLAVE RX synchronous from SAI2 block A
+  // Initialize the haudio_in_sai Instance parameter
   haudio_in_sai.Instance = AUDIO_IN_SAIx;
 
-  /* Disable SAI peripheral to allow access to SAI internal registers */
+  // Disable SAI peripheral to allow access to SAI internal registers
   __HAL_SAI_DISABLE(&haudio_in_sai);
 
-  /* Configure SAI_Block_x
-  LSBFirst: Disabled
-  DataSize: 16 */
+  // Configure SAI_Block_x LSBFirst: Disabled DataSize: 16
   haudio_in_sai.Init.AudioFrequency = AudioFreq;
   haudio_in_sai.Init.AudioMode = SAI_MODESLAVE_RX;
   haudio_in_sai.Init.NoDivider = SAI_MASTERDIVIDER_ENABLED;
@@ -140,23 +138,23 @@ static void SAIx_In_Init (uint32_t SaiOutMode, uint32_t SlotActive, uint32_t Aud
   haudio_in_sai.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLED;
   haudio_in_sai.Init.FIFOThreshold = SAI_FIFOTHRESHOLD_1QF;
 
-  /* Configure SAI_Block_x Frame
-  Frame Length: 64
-  Frame active Length: 32
-  FS Definition: Start frame + Channel Side identification
-  FS Polarity: FS active Low
-  FS Offset: FS asserted one bit before the first bit of slot 0 */
+  // Configure SAI_Block_x Frame
+  // Frame Length: 64
+  // Frame active Length: 32
+  // FS Definition: Start frame + Channel Side identification
+  // FS Polarity: FS active Low
+  // FS Offset: FS asserted one bit before the first bit of slot 0
   haudio_in_sai.FrameInit.FrameLength = 64;
   haudio_in_sai.FrameInit.ActiveFrameLength = 32;
   haudio_in_sai.FrameInit.FSDefinition = SAI_FS_CHANNEL_IDENTIFICATION;
   haudio_in_sai.FrameInit.FSPolarity = SAI_FS_ACTIVE_LOW;
   haudio_in_sai.FrameInit.FSOffset = SAI_FS_BEFOREFIRSTBIT;
 
-  /* Configure SAI Block_x Slot
-  Slot First Bit Offset: 0
-  Slot Size  : 16
-  Slot Number: 4
-  Slot Active: All slot active */
+  // Configure SAI Block_x Slot
+  // Slot First Bit Offset: 0
+  // Slot Size  : 16
+  // Slot Number: 4
+  // Slot Active: All slot active
   haudio_in_sai.SlotInit.FirstBitOffset = 0;
   haudio_in_sai.SlotInit.SlotSize = SAI_SLOTSIZE_DATASIZE;
   haudio_in_sai.SlotInit.SlotNumber = 4;
@@ -164,25 +162,25 @@ static void SAIx_In_Init (uint32_t SaiOutMode, uint32_t SlotActive, uint32_t Aud
 
   HAL_SAI_Init(&haudio_in_sai);
 
-  /* Enable SAI peripheral to generate MCLK */
+  // Enable SAI peripheral to generate MCLK
   __HAL_SAI_ENABLE(&haudio_out_sai);
 
-  /* Enable SAI peripheral */
+  // Enable SAI peripheral
   __HAL_SAI_ENABLE(&haudio_in_sai);
-}
+  }
 //}}}
 //{{{
 static void SAIx_In_DeInit() {
 
-  /* Initialize the haudio_in_sai Instance parameter */
+  // Initialize the haudio_in_sai Instance parameter
   haudio_in_sai.Instance = AUDIO_IN_SAIx;
 
-  /* Disable SAI peripheral */
+  // Disable SAI peripheral
   __HAL_SAI_DISABLE(&haudio_in_sai);
-
   HAL_SAI_DeInit(&haudio_in_sai);
   }
 //}}}
+
 //{{{
 void HAL_SAI_TxCpltCallback (SAI_HandleTypeDef *hsai) {
   BSP_AUDIO_OUT_TransferComplete_CallBack();
@@ -212,7 +210,7 @@ void HAL_SAI_ErrorCallback (SAI_HandleTypeDef *hsai) {
   audio_out_state = HAL_SAI_GetState(&haudio_out_sai);
   audio_in_state = HAL_SAI_GetState(&haudio_in_sai);
 
-  /* Determines if it is an audio out or audio in error */
+  // Determines if it is an audio out or audio in error
   if ((audio_out_state == HAL_SAI_STATE_BUSY) || (audio_out_state == HAL_SAI_STATE_BUSY_TX))
     BSP_AUDIO_OUT_Error_CallBack();
 
@@ -228,26 +226,26 @@ uint8_t BSP_AUDIO_OUT_Init (uint16_t OutputDevice, uint8_t Volume, uint32_t Audi
   uint8_t ret = AUDIO_ERROR;
   uint32_t deviceid = 0x00;
 
-  /* Disable SAI */
+  // Disable SAI
   SAIx_Out_DeInit();
 
-  /* PLL clock is set depending on the AudioFreq (44.1khz vs 48khz groups) */
+  // PLL clock is set depending on the AudioFreq (44.1khz vs 48khz groups)
   BSP_AUDIO_OUT_ClockConfig (&haudio_out_sai, AudioFreq, NULL);
 
   // SAI data transfer preparation:
-  // Prepare the Media to be used for the audio transfer from memory to SAI peripheral */
+  // Prepare the Media to be used for the audio transfer from memory to SAI peripheral
   haudio_out_sai.Instance = AUDIO_OUT_SAIx;
-  if(HAL_SAI_GetState(&haudio_out_sai) == HAL_SAI_STATE_RESET)
-    // Init the SAI MSP: this __weak function can be redefined by the application*/
+  if (HAL_SAI_GetState(&haudio_out_sai) == HAL_SAI_STATE_RESET)
+    // Init the SAI MSP: this __weak function can be redefined by the application
     BSP_AUDIO_OUT_MspInit(&haudio_out_sai, NULL);
   SAIx_Out_Init(AudioFreq);
 
-  // wm8994 codec initialization */
+  // wm8994 codec initialization
   deviceid = wm8994_drv.ReadID(AUDIO_I2C_ADDRESS);
   if ((deviceid) == WM8994_ID) {
-    // Reset the Codec Registers */
+    // Reset the Codec Registers
     wm8994_drv.Reset(AUDIO_I2C_ADDRESS);
-    // Initialize the audio driver structure */
+    // Initialize the audio driver structure
     audio_drv = &wm8994_drv;
     ret = AUDIO_OK;
     }
@@ -255,7 +253,7 @@ uint8_t BSP_AUDIO_OUT_Init (uint16_t OutputDevice, uint8_t Volume, uint32_t Audi
     ret = AUDIO_ERROR;
 
   if (ret == AUDIO_OK)
-    // Initialize the codec internal registers */
+    // Initialize the codec internal registers
     audio_drv->Init(AUDIO_I2C_ADDRESS, OutputDevice, Volume, AudioFreq);
 
   return ret;
@@ -305,7 +303,7 @@ uint8_t BSP_AUDIO_OUT_Stop (uint32_t Option) {
 
   audio_drv->Stop (AUDIO_I2C_ADDRESS, Option);
   if (Option == CODEC_PDWN_HW)
-    /* Wait at least 100us */
+    // Wait at least 100us
     HAL_Delay(1);
 
   return AUDIO_OK;
@@ -335,31 +333,31 @@ uint8_t BSP_AUDIO_OUT_SetOutputMode (uint8_t Output) {
 //{{{
 void BSP_AUDIO_OUT_SetFrequency (uint32_t AudioFreq) {
 
-  /* PLL clock is set depending by the AudioFreq (44.1khz vs 48khz groups) */
+  // PLL clock is set depending by the AudioFreq (44.1khz vs 48khz groups)
   BSP_AUDIO_OUT_ClockConfig(&haudio_out_sai, AudioFreq, NULL);
 
-  /* Disable SAI peripheral to allow access to SAI internal registers */
+  // Disable SAI peripheral to allow access to SAI internal registers
   __HAL_SAI_DISABLE(&haudio_out_sai);
 
-  /* Update the SAI audio frequency configuration */
+  // Update the SAI audio frequency configuration
   haudio_out_sai.Init.AudioFrequency = AudioFreq;
   HAL_SAI_Init(&haudio_out_sai);
 
-  /* Enable SAI peripheral to generate MCLK */
+  // Enable SAI peripheral to generate MCLK
   __HAL_SAI_ENABLE(&haudio_out_sai);
   }
 //}}}
 //{{{
 void BSP_AUDIO_OUT_SetAudioFrameSlot (uint32_t AudioFrameSlot) {
 
-  /* Disable SAI peripheral to allow access to SAI internal registers */
+  // Disable SAI peripheral to allow access to SAI internal registers
   __HAL_SAI_DISABLE (&haudio_out_sai);
 
-  /* Update the SAI audio frame slot configuration */
+  // Update the SAI audio frame slot configuration
   haudio_out_sai.SlotInit.SlotActive = AudioFrameSlot;
   HAL_SAI_Init (&haudio_out_sai);
 
-  /* Enable SAI peripheral to generate MCLK */
+  // Enable SAI peripheral to generate MCLK
   __HAL_SAI_ENABLE (&haudio_out_sai);
   }
 //}}}
