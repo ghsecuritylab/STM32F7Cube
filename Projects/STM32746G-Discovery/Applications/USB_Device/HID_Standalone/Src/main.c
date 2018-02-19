@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB HID 16/2/18";
+char* kVersion = "USB HID 19/2/18";
 //{{{  includes
 #include "../../../utils.h"
 #include "../../../usbd.h"

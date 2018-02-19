@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB audio 18/2/18";
+char* kVersion = "USB audio 19/2/18";
 //{{{  includes
 #include "../../../utils.h"
 #include "../../../usbd.h"
