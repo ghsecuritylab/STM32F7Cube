@@ -1,5 +1,12 @@
 // ps2.cpp
 #include "ps2.h"
+// keyboard
+// brown  - V - +5v
+// yellow - C - clock ?
+// red -    O - data
+// black    G - ground
+   A3 - PF8
+   A2 - PF9
 
 //{{{  struct ps2Keymap_t
 typedef struct {
@@ -101,88 +108,88 @@ void EXTI2_IRQHandler() {
         bitPos++;
         }
       else if (bitPos == 8) {
-       //{{{  parity bit - got data
-       if (stream) {
-         if (streamByte == -1) {
-           if ((data & 0xC0) == 0x80) {
-             streamByte = 0;
-             streamBytes[streamByte] =  data;
-             }
-           }
-         else {
-           streamByte++;
-           if ((streamByte == 3) && ((data & 0xc0) != 0xc0))
-             streamByte = -1;
-           else {
-             streamBytes[streamByte] = data;
-              if (streamByte == 5) {
-                touchX = ((streamBytes[3] & 0x10) << 8) | ((streamBytes[1] & 0x0F) << 8) | streamBytes[4];
-                touchY = ((streamBytes[3] & 0x20) << 7) | ((streamBytes[1] & 0xF0) << 4) | streamBytes[5];
-                touchZ = streamBytes[2];
-                streamByte = -1;
-                }
+        //{{{  parity bit - got data
+        if (stream) {
+          if (streamByte == -1) {
+            if ((data & 0xC0) == 0x80) {
+              streamByte = 0;
+              streamBytes[streamByte] =  data;
               }
-           }
-         }
-       else if (raw) {
-         rxData[inPtr] = data | (0x100 * rxReleaseCode);
-         inPtr = (inPtr + 1) % 32;
-         }
-       else if (data == 0xE0)
-         rxExpandCode = true;
-       else if (data == 0xF0)
-         rxReleaseCode = true;
-       else if (data == 0x12) // SHIFT_L;
-         shifted = !rxReleaseCode;
-       else if (data == 0x59) // SHIFT_R;
-         shifted = !rxReleaseCode;
-       else if (data == 0x14) // CTRL_L
-         ctrled = !rxReleaseCode;
-       else {
-         if (rxExpandCode) {
-           if (data == 0x70)
-             data = PS2_INSERT;
-           else if (data == 0x6C)
-             data = PS2_HOME;
-           else if (data == 0x7D)
-             data = PS2_PAGEUP;
-           else if (data == 0x71)
-             data = PS2_DELETE;
-           else if (data == 0x6C)
-             data = PS2_HOME;
-           else if (data == 0x69)
-             data = PS2_END;
-           else if (data == 0x6C)
-             data = PS2_PAGEDOWN;
-           else if (data == 0x75)
-             data = PS2_UPARROW;
-           else if (data == 0x6B)
-             data = PS2_LEFTARROW;
-           else if (data == 0x72)
-             data = PS2_DOWNARROW;
-           else if (data == 0x74)
-             data = PS2_RIGHTARROW;
-           else if (data == 0x4A)
-             data = '/';
-           else if (data == 0x5A)
-             data = PS2_ENTER;
-           else
-             data |= 0x200;
-           }
-         else if (shifted)
-           data = kPs2Keymap.shift[data];
-         else
-           data = kPs2Keymap.noshift[data];
+            }
+          else {
+            streamByte++;
+            if ((streamByte == 3) && ((data & 0xc0) != 0xc0))
+              streamByte = -1;
+            else {
+              streamBytes[streamByte] = data;
+               if (streamByte == 5) {
+                 touchX = ((streamBytes[3] & 0x10) << 8) | ((streamBytes[1] & 0x0F) << 8) | streamBytes[4];
+                 touchY = ((streamBytes[3] & 0x20) << 7) | ((streamBytes[1] & 0xF0) << 4) | streamBytes[5];
+                 touchZ = streamBytes[2];
+                 streamByte = -1;
+                 }
+               }
+            }
+          }
+        else if (raw) {
+          rxData[inPtr] = data | (0x100 * rxReleaseCode);
+          inPtr = (inPtr + 1) % 32;
+          }
+        else if (data == 0xE0)
+          rxExpandCode = true;
+        else if (data == 0xF0)
+          rxReleaseCode = true;
+        else if (data == 0x12) // SHIFT_L;
+          shifted = !rxReleaseCode;
+        else if (data == 0x59) // SHIFT_R;
+          shifted = !rxReleaseCode;
+        else if (data == 0x14) // CTRL_L
+          ctrled = !rxReleaseCode;
+        else {
+          if (rxExpandCode) {
+            if (data == 0x70)
+              data = PS2_INSERT;
+            else if (data == 0x6C)
+              data = PS2_HOME;
+            else if (data == 0x7D)
+              data = PS2_PAGEUP;
+            else if (data == 0x71)
+              data = PS2_DELETE;
+            else if (data == 0x6C)
+              data = PS2_HOME;
+            else if (data == 0x69)
+              data = PS2_END;
+            else if (data == 0x6C)
+              data = PS2_PAGEDOWN;
+            else if (data == 0x75)
+              data = PS2_UPARROW;
+            else if (data == 0x6B)
+              data = PS2_LEFTARROW;
+            else if (data == 0x72)
+              data = PS2_DOWNARROW;
+            else if (data == 0x74)
+              data = PS2_RIGHTARROW;
+            else if (data == 0x4A)
+              data = '/';
+            else if (data == 0x5A)
+              data = PS2_ENTER;
+            else
+              data |= 0x200;
+            }
+          else if (shifted)
+            data = kPs2Keymap.shift[data];
+          else
+            data = kPs2Keymap.noshift[data];
 
-         rxData[inPtr] = data | (0x100 * rxReleaseCode);
-         inPtr = (inPtr + 1) % 32;
-         rxExpandCode = false;
-         rxReleaseCode = false;
-         }
+          rxData[inPtr] = data | (0x100 * rxReleaseCode);
+          inPtr = (inPtr + 1) % 32;
+          rxExpandCode = false;
+          rxReleaseCode = false;
+          }
 
-       bitPos++;
-       }
-       //}}}
+        bitPos++;
+        }
+        //}}}
       else if (bitPos == 9) {
         //{{{  expect hi stop bit
         if (bit)
