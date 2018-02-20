@@ -5,6 +5,7 @@ char* kVersion = "USB audio 19/2/18";
 #include "../../../usbd.h"
 #include "../../../stm32746g_discovery_audio.h"
 //}}}
+#define AUDIO_OUT_ENDPOINT  0x01
 
 //{{{  packet defines
 #define CHANNELS              4
@@ -38,6 +39,7 @@ static uint16_t gRR[240];
 static int gFaster = 1;
 static int writePtrOnRead = 0;
 
+//{{{  audioDescriptor handler
 //{{{  device descriptor
 #define USBD_VID  0x0483
 #define USBD_PID  0x5730
@@ -57,15 +59,30 @@ __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_E
   USBD_IDX_SERIAL_STR,                 // Index of serial number string
   USBD_MAX_NUM_CONFIGURATION           // bNumConfigurations
   };
-//}}}
-//{{{  configuration descriptor
-#define CONFIG_DESC_SIZ     109
-#define AUDIO_OUT_ENDPOINT  1
 
-__ALIGN_BEGIN static const uint8_t kConfigurationDescriptor[CONFIG_DESC_SIZ] __ALIGN_END = {
+static uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  *length = sizeof(kDeviceDescriptor);
+  return (uint8_t*)kDeviceDescriptor;
+  }
+//}}}
+//{{{  device qualifier descriptor
+__ALIGN_BEGIN static const uint8_t kDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
+  USB_LEN_DEV_QUALIFIER_DESC, USB_DESC_TYPE_DEVICE_QUALIFIER,
+  0x00, 0x02,  // bcdUSb
+  0x00,        // bDeviceClass
+  0x00,        // bDeviceSubClass
+  0x00,        // bDeviceProtocol
+  0x40,        // bMaxPacketSize0
+  0x01,        // bNumConfigurations
+  0x00,        // bReserved
+  };
+//}}}
+__ALIGN_BEGIN static uint8_t strDesc[256] __ALIGN_END;
+//{{{  configuration descriptor
+__ALIGN_BEGIN static const uint8_t kConfigurationDescriptor[109] __ALIGN_END = {
   // Configuration Descriptor
   9, USB_DESC_TYPE_CONFIGURATION,
-  LOBYTE(CONFIG_DESC_SIZ), HIBYTE(CONFIG_DESC_SIZ), // wTotalLength
+  LOBYTE(109), HIBYTE(109), // wTotalLength
   2,    // bNumInterfaces
   1,    // bConfigurationValue
   0,    // iConfiguration
@@ -168,18 +185,12 @@ __ALIGN_BEGIN static const uint8_t kConfigurationDescriptor[CONFIG_DESC_SIZ] __A
   0, // bLockDelayUnits
   0, // wLockDelay
   };
-//}}}
-//{{{  device qualifier descriptor
-__ALIGN_BEGIN static const uint8_t kDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
-  USB_LEN_DEV_QUALIFIER_DESC, USB_DESC_TYPE_DEVICE_QUALIFIER, // bDescriptorType
-  0x00, 0x02,                     // bcdUSb
-  0x00,                           // bDeviceClass
-  0x00,                           // bDeviceSubClass
-  0x00,                           // bDeviceProtocol
-  0x40,                           // bMaxPacketSize0
-  0x01,                           // bNumConfigurations
-  0x00,                           // bReserved
-  };
+
+static uint8_t* configurationStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  #define USBD_CONFIGURATION_STRING "audio config"
+  USBD_GetString ((uint8_t*)USBD_CONFIGURATION_STRING, strDesc, length);
+  return strDesc;
+  }
 //}}}
 //{{{  language id descriptor
 #define USBD_LANGID_STRING    0x409
@@ -189,6 +200,32 @@ __ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __
   USB_DESC_TYPE_STRING,
   LOBYTE(USBD_LANGID_STRING), HIBYTE(USBD_LANGID_STRING),
   };
+
+static uint8_t* langIdStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  *length = sizeof(kLangIdDescriptor);
+  return (uint8_t*)kLangIdDescriptor;
+  }
+//}}}
+//{{{
+static uint8_t* manufacturerStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  #define USBD_MANUFACTURER_STRING  "colin"
+  USBD_GetString ((uint8_t*)USBD_MANUFACTURER_STRING, strDesc, length);
+  return strDesc;
+  }
+//}}}
+//{{{
+static uint8_t* productStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+  USBD_GetString ((uint8_t*)((speed == USBD_SPEED_HIGH) ? "Stm32 HS USB audio 1.0" : "Stm32 FS USB audio 1.0"), strDesc, length);
+  return strDesc;
+  }
+//}}}
+//{{{
+static uint8_t* interfaceStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+
+  #define USBD_INTERFACE_STRING "audio Interface"
+  USBD_GetString ((uint8_t*)USBD_INTERFACE_STRING, strDesc, length);
+  return strDesc;
+  }
 //}}}
 //{{{  serial string descriptor
 #define USB_SIZ_STRING_SERIAL 0x1A
@@ -197,10 +234,6 @@ __ALIGN_BEGIN static uint8_t kStringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = 
   USB_SIZ_STRING_SERIAL,
   USB_DESC_TYPE_STRING,
   };
-//}}}
-
-//{{{  audioDescriptor handler
-__ALIGN_BEGIN static uint8_t strDesc[256] __ALIGN_END;
 //{{{
 static void intToUnicode (uint32_t value, uint8_t* pbuf, uint8_t len) {
 
@@ -232,31 +265,6 @@ static void getSerialNum() {
 //}}}
 
 //{{{
-static uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  *length = sizeof(kDeviceDescriptor);
-  return (uint8_t*)kDeviceDescriptor;
-  }
-//}}}
-//{{{
-static uint8_t* langIdStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  *length = sizeof(kLangIdDescriptor);
-  return (uint8_t*)kLangIdDescriptor;
-  }
-//}}}
-//{{{
-static uint8_t* manufacturerStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  #define USBD_MANUFACTURER_STRING  "colin"
-  USBD_GetString ((uint8_t*)USBD_MANUFACTURER_STRING, strDesc, length);
-  return strDesc;
-  }
-//}}}
-//{{{
-static uint8_t* productStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  USBD_GetString ((uint8_t*)((speed == USBD_SPEED_HIGH) ? "Stm32 HS USB audio 1.0" : "Stm32 FS USB audio 1.0"), strDesc, length);
-  return strDesc;
-  }
-//}}}
-//{{{
 static uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
 
   *length = USB_SIZ_STRING_SERIAL;
@@ -264,20 +272,6 @@ static uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* lengt
   return (uint8_t*)kStringSerial;
   }
 //}}}
-//{{{
-static uint8_t* configurationStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  #define USBD_CONFIGURATION_STRING "audio config"
-  USBD_GetString ((uint8_t*)USBD_CONFIGURATION_STRING, strDesc, length);
-  return strDesc;
-  }
-//}}}
-//{{{
-static uint8_t* interfaceStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-
-  #define USBD_INTERFACE_STRING "audio Interface"
-  USBD_GetString ((uint8_t*)USBD_INTERFACE_STRING, strDesc, length);
-  return strDesc;
-  }
 //}}}
 
 static USBD_DescriptorsTypeDef audioDescriptor = {
