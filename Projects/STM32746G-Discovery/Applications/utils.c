@@ -121,8 +121,6 @@ void initUtils() {
   //}}}
 
   BSP_LCD_Init();
-  BSP_LCD_Init();
-
   BSP_TS_Init (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
   BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
   BSP_LED_Init (LED1);
