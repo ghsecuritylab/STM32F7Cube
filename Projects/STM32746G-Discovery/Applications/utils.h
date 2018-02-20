@@ -9,12 +9,17 @@
 #include "stm32746g_discovery_lcd.h"
 #include "stm32746g_discovery_ts.h"
 
+//{{{
+#ifdef __cplusplus
+  extern "C" {
+#endif
+//}}}
 int getScrollScale();
 int getScrollLines();
 void incScrollValue (int inc);
 
 void initUtils();
-void showLcd (char* title, int showTouch);
+void showLcd (const char* title, int showTouch);
 void flipLcd();
 
 void debug (uint32_t colour, const char* format, ... );
@@ -26,3 +31,8 @@ void onScroll (int x, int y, int z);
 void onRelease (int x, int y);
 
 void touch();
+//{{{
+#ifdef __cplusplus
+}
+#endif
+//}}}

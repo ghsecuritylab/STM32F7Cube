@@ -150,7 +150,7 @@ void initUtils() {
   }
 //}}}
 //{{{
-void showLcd (char* title, int showTouch) {
+void showLcd (const char* title, int showTouch) {
 
   BSP_LCD_SelectLayer (gLayer);
   BSP_LCD_Clear (LCD_COLOR_BLACK);
