@@ -23,12 +23,13 @@
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 		<nature>fr.ac6.mcu.ide.core.MCUProjectNature</nature>
+		<nature>org.eclipse.cdt.core.ccnature</nature>
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Application/main.c</name>
+			<name>Application/main.cpp</name>
 			<type>1</type>
-			<locationURI>PARENT-2-PROJECT_LOC/Src/main.c</locationURI>
+			<locationURI>PARENT-2-PROJECT_LOC/Src/main.cpp</locationURI>
 		</link>
 		<link>
 			<name>Application/stm32746g_discovery_lcd.c</name>

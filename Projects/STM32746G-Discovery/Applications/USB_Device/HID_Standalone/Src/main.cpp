@@ -1,9 +1,10 @@
 // main.c - usb hid
-const char* kVersion = "USB HID keyboard 20/2/18";
 //{{{  includes
+#include <string>
 #include "../../../utils.h"
 #include "../../../usbd.h"
 //}}}
+std::string kVersion = "USB HID keyboard 20/2/18";
 #define HID_IN_ENDPOINT       0x81
 //#define HID_IN_ENDPOINT_SIZE  4
 #define HID_IN_ENDPOINT_SIZE  5
@@ -816,7 +817,7 @@ int main() {
 
   while (1) {
     touch();
-    showLcd (kVersion, 0);
+    showLcd (kVersion.c_str(), 0);
     flipLcd();
     }
   }
