@@ -1,13 +1,13 @@
 //{{{  includes
 #pragma once
+#include "stm32746g_discovery_sdram.h"
+#include "stm32746g_discovery.h"
+#include "../../../Utilities/Fonts/fonts.h"
+//}}}
 //{{{
 #ifdef __cplusplus
  extern "C" {
 #endif
-//}}}
-#include "stm32746g_discovery_sdram.h"
-#include "stm32746g_discovery.h"
-#include "../../../Utilities/Fonts/fonts.h"
 //}}}
 //{{{  LCD_DrawPropTypeDef
 typedef struct {
@@ -29,17 +29,7 @@ typedef enum {
   LEFT_MODE               = 0x03     /* Left mode   */
   }Text_AlignModeTypdef;
 //}}}
-
-#define MAX_LAYER_NUMBER        ((uint32_t)2)
-#define LCD_LayerCfgTypeDef     LTDC_LayerCfgTypeDef
-#define LTDC_ACTIVE_LAYER       ((uint32_t)1) /* Layer 1 */
-
-#define LCD_OK                  ((uint8_t)0x00)
-#define LCD_ERROR               ((uint8_t)0x01)
-#define LCD_TIMEOUT             ((uint8_t)0x02)
-
-#define LCD_FB_START_ADDRESS    ((uint32_t)0xC0000000)
-
+//{{{  colour defines
 #define LCD_COLOR_BLUE          ((uint32_t)0xFF0000FF)
 #define LCD_COLOR_GREEN         ((uint32_t)0xFF00FF00)
 #define LCD_COLOR_RED           ((uint32_t)0xFFFF0000)
@@ -66,6 +56,18 @@ typedef enum {
 #define LCD_COLOR_BROWN         ((uint32_t)0xFFA52A2A)
 #define LCD_COLOR_ORANGE        ((uint32_t)0xFFFFA500)
 #define LCD_COLOR_TRANSPARENT   ((uint32_t)0xFF000000)
+//}}}
+//{{{  other defines
+#define MAX_LAYER_NUMBER        ((uint32_t)2)
+#define LCD_LayerCfgTypeDef     LTDC_LayerCfgTypeDef
+#define LTDC_ACTIVE_LAYER       ((uint32_t)1) /* Layer 1 */
+
+#define LCD_OK                  ((uint8_t)0x00)
+#define LCD_ERROR               ((uint8_t)0x01)
+#define LCD_TIMEOUT             ((uint8_t)0x02)
+
+#define LCD_FB_START_ADDRESS    ((uint32_t)0xC0000000)
+
 
 #define LCD_DEFAULT_FONT        Font16
 
@@ -84,6 +86,8 @@ typedef enum {
 
 #define  RK043FN48H_WIDTH   480
 #define  RK043FN48H_HEIGHT  272
+//}}}
+
 inline uint32_t BSP_LCD_GetXSize() { return RK043FN48H_WIDTH; }
 inline uint32_t BSP_LCD_GetYSize() { return RK043FN48H_HEIGHT; }
 
