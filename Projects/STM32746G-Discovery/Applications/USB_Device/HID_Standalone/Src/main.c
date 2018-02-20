@@ -722,7 +722,7 @@ static uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
   struct keyboardHID_t keyboardHID;
 
   keyboardHID.id = 1;
-  keyboardHID.modifiers = KEY_MOD_LCTRL;
+  keyboardHID.modifiers = KEY_MOD_LSHIFT;
   keyboardHID.key1 = KEY_L;
   keyboardHID.key2 = 0;
   keyboardHID.key3 = 0;
