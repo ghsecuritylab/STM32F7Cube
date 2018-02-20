@@ -15,7 +15,7 @@ char* kVersion = "USB HID 20/2/18";
 // USB HID device Configuration Descriptor
 __ALIGN_BEGIN static const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
   0x09, USB_DESC_TYPE_CONFIGURATION,
-  34,00  // wTotalLength: Bytes returned
+  34,00, // wTotalLength: Bytes returned
   0x01,  // bNumInterfaces: 1 interface
   0x01,  // bConfigurationValue: Configuration value
   0x00,  // iConfiguration: Index of string descriptor describing the configuration
@@ -34,7 +34,7 @@ __ALIGN_BEGIN static const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END =
 
   // Joystick Mouse HID Descriptor
   0x09, 0x21, // bDescriptorType: HID
-  0x11,01  // bcdHID: HID Class Spec release number
+  0x11,01, // bcdHID: HID Class Spec release number
   0x00,    // bCountryCode: Hardware target country
   0x01,    // bNumDescriptors: Number of HID class descriptors to follow
   0x22,    // bDescriptorType
