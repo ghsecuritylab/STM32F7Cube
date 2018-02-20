@@ -1,5 +1,5 @@
 // main.c
-char* kVersion = "USB audio 19/2/18";
+char* kVersion = "USB audio 20/2/18";
 //{{{  includes
 #include "../../../utils.h"
 #include "../../../usbd.h"
@@ -192,7 +192,7 @@ static uint8_t* configurationStringDescriptor (USBD_SpeedTypeDef speed, uint16_t
   return strDesc;
   }
 //}}}
-//{{{  language id descriptor
+//{{{  language id string descriptor
 #define USBD_LANGID_STRING    0x409
 
 __ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
@@ -206,24 +206,21 @@ static uint8_t* langIdStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* lengt
   return (uint8_t*)kLangIdDescriptor;
   }
 //}}}
-//{{{
+//{{{  manufacturer string descriptor
 static uint8_t* manufacturerStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-  #define USBD_MANUFACTURER_STRING  "colin"
-  USBD_GetString ((uint8_t*)USBD_MANUFACTURER_STRING, strDesc, length);
+  USBD_GetString ((uint8_t*)"colin", strDesc, length);
   return strDesc;
   }
 //}}}
-//{{{
+//{{{  product string descriptor
 static uint8_t* productStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)((speed == USBD_SPEED_HIGH) ? "Stm32 HS USB audio 1.0" : "Stm32 FS USB audio 1.0"), strDesc, length);
   return strDesc;
   }
 //}}}
-//{{{
+//{{{  interface string descriptor
 static uint8_t* interfaceStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-
-  #define USBD_INTERFACE_STRING "audio Interface"
-  USBD_GetString ((uint8_t*)USBD_INTERFACE_STRING, strDesc, length);
+  USBD_GetString ((uint8_t*)"audio Interface", strDesc, length);
   return strDesc;
   }
 //}}}
@@ -234,44 +231,35 @@ __ALIGN_BEGIN static uint8_t kStringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = 
   USB_SIZ_STRING_SERIAL,
   USB_DESC_TYPE_STRING,
   };
-//{{{
-static void intToUnicode (uint32_t value, uint8_t* pbuf, uint8_t len) {
 
+static void intToUnicode (uint32_t value, uint8_t* pbuf, uint8_t len) {
   uint8_t idx = 0;
   for (idx = 0; idx < len; idx ++) {
     if (((value >> 28)) < 0xA )
       pbuf[2 * idx] = (value >> 28) + '0';
     else
       pbuf[2 * idx] = (value >> 28) + 'A' - 10;
-
     value = value << 4;
     pbuf[2 * idx + 1] = 0;
     }
   }
-//}}}
-//{{{
-static void getSerialNum() {
 
+static void getSerialNum() {
   uint32_t deviceserial0 = *(uint32_t*)0x1FFF7A10;
   uint32_t deviceserial1 = *(uint32_t*)0x1FFF7A14;
   uint32_t deviceserial2 = *(uint32_t*)0x1FFF7A18;
-
   deviceserial0 += deviceserial2;
   if (deviceserial0 != 0) {
     intToUnicode (deviceserial0, &kStringSerial[2], 8);
     intToUnicode (deviceserial1, &kStringSerial[18], 4);
     }
   }
-//}}}
 
-//{{{
 static uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
-
   *length = USB_SIZ_STRING_SERIAL;
   getSerialNum();
   return (uint8_t*)kStringSerial;
   }
-//}}}
 //}}}
 
 static USBD_DescriptorsTypeDef audioDescriptor = {
