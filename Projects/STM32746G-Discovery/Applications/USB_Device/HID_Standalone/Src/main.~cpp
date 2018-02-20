@@ -699,7 +699,7 @@ USBD_ClassTypeDef hidClass = {
 //{{{
 static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report) {
 
-  auto hidData = (tHidData*)device->pClassData;
+  tHidData* hidData = (tHidData*)device->pClassData;
   if (device->dev_state == USBD_STATE_CONFIGURED) {
     if (hidData->mState == HID_IDLE) {
       hidData->mState = HID_BUSY;
