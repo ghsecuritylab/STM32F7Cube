@@ -297,7 +297,7 @@ std::string kVersion = "USB HID keyboard 20/2/18";
 #define VID                      0x0483
 #define PID                      0x5710
 
-__ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
+__ALIGN_BEGIN const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12, USB_DESC_TYPE_DEVICE,
   0,2,                       // bcdUSB
   0x00,                      // bDeviceClass
@@ -313,13 +313,13 @@ __ALIGN_BEGIN static const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_E
   USBD_MAX_NUM_CONFIGURATION // bNumConfigurations
   };
 
-static uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   *length = sizeof(kDeviceDescriptor);
   return (uint8_t*)kDeviceDescriptor;
   }
 //}}}
 //{{{  device qualifier descriptor
-__ALIGN_BEGIN static const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
+__ALIGN_BEGIN const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
   USB_LEN_DEV_QUALIFIER_DESC, USB_DESC_TYPE_DEVICE_QUALIFIER,
   0x00, 0x02,  // bcdUSb
   0x00,        // bDeviceClass
@@ -332,7 +332,7 @@ __ALIGN_BEGIN static const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUA
 //}}}
 
 //{{{  mouse hid report descriptor
-__ALIGN_BEGIN static const uint8_t kHidMouseReportDescriptor[74] __ALIGN_END = {
+__ALIGN_BEGIN const uint8_t kHidMouseReportDescriptor[74] __ALIGN_END = {
   0x05, 0x01, // Usage Page (Generic Desktop),
   0x09, 0x02, // Usage (Mouse),
   0xA1, 0x01, // Collection (Application),
@@ -381,7 +381,7 @@ __ALIGN_BEGIN static const uint8_t kHidMouseReportDescriptor[74] __ALIGN_END = {
   };
 //}}}
 //{{{  keyboard hid report descriptor
-__ALIGN_BEGIN static uint8_t kHidKeyboardReportDescriptor[78] __ALIGN_END = {
+__ALIGN_BEGIN uint8_t kHidKeyboardReportDescriptor[78] __ALIGN_END = {
   0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
   0x09, 0x06,        // Usage (Keyboard)
   0xA1, 0x01,        // Collection (Application)
@@ -425,7 +425,7 @@ __ALIGN_BEGIN static uint8_t kHidKeyboardReportDescriptor[78] __ALIGN_END = {
   };
 //}}}
 //{{{  hid configuration descriptor
-__ALIGN_BEGIN static const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
+__ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
   0x09, USB_DESC_TYPE_CONFIGURATION,
   34,00, // wTotalLength - bytes returned
   0x01,  // bNumInterfaces: 1 interface
@@ -464,7 +464,7 @@ __ALIGN_BEGIN static const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END =
   };
 //}}}
 //{{{  device Configuration Descriptor
-__ALIGN_BEGIN static const uint8_t kHidDescriptor[9] __ALIGN_END = {
+__ALIGN_BEGIN const uint8_t kHidDescriptor[9] __ALIGN_END = {
   0x09, 0x21,
   0x11,1, // bcdHID: HID Class Spec release number
   0x00,   // bCountryCode: Hardware target country
@@ -478,7 +478,7 @@ __ALIGN_BEGIN static const uint8_t kHidDescriptor[9] __ALIGN_END = {
 #define LANGID_STRING            0x409
 
 // USB Standard Device Descriptor
-__ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
+__ALIGN_BEGIN const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
   USB_LEN_LANGID_STR_DESC,
   USB_DESC_TYPE_STRING,
   LOBYTE(LANGID_STRING), HIBYTE(LANGID_STRING),
@@ -486,31 +486,31 @@ __ALIGN_BEGIN static const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __
 
 __ALIGN_BEGIN uint8_t stringDescriptor[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
 
-static uint8_t* langIdStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+uint8_t* langIdStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   *length = sizeof(kLangIdDescriptor);
   return (uint8_t*)kLangIdDescriptor;
   }
 //}}}
 //{{{  product string descriptor
-static uint8_t* productStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+uint8_t* productStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)"fs hid mouse", stringDescriptor, length);
   return stringDescriptor;
   }
 //}}}
 //{{{  manufacturer string descriptor
-static uint8_t* manufacturerStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+uint8_t* manufacturerStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)"Colin", stringDescriptor, length);
   return stringDescriptor;
   }
 //}}}
 //{{{  configuration string descriptor
-static uint8_t* configurationStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+uint8_t* configurationStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)"hid fs config", stringDescriptor, length);
   return stringDescriptor;
   }
 //}}}
 //{{{  interface string descriptor
-static uint8_t* interfaceStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+uint8_t* interfaceStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   USBD_GetString ((uint8_t*)"hid fs interface", stringDescriptor, length);
   return stringDescriptor;
   }
@@ -518,12 +518,12 @@ static uint8_t* interfaceStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* le
 //}}}
 //{{{  serial string descriptor
 #define USB_SIZ_STRING_SERIAL    0x1A
-__ALIGN_BEGIN static uint8_t stringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
+__ALIGN_BEGIN uint8_t stringSerial[USB_SIZ_STRING_SERIAL] __ALIGN_END = {
   USB_SIZ_STRING_SERIAL,
   USB_DESC_TYPE_STRING,
   };
 
-static void intToUnicode (uint32_t value , uint8_t* pbuf , uint8_t len) {
+void intToUnicode (uint32_t value , uint8_t* pbuf , uint8_t len) {
   uint8_t idx = 0;
   for( idx = 0 ; idx < len ; idx ++) {
     if( ((value >> 28)) < 0xA )
@@ -535,7 +535,7 @@ static void intToUnicode (uint32_t value , uint8_t* pbuf , uint8_t len) {
     }
   }
 
-static void getSerialNum() {
+void getSerialNum() {
   #define DEVICE_ID1 (0x1FFF7A10)
   #define DEVICE_ID2 (0x1FFF7A14)
   #define DEVICE_ID3 (0x1FFF7A18)
@@ -549,7 +549,7 @@ static void getSerialNum() {
     }
   }
 
-static uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
+uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   *length = USB_SIZ_STRING_SERIAL;
   getSerialNum();
   return (uint8_t*)stringSerial;
@@ -578,7 +578,7 @@ typedef struct {
 //}}}
 
 //{{{
-static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
+uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   // Open EP IN
   USBD_LL_OpenEP (device, HID_IN_ENDPOINT, USBD_EP_TYPE_INTR, HID_IN_ENDPOINT_SIZE);
@@ -588,7 +588,7 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   }
 //}}}
 //{{{
-static uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
+uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   // Close HID EPs
   USBD_LL_CloseEP (device, HID_IN_ENDPOINT);
@@ -598,7 +598,7 @@ static uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   }
 //}}}
 //{{{
-static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
+uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   tHidData* hidData = (tHidData*)device->pClassData;
   debug (LCD_COLOR_YELLOW, "setup bmReq:%x req:%x v:%x l:%d",
@@ -660,13 +660,13 @@ static uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 //}}}
 
 //{{{
-static uint8_t* usbGetConfigurationDescriptor (uint16_t* length) {
+uint8_t* usbGetConfigurationDescriptor (uint16_t* length) {
   *length = sizeof(kHidConfigurationDescriptor);
   return (uint8_t*)kHidConfigurationDescriptor;
   }
 //}}}
 //{{{
-static uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epnum) {
+uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epnum) {
   // Ensure that the FIFO is empty before a new transfer, this condition could
   // be caused by  a new transfer before the end of the previous transfer
   ((tHidData *)device->pClassData)->mState = HID_IDLE;
@@ -674,7 +674,7 @@ static uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epnum) {
   }
 //}}}
 //{{{
-static uint8_t* usbGetDeviceQualifierDescriptor (uint16_t* length) {
+uint8_t* usbGetDeviceQualifierDescriptor (uint16_t* length) {
   *length = sizeof (kHidDeviceQualifierDescriptor);
   return (uint8_t*)kHidDeviceQualifierDescriptor;
   }
@@ -698,7 +698,7 @@ USBD_ClassTypeDef hidClass = {
   };
 //}}}
 //{{{
-static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report) {
+uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report) {
 
   auto hidData = (tHidData*)device->pClassData;
   if (device->dev_state == USBD_STATE_CONFIGURED) {
@@ -712,7 +712,7 @@ static uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report) {
   }
 //}}}
 //{{{
-static uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
+uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
 
   struct keyboardHID_t {
     uint8_t id;
@@ -751,7 +751,7 @@ static uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
   }
 //}}}
 //{{{
-//static uint32_t hidGetPollingInterval (USBD_HandleTypeDef* device) {
+//int32_t hidGetPollingInterval (USBD_HandleTypeDef* device) {
 
   //if (device->dev_speed == USBD_SPEED_HIGH)
     //// high speed endpoints, values between 1..16 are allowed. Values correspond to interval/ of 2 ^ (bInterval-1).

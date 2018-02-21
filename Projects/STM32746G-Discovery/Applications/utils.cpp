@@ -1,5 +1,6 @@
 // utils.cpp
 //{{{  includes
+#include <vector>
 #include "utils.h"
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
@@ -10,10 +11,26 @@
 #define DEBUG_MAX_LINES      200
 int gTick = 0;
 int gLayer = 1;
-uint16_t gDebugLine = 0;
-char* gDebugStr[DEBUG_MAX_LINES];
-uint32_t gDebugTicks[DEBUG_MAX_LINES];
-uint32_t gDebugColour[DEBUG_MAX_LINES];
+
+//{{{
+class cDebugItem {
+public:
+  cDebugItem() {
+    mStr = (char*)malloc (40);
+    }
+  ~cDebugItem() { free (mStr); }
+
+  char* mStr = nullptr;
+  int mStrSize = 40;
+  uint32_t mTicks = 0;
+  uint32_t mColour = 0;
+  };
+//}}}
+cDebugItem gLines[DEBUG_MAX_LINES];
+unsigned gDebugLine = 0;
+
+std::vector<cDebugItem> mLines;
+unsigned mMaxLine = 0;
 
 // touch
 TS_StateTypeDef gTsState;
@@ -31,7 +48,7 @@ int getScrollScale() {
   }
 //}}}
 //{{{
-int getScrollLines() {
+unsigned getScrollLines() {
   return gScroll / getScrollScale();
   }
 //}}}
@@ -124,9 +141,6 @@ void initUtils() {
   BSP_LCD_SetTransparency (1, 0);
 
   BSP_LCD_DisplayOn();
-
-  for (int i = 0; i < DEBUG_MAX_LINES; i++)
-    gDebugStr[i] = NULL;
   }
 //}}}
 //{{{
@@ -145,20 +159,20 @@ void showLcd (const std::string& title, bool showTouch) {
   BSP_LCD_DisplayStringAtLine (0, str1);
 
   if (!BSP_PB_GetState (BUTTON_KEY))
-    for (int displayLine = 0; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
+    for (auto displayLine = 0u; (displayLine < gDebugLine) && (displayLine < DEBUG_DISPLAY_LINES); displayLine++) {
       int debugLine = (gDebugLine <= DEBUG_DISPLAY_LINES) ?
                         displayLine : gDebugLine - DEBUG_DISPLAY_LINES + displayLine - getScrollLines();
       debugLine = debugLine % DEBUG_MAX_LINES;
       BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
       char tickStr[20];
-      sprintf (tickStr, "%2d.%03d", (int)gDebugTicks[debugLine] / 1000, (int)gDebugTicks[debugLine] % 1000);
+      sprintf (tickStr, "%2d.%03d", (int)gLines[debugLine].mTicks / 1000, (int)gLines[debugLine].mTicks % 1000);
       BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 0, tickStr);
-      BSP_LCD_SetTextColor (gDebugColour[debugLine]);
-      BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 7, gDebugStr[debugLine]);
+      BSP_LCD_SetTextColor (gLines[debugLine].mColour);
+      BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 7, gLines[debugLine].mStr);
       }
 
   if (showTouch)
-    for (int i = 0; i < gTsState.touchDetected; i++) {
+    for (unsigned int i = 0u; i < gTsState.touchDetected; i++) {
       BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
       BSP_LCD_FillCircle (gTsState.touchX[i], gTsState.touchY[i],
                           gTsState.touchWeight[i] ? gTsState.touchWeight[i] : 1);
@@ -177,15 +191,13 @@ void flipLcd() {
 //{{{
 void debug (uint32_t colour, const char* format, ... ) {
 
-  gDebugColour[gDebugLine] = colour;
-  gDebugTicks[gDebugLine] = HAL_GetTick();
-
   va_list args;
   va_start (args, format);
-  free (gDebugStr[gDebugLine]);
-  gDebugStr[gDebugLine] = (char*)malloc (vsnprintf (NULL, 0, format, args) + 1);
-  vsnprintf (gDebugStr[gDebugLine], 40, format, args);
+  vsnprintf (gLines[gDebugLine].mStr, gLines[gDebugLine].mStrSize, format, args);
   va_end (args);
+
+  gLines[gDebugLine].mTicks = HAL_GetTick();
+  gLines[gDebugLine].mColour = colour;
 
   gDebugLine = (gDebugLine+1) % DEBUG_MAX_LINES;
   }

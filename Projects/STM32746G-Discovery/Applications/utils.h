@@ -16,7 +16,7 @@
 #endif
 //}}}
 int getScrollScale();
-int getScrollLines();
+unsigned getScrollLines();
 void incScrollValue (int inc);
 
 void initUtils();
