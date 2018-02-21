@@ -213,6 +213,16 @@ static PCD_HandleTypeDef gPcdHandle;
 void OTG_FS_IRQHandler() { HAL_PCD_IRQHandler (&gPcdHandle); }
 
 //{{{
+uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
+
+  auto pcdHandle = (PCD_HandleTypeDef*)device->pData;
+  if ((ep_addr & 0x80) == 0x80)
+    return pcdHandle->IN_ep[ep_addr & 0x7F].is_stall;
+  else
+    return pcdHandle->OUT_ep[ep_addr & 0x7F].is_stall;
+  }
+//}}}
+//{{{
 USBD_StatusTypeDef USBD_LL_OpenEP (USBD_HandleTypeDef* device, uint8_t ep_addr, uint8_t ep_type, uint16_t ep_mps) {
   HAL_PCD_EP_Open ((PCD_HandleTypeDef*)device->pData, ep_addr, ep_mps, ep_type);
   return USBD_OK;
@@ -254,16 +264,6 @@ USBD_StatusTypeDef USBD_LL_PrepareReceive (USBD_HandleTypeDef* device, uint8_t e
   return USBD_OK;
   }
 //}}}
-//{{{
-uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef* device, uint8_t ep_addr) {
-
-  PCD_HandleTypeDef* gPcdHandle = (PCD_HandleTypeDef*)device->pData;
-  if ((ep_addr & 0x80) == 0x80)
-    return gPcdHandle->IN_ep[ep_addr & 0x7F].is_stall;
-  else
-    return gPcdHandle->OUT_ep[ep_addr & 0x7F].is_stall;
-  }
-//}}}
 
 //{{{
 void USBD_CtlError (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
@@ -277,7 +277,7 @@ void USBD_GetString (uint8_t* desc, uint8_t* unicode, uint16_t* len) {
 
   uint8_t idx = 0;
   if (desc != NULL) {
-    uint8_t* buf= desc;
+    auto buf = desc;
     uint8_t length = 0;
     while (*buf != '\0') {
       length++;
@@ -456,7 +456,7 @@ void HAL_PCD_MspInit (PCD_HandleTypeDef* pcdHandle) {
 
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  /* Configure DM DP Pins */
+  // Configure DM DP Pins
   GPIO_InitStruct.Pin = (GPIO_PIN_11 | GPIO_PIN_12);
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -464,13 +464,13 @@ void HAL_PCD_MspInit (PCD_HandleTypeDef* pcdHandle) {
   GPIO_InitStruct.Alternate = GPIO_AF10_OTG_FS;
   HAL_GPIO_Init (GPIOA, &GPIO_InitStruct);
 
-  /* Enable USB FS Clock */
+  // Enable USB FS Clock
   __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
 
-  /* Set USBFS Interrupt priority */
+  // Set USBFS Interrupt priority
   HAL_NVIC_SetPriority (OTG_FS_IRQn, 5, 0);
 
-  /* Enable USBFS Interrupt */
+  // Enable USBFS Interrupt
   HAL_NVIC_EnableIRQ (OTG_FS_IRQn);
   }
 //}}}
@@ -587,7 +587,7 @@ void USBD_GetDescriptor (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) 
 void USBD_SetAddress (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   if ((req->wIndex == 0) && (req->wLength == 0)) {
-    uint8_t device_addr = (uint8_t)(req->wValue) & 0x7F;
+    auto device_addr = (uint8_t)(req->wValue) & 0x7F;
     if (device->dev_state == USBD_STATE_CONFIGURED)
       USBD_CtlError (device, req);
     else {
@@ -608,13 +608,11 @@ void USBD_SetAddress (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 //{{{
 USBD_StatusTypeDef USBD_SetClassConfig (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
-  USBD_StatusTypeDef ret = USBD_FAIL;
   if (device->pClass != NULL)
-    // Set configuration  and Start the Class
     if (device->pClass->Init (device, cfgidx) == 0)
-      ret = USBD_OK;
+      return USBD_OK;
 
-  return ret;
+  return USBD_FAIL;
   }
 //}}}
 //{{{
@@ -628,7 +626,7 @@ USBD_StatusTypeDef USBD_ClrClassConfig (USBD_HandleTypeDef* device, uint8_t cfgi
 //{{{
 void USBD_SetConfig (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
-  uint8_t cfgidx = (uint8_t)(req->wValue);
+  auto cfgidx = (uint8_t)(req->wValue);
   if (cfgidx > USBD_MAX_NUM_CONFIGURATION )
     USBD_CtlError (device, req);
   else {
@@ -637,14 +635,14 @@ void USBD_SetConfig (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
         if (cfgidx) {
           device->dev_config = cfgidx;
           device->dev_state = USBD_STATE_CONFIGURED;
-          if(USBD_SetClassConfig(device , cfgidx) == USBD_FAIL) {
-            USBD_CtlError(device , req);
+          if (USBD_SetClassConfig (device , cfgidx) == USBD_FAIL) {
+            USBD_CtlError (device , req);
             return;
             }
           USBD_CtlSendStatus (device);
           }
         else
-           USBD_CtlSendStatus (device);
+          USBD_CtlSendStatus (device);
         break;
 
       case USBD_STATE_CONFIGURED:
@@ -660,7 +658,7 @@ void USBD_SetConfig (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
           /* set new configuration */
           device->dev_config = cfgidx;
-          if(USBD_SetClassConfig (device , cfgidx) == USBD_FAIL) {
+          if (USBD_SetClassConfig (device , cfgidx) == USBD_FAIL) {
             USBD_CtlError (device , req);
             return;
             }
@@ -671,7 +669,7 @@ void USBD_SetConfig (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
         break;
 
       default:
-         USBD_CtlError (device , req);
+        USBD_CtlError (device , req);
         break;
       }
     }
@@ -694,7 +692,7 @@ void USBD_GetConfig (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
         break;
 
       default:
-        USBD_CtlError(device , req);
+        USBD_CtlError (device , req);
         break;
       }
    }
@@ -717,7 +715,7 @@ void USBD_GetStatus (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
       break;
 
     default :
-      USBD_CtlError(device , req);
+      USBD_CtlError (device , req);
       break;
     }
   }
@@ -728,7 +726,7 @@ void USBD_SetFeature (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
   if (req->wValue == USB_FEATURE_REMOTE_WAKEUP) {
     device->dev_remote_wakeup = 1;
     device->pClass->Setup (device, req);
-    USBD_CtlSendStatus(device);
+    USBD_CtlSendStatus (device);
     }
   }
 //}}}
@@ -779,11 +777,11 @@ USBD_StatusTypeDef USBD_StdItfReq (USBD_HandleTypeDef* device, USBD_SetupReqType
           USBD_CtlSendStatus (device);
         }
       else
-        USBD_CtlError (device , req);
+        USBD_CtlError (device, req);
       break;
 
     default:
-      USBD_CtlError (device , req);
+      USBD_CtlError (device, req);
       break;
     }
 
@@ -800,57 +798,52 @@ USBD_StatusTypeDef USBD_StdEPReq (USBD_HandleTypeDef* device, USBD_SetupReqTyped
     }
 
   USBD_StatusTypeDef ret = USBD_OK;
-  USBD_EndpointTypeDef* pep;
   uint8_t ep_addr = LOBYTE(req->wIndex);
-
   switch (req->bRequest) {
     //{{{
     case USB_REQ_SET_FEATURE :
       switch (device->dev_state) {
-      case USBD_STATE_ADDRESSED:
-        if ((ep_addr != 0x00) && (ep_addr != 0x80))
-          USBD_LL_StallEP (device , ep_addr);
-        break;
-
-      case USBD_STATE_CONFIGURED:
-        if (req->wValue == USB_FEATURE_EP_HALT) {
+        case USBD_STATE_ADDRESSED:
           if ((ep_addr != 0x00) && (ep_addr != 0x80))
-            USBD_LL_StallEP (device , ep_addr);
+            USBD_LL_StallEP (device, ep_addr);
+          break;
+
+        case USBD_STATE_CONFIGURED:
+          if (req->wValue == USB_FEATURE_EP_HALT)
+            if ((ep_addr != 0x00) && (ep_addr != 0x80))
+              USBD_LL_StallEP (device , ep_addr);
+          device->pClass->Setup (device, req);
+          USBD_CtlSendStatus (device);
+          break;
+
+        default:
+          USBD_CtlError(device , req);
+          break;
         }
-        device->pClass->Setup (device, req);
-        USBD_CtlSendStatus (device);
-
-        break;
-
-      default:
-        USBD_CtlError(device , req);
-        break;
-      }
       break;
     //}}}
     //{{{
     case USB_REQ_CLEAR_FEATURE :
-
       switch (device->dev_state) {
-      case USBD_STATE_ADDRESSED:
-        if ((ep_addr != 0x00) && (ep_addr != 0x80))
-          USBD_LL_StallEP(device , ep_addr);
-        break;
+        case USBD_STATE_ADDRESSED:
+          if ((ep_addr != 0x00) && (ep_addr != 0x80))
+            USBD_LL_StallEP (device, ep_addr);
+          break;
 
-      case USBD_STATE_CONFIGURED:
-        if (req->wValue == USB_FEATURE_EP_HALT) {
-          if ((ep_addr & 0x7F) != 0x00) {
-            USBD_LL_ClearStallEP(device , ep_addr);
-            device->pClass->Setup (device, req);
-          }
-          USBD_CtlSendStatus(device);
+        case USBD_STATE_CONFIGURED:
+          if (req->wValue == USB_FEATURE_EP_HALT) {
+            if ((ep_addr & 0x7F) != 0x00) {
+              USBD_LL_ClearStallEP(device , ep_addr);
+              device->pClass->Setup (device, req);
+              }
+            USBD_CtlSendStatus(device);
+            }
+          break;
+
+        default:
+          USBD_CtlError(device , req);
+          break;
         }
-        break;
-
-      default:
-        USBD_CtlError(device , req);
-        break;
-      }
       break;
     //}}}
     //{{{
@@ -858,21 +851,22 @@ USBD_StatusTypeDef USBD_StdEPReq (USBD_HandleTypeDef* device, USBD_SetupReqTyped
       switch (device->dev_state) {
       case USBD_STATE_ADDRESSED:
         if ((ep_addr & 0x7F) != 0x00)
-          USBD_LL_StallEP(device , ep_addr);
+          USBD_LL_StallEP (device , ep_addr);
         break;
 
-      case USBD_STATE_CONFIGURED:
-        pep = ((ep_addr & 0x80) == 0x80) ? &device->ep_in[ep_addr & 0x7F]: &device->ep_out[ep_addr & 0x7F];
-        if(USBD_LL_IsStallEP(device, ep_addr))
+      case USBD_STATE_CONFIGURED: {
+        auto pep = ((ep_addr & 0x80) == 0x80) ? &device->ep_in[ep_addr & 0x7F]: &device->ep_out[ep_addr & 0x7F];
+        if (USBD_LL_IsStallEP (device, ep_addr))
           pep->status = 0x0001;
         else
           pep->status = 0x0000;
 
-        USBD_CtlSendData (device, (uint8_t *)&pep->status, 2);
+        USBD_CtlSendData (device, (uint8_t*)&pep->status, 2);
         break;
+        }
 
       default:
-        USBD_CtlError(device , req);
+        USBD_CtlError (device , req);
         break;
       }
       break;
@@ -887,8 +881,8 @@ USBD_StatusTypeDef USBD_StdEPReq (USBD_HandleTypeDef* device, USBD_SetupReqTyped
 //{{{
 void HAL_PCD_SetupStageCallback (PCD_HandleTypeDef* pcdHandle) {
 
-  USBD_HandleTypeDef* device = (USBD_HandleTypeDef*)pcdHandle->pData;
-  uint8_t* psetup= (uint8_t*)pcdHandle->Setup;
+  auto device = (USBD_HandleTypeDef*)pcdHandle->pData;
+  auto psetup = (uint8_t*)pcdHandle->Setup;
 
   device->request.bmRequest = *(uint8_t*)(psetup);
   device->request.bRequest = *(uint8_t*)(psetup +  1);
@@ -921,35 +915,35 @@ void HAL_PCD_SetupStageCallback (PCD_HandleTypeDef* pcdHandle) {
 //{{{
 void HAL_PCD_DataOutStageCallback (PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
 
-  USBD_HandleTypeDef* device = (USBD_HandleTypeDef*)pcdHandle->pData;
-  uint8_t* pdata = pcdHandle->OUT_ep[epnum].xfer_buff;
+  auto device = (USBD_HandleTypeDef*)pcdHandle->pData;
+  auto pdata = pcdHandle->OUT_ep[epnum].xfer_buff;
 
   if (epnum == 0) {
-    USBD_EndpointTypeDef* pep = &device->ep_out[0];
+    auto pep = &device->ep_out[0];
     if (device->ep0_state == USBD_EP0_DATA_OUT) {
       if (pep->rem_length > pep->maxpacket) {
-        pep->rem_length -=  pep->maxpacket;
+        pep->rem_length -= pep->maxpacket;
         USBD_CtlContinueRx (device, pdata, MIN(pep->rem_length ,pep->maxpacket));
         }
       else {
         if ((device->pClass->EP0_RxReady != NULL) && (device->dev_state == USBD_STATE_CONFIGURED))
-          device->pClass->EP0_RxReady(device);
-        USBD_CtlSendStatus(device);
+          device->pClass->EP0_RxReady (device);
+        USBD_CtlSendStatus (device);
         }
       }
     }
   else if ((device->pClass->DataOut != NULL) && (device->dev_state == USBD_STATE_CONFIGURED))
-    device->pClass->DataOut(device, epnum);
+    device->pClass->DataOut (device, epnum);
   }
 //}}}
 //{{{
 void HAL_PCD_DataInStageCallback( PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
 
-  USBD_HandleTypeDef* device = (USBD_HandleTypeDef*)pcdHandle->pData;
-  uint8_t* pdata = pcdHandle->IN_ep[epnum].xfer_buff;
+  auto device = (USBD_HandleTypeDef*)pcdHandle->pData;
+  auto pdata = pcdHandle->IN_ep[epnum].xfer_buff;
 
   if (epnum == 0) {
-    USBD_EndpointTypeDef* pep = &device->ep_in[0];
+    auto pep = &device->ep_in[0];
     if (device->ep0_state == USBD_EP0_DATA_IN) {
       if (pep->rem_length > pep->maxpacket) {
         pep->rem_length -=  pep->maxpacket;
@@ -988,7 +982,7 @@ void HAL_PCD_DataInStageCallback( PCD_HandleTypeDef* pcdHandle, uint8_t epnum) {
 //{{{
 void HAL_PCD_SOFCallback (PCD_HandleTypeDef* pcdHandle) {
 
-  USBD_HandleTypeDef* device = (USBD_HandleTypeDef*)pcdHandle->pData;
+  auto device = (USBD_HandleTypeDef*)pcdHandle->pData;
   if (device->dev_state == USBD_STATE_CONFIGURED)
     if (device->pClass->SOF != NULL)
       device->pClass->SOF (device);
@@ -997,7 +991,7 @@ void HAL_PCD_SOFCallback (PCD_HandleTypeDef* pcdHandle) {
 //{{{
 void HAL_PCD_ResetCallback (PCD_HandleTypeDef* pcdHandle) {
 
-  USBD_SpeedTypeDef speed = USBD_SPEED_FULL;
+  auto speed = USBD_SPEED_FULL;
 
   // Set USB Current Speed
   switch (pcdHandle->Init.speed) {
@@ -1007,7 +1001,7 @@ void HAL_PCD_ResetCallback (PCD_HandleTypeDef* pcdHandle) {
     }
 
   // Reset Device
-  USBD_HandleTypeDef* device = (USBD_HandleTypeDef*)pcdHandle->pData;
+  auto device = (USBD_HandleTypeDef*)pcdHandle->pData;
 
   // Open EP0 OUT
   USBD_LL_OpenEP (device, 0x00, USBD_EP_TYPE_CTRL, USB_MAX_EP0_SIZE);
@@ -1030,26 +1024,23 @@ void HAL_PCD_ResetCallback (PCD_HandleTypeDef* pcdHandle) {
 //{{{
 void HAL_PCD_SuspendCallback (PCD_HandleTypeDef* pcdHandle) {
 
-  USBD_HandleTypeDef* device = (USBD_HandleTypeDef*)pcdHandle->pData;
+  auto device = (USBD_HandleTypeDef*)pcdHandle->pData;
   device->dev_old_state =  device->dev_state;
   device->dev_state  = USBD_STATE_SUSPENDED;
-
   __HAL_PCD_GATE_PHYCLOCK (pcdHandle);
   }
 //}}}
 //{{{
 void HAL_PCD_ResumeCallback (PCD_HandleTypeDef* pcdHandle) {
-
   __HAL_PCD_UNGATE_PHYCLOCK (pcdHandle);
-  USBD_HandleTypeDef* device = (USBD_HandleTypeDef*)pcdHandle->pData;
+  auto device = (USBD_HandleTypeDef*)pcdHandle->pData;
   device->dev_state = device->dev_old_state;
   }
 //}}}
 void HAL_PCD_ConnectCallback (PCD_HandleTypeDef* pcdHandle) {}
 //{{{
 void HAL_PCD_DisconnectCallback (PCD_HandleTypeDef* pcdHandle) {
-
-  USBD_HandleTypeDef* device = (USBD_HandleTypeDef*)pcdHandle->pData;
+  auto device = (USBD_HandleTypeDef*)pcdHandle->pData;
   device->dev_state = USBD_STATE_DEFAULT;
   device->pClass->DeInit (device, device->dev_config);
   }
@@ -1059,6 +1050,6 @@ void HAL_PCD_ISOINIncompleteCallback (PCD_HandleTypeDef* pcdHandle, uint8_t epnu
 
 //{{{
 #ifdef __cplusplus
-}
+  }
 #endif
 //}}}

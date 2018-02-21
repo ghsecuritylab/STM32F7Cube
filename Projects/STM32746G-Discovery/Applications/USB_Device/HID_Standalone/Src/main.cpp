@@ -403,6 +403,7 @@ __ALIGN_BEGIN uint8_t kHidKeyboardReportDescriptor[78] __ALIGN_END = {
     0x29, 0x65,        //  Usage Maximum (0x65)
     0x81, 0x00,        //  Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
   0xC0,              // End Collection
+
   0x05, 0x0C,        // Usage Page (Consumer)
   0x09, 0x01,        // Usage (Consumer Control)
   0xA1, 0x01,        // Collection (Application)
@@ -477,7 +478,6 @@ __ALIGN_BEGIN const uint8_t kHidDescriptor[9] __ALIGN_END = {
 //{{{  languageId string descriptor
 #define LANGID_STRING            0x409
 
-// USB Standard Device Descriptor
 __ALIGN_BEGIN const uint8_t kLangIdDescriptor[USB_LEN_LANGID_STR_DESC] __ALIGN_END = {
   USB_LEN_LANGID_STR_DESC,
   USB_DESC_TYPE_STRING,
@@ -816,7 +816,7 @@ int main() {
   USBD_RegisterClass (&gUsbDevice, &hidClass);
   USBD_Start (&gUsbDevice);
 
-  while (1) {
+  while (true) {
     touch();
     showLcd (kVersion, 0);
     flipLcd();

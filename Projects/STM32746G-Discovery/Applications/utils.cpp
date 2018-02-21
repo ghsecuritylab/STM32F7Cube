@@ -199,6 +199,7 @@ void debug (uint32_t colour, const char* format, ... ) {
   gLines[gDebugLine].mStr = str;
   gLines[gDebugLine].mTicks = HAL_GetTick();
   gLines[gDebugLine].mColour = colour;
+
   gDebugLine = (gDebugLine+1) % DEBUG_MAX_LINES;
   }
 //}}}
