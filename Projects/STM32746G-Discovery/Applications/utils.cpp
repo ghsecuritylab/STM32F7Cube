@@ -1,6 +1,6 @@
 // utils.cpp
 //{{{  includes
-#include <vector>
+#include <array>
 #include "utils.h"
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
@@ -15,22 +15,21 @@ int gLayer = 1;
 //{{{
 class cDebugItem {
 public:
-  cDebugItem() {
-    mStr = (char*)malloc (40);
+  cDebugItem() {}
+  cDebugItem (char* str, uint32_t ticks, uint32_t colour) : mStr(str), mTicks(ticks), mColour(colour) {}
+  //{{{
+  ~cDebugItem() {
+    free (mStr);
     }
-  ~cDebugItem() { free (mStr); }
+  //}}}
 
   char* mStr = nullptr;
-  int mStrSize = 40;
   uint32_t mTicks = 0;
   uint32_t mColour = 0;
   };
 //}}}
-cDebugItem gLines[DEBUG_MAX_LINES];
+std::array <cDebugItem,DEBUG_MAX_LINES> gLines;
 unsigned gDebugLine = 0;
-
-std::vector<cDebugItem> mLines;
-unsigned mMaxLine = 0;
 
 // touch
 TS_StateTypeDef gTsState;
@@ -193,12 +192,13 @@ void debug (uint32_t colour, const char* format, ... ) {
 
   va_list args;
   va_start (args, format);
-  vsnprintf (gLines[gDebugLine].mStr, gLines[gDebugLine].mStrSize, format, args);
+  auto str = (char*)malloc (40+1);
+  vsnprintf (str, 40, format, args);
   va_end (args);
 
+  gLines[gDebugLine].mStr = str;
   gLines[gDebugLine].mTicks = HAL_GetTick();
   gLines[gDebugLine].mColour = colour;
-
   gDebugLine = (gDebugLine+1) % DEBUG_MAX_LINES;
   }
 //}}}
