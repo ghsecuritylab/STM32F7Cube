@@ -5,11 +5,6 @@
 #include "../../../utils.h"
 #include "../../../usbd.h"
 //}}}
-std::string kVersion = "USB HID keyboard 20/2/18";
-#define HID_IN_ENDPOINT       0x81
-//#define HID_IN_ENDPOINT_SIZE  4
-#define HID_IN_ENDPOINT_SIZE  5
-
 //{{{  keycode, modifier defines
 //{{{  modifier keys
 #define KEY_MOD_LCTRL  0x01
@@ -291,6 +286,10 @@ std::string kVersion = "USB HID keyboard 20/2/18";
 #define KEY_MEDIA_CALC 0xfb
 //}}}
 //}}}
+std::string kVersion = "USB HID keyboard 21/2/18";
+#define HID_IN_ENDPOINT       0x81
+#define HID_IN_ENDPOINT_SIZE  5
+//#define HID_IN_ENDPOINT_SIZE  4
 
 //{{{  hidDescriptor handler
 //{{{  device descriptor
@@ -592,7 +591,7 @@ uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   // Close HID EPs
   USBD_LL_CloseEP (device, HID_IN_ENDPOINT);
-  free(device->pClassData);
+  free (device->pClassData);
   device->pClassData = NULL;
   return USBD_OK;
   }
@@ -600,7 +599,7 @@ uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 //{{{
 uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
-  tHidData* hidData = (tHidData*)device->pClassData;
+  auto hidData = (tHidData*)device->pClassData;
   debug (LCD_COLOR_YELLOW, "setup bmReq:%x req:%x v:%x l:%d",
                            req->bmRequest, req->bRequest, req->wValue, req->wLength);
 
@@ -669,7 +668,7 @@ uint8_t* usbGetConfigurationDescriptor (uint16_t* length) {
 uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epnum) {
   // Ensure that the FIFO is empty before a new transfer, this condition could
   // be caused by  a new transfer before the end of the previous transfer
-  ((tHidData *)device->pClassData)->mState = HID_IDLE;
+  ((tHidData*)device->pClassData)->mState = HID_IDLE;
   return USBD_OK;
   }
 //}}}
@@ -729,7 +728,7 @@ uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
   keyboardHID.key2 = 0;
   keyboardHID.key3 = 0;
 
-  tHidData* hidData = (tHidData*)device->pClassData;
+  auto hidData = (tHidData*)device->pClassData;
   if (device->dev_state == USBD_STATE_CONFIGURED) {
     if (hidData->mState == HID_IDLE) {
       hidData->mState = HID_BUSY;
