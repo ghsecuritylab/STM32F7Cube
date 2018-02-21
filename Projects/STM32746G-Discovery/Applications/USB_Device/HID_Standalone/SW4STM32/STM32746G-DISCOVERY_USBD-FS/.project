@@ -27,21 +27,6 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Application/main.cpp</name>
-			<type>1</type>
-			<locationURI>copy_PARENT/Src/main.cpp</locationURI>
-		</link>
-		<link>
-			<name>Application/stm32746g_discovery_lcd.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/stm32746g_discovery_lcd.c</locationURI>
-		</link>
-		<link>
-			<name>Application/utils.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/utils.c</locationURI>
-		</link>
-		<link>
 			<name>Drivers/ft5336.c</name>
 			<type>1</type>
 			<locationURI>copy_PARENT12/Drivers/BSP/Components/ft5336/ft5336.c</locationURI>
@@ -65,6 +50,26 @@
 			<name>Drivers/stm32746g_discovery_ts.c</name>
 			<type>1</type>
 			<locationURI>copy_PARENT12/Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_ts.c</locationURI>
+		</link>
+		<link>
+			<name>app/main.cpp</name>
+			<type>1</type>
+			<locationURI>copy_PARENT/Src/main.cpp</locationURI>
+		</link>
+		<link>
+			<name>app/stm32746g_discovery_lcd.c</name>
+			<type>1</type>
+			<locationURI>copy_PARENT1/stm32746g_discovery_lcd.c</locationURI>
+		</link>
+		<link>
+			<name>app/system.c</name>
+			<type>1</type>
+			<locationURI>PARENT-4-PROJECT_LOC/system.c</locationURI>
+		</link>
+		<link>
+			<name>app/utils.cpp</name>
+			<type>1</type>
+			<locationURI>PARENT-4-PROJECT_LOC/utils.cpp</locationURI>
 		</link>
 		<link>
 			<name>Drivers/STM32F7xx_HAL_Driver/stm32f7xx_hal.c</name>

@@ -1,7 +1,6 @@
 // main.c - usb hid
 //{{{  includes
 #include <string>
-#include "../../../system.h"
 #include "../../../utils.h"
 #include "../../../usbd.h"
 //}}}

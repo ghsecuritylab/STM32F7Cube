@@ -1,7 +1,6 @@
 // main.cpp
 //{{{  includes
 #include <string>
-#include "../../../system.h"
 #include "../../../utils.h"
 #include "../../../usbd.h"
 #include "../../../stm32746g_discovery_audio.h"

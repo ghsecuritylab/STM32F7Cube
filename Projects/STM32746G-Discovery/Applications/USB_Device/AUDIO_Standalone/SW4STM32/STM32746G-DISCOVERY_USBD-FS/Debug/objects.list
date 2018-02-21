@@ -30,5 +30,6 @@
 "app/startup_stm32f746xx.o"
 "app/stm32746g_discovery_audio.o"
 "app/stm32746g_discovery_lcd.o"
+"app/system.o"
 "app/utils.o"
 "app/wm8994.o"
