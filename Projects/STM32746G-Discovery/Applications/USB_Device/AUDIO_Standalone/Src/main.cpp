@@ -1,10 +1,11 @@
-// main.c
-char* kVersion = "USB audio 20/2/18";
+// main.cpp
 //{{{  includes
+#include <string>
 #include "../../../utils.h"
 #include "../../../usbd.h"
 #include "../../../stm32746g_discovery_audio.h"
 //}}}
+std::string kVersion = "USB audio 21/2/18";
 #define AUDIO_OUT_ENDPOINT  0x01
 
 //{{{  packet defines
@@ -299,7 +300,7 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   USBD_LL_OpenEP (device, AUDIO_OUT_ENDPOINT, USBD_EP_TYPE_ISOC, PACKET_SIZE);
 
   // allocate audioData
-  tAudioData* audioData = malloc (sizeof (tAudioData));
+  tAudioData* audioData = (tAudioData*)malloc (sizeof (tAudioData));
   audioData->mPlayStarted = 0;
   audioData->mWritePtr = 0;
   audioData->mAltSetting = 0;
@@ -684,7 +685,7 @@ int main() {
 
   while (1) {
     touch();
-    showLcd (kVersion, 1);
+    showLcd (kVersion.c_str(), 1);
     BSP_LCD_SetTextColor (LCD_COLOR_GREEN);
     uint16_t sample = gSample;
     for (int i = 0; i < gCentreX; i++) {
