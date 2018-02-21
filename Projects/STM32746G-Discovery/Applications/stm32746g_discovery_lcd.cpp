@@ -1,11 +1,9 @@
 //{{{  includes
 #include "stm32746g_discovery_lcd.h"
+
 #include "../../../Utilities/Fonts/fonts.h"
-#include "../../../Utilities/Fonts/font24.c"
-#include "../../../Utilities/Fonts/font20.c"
 #include "../../../Utilities/Fonts/font16.c"
 #include "../../../Utilities/Fonts/font12.c"
-#include "../../../Utilities/Fonts/font8.c"
 //}}}
 //{{{  defines
 #define POLY_X(Z)           ((int32_t)((Points + Z)->X))
@@ -23,12 +21,12 @@
 //}}}
 
 LTDC_HandleTypeDef hLtdcHandler;
-static DMA2D_HandleTypeDef hDma2dHandler;
-static uint32_t ActiveLayer = 0;
-static LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
+DMA2D_HandleTypeDef hDma2dHandler;
+uint32_t ActiveLayer = 0;
+LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
 
 //{{{
-static void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t* c) {
+void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t* c) {
 
   uint16_t width = DrawProp[ActiveLayer].pFont->Width;
   uint8_t offset = 8 *((width+7)/8) -  width;
@@ -62,7 +60,7 @@ static void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t* c) {
   }
 //}}}
 //{{{
-static void FillTriangle (uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3)
+void FillTriangle (uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3)
 {
   int16_t deltax = 0, deltay = 0, x = 0, y = 0, xinc1 = 0, xinc2 = 0,
   yinc1 = 0, yinc2 = 0, den = 0, num = 0, num_add = 0, num_pixels = 0,
@@ -131,7 +129,7 @@ static void FillTriangle (uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, ui
 }
 //}}}
 //{{{
-static void LL_FillBuffer (uint32_t LayerIndex, void* pDst, uint32_t xSize, uint32_t ySize, uint32_t OffLine, uint32_t ColorIndex)
+void LL_FillBuffer (uint32_t LayerIndex, void* pDst, uint32_t xSize, uint32_t ySize, uint32_t OffLine, uint32_t ColorIndex)
 {
   hDma2dHandler.Init.Mode = DMA2D_R2M;
   if (hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565)
@@ -147,7 +145,7 @@ static void LL_FillBuffer (uint32_t LayerIndex, void* pDst, uint32_t xSize, uint
 }
 //}}}
 //{{{
-static void LL_ConvertLineToARGB8888 (void* pSrc, void* pDst, uint32_t xSize, uint32_t ColorMode)
+void LL_ConvertLineToARGB8888 (void* pSrc, void* pDst, uint32_t xSize, uint32_t ColorMode)
 {
   hDma2dHandler.Init.Mode = DMA2D_M2M_PFC;
   hDma2dHandler.Init.ColorMode = DMA2D_ARGB8888;
@@ -260,7 +258,7 @@ void BSP_LCD_LayerDefaultInit (uint16_t LayerIndex, uint32_t FB_Address)
   HAL_LTDC_ConfigLayer(&hLtdcHandler, &layer_cfg, LayerIndex);
 
   DrawProp[LayerIndex].BackColor = LCD_COLOR_WHITE;
-  DrawProp[LayerIndex].pFont     = &Font24;
+  DrawProp[LayerIndex].pFont = &Font16;
   DrawProp[LayerIndex].TextColor = LCD_COLOR_BLACK;
 }
 //}}}

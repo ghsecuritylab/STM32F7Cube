@@ -57,14 +57,14 @@
 			<locationURI>copy_PARENT12/startup_stm32f746xx.s</locationURI>
 		</link>
 		<link>
-			<name>app/stm32746g_discovery_audio.c</name>
+			<name>app/stm32746g_discovery_audio.cpp</name>
 			<type>1</type>
-			<locationURI>copy_PARENT123/stm32746g_discovery_audio.c</locationURI>
+			<locationURI>PARENT-4-PROJECT_LOC/stm32746g_discovery_audio.cpp</locationURI>
 		</link>
 		<link>
-			<name>app/stm32746g_discovery_lcd.c</name>
+			<name>app/stm32746g_discovery_lcd.cpp</name>
 			<type>1</type>
-			<locationURI>copy_PARENT1234/stm32746g_discovery_lcd.c</locationURI>
+			<locationURI>PARENT-4-PROJECT_LOC/stm32746g_discovery_lcd.cpp</locationURI>
 		</link>
 		<link>
 			<name>app/system.c</name>

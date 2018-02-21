@@ -1,32 +1,29 @@
-// utils.c
+// utils.cpp
 //{{{  includes
 #include "utils.h"
 #include "stm32f7xx.h"
 #include "stm32f7xx_hal.h"
 //}}}
 
-//{{{  static vars
+// lcd
 #define DEBUG_DISPLAY_LINES  16
 #define DEBUG_MAX_LINES      200
+int gTick = 0;
+int gLayer = 1;
+uint16_t gDebugLine = 0;
+char* gDebugStr[DEBUG_MAX_LINES];
+uint32_t gDebugTicks[DEBUG_MAX_LINES];
+uint32_t gDebugColour[DEBUG_MAX_LINES];
 
-static int gTick = 0;
-static int gLayer = 1;
-
-static uint16_t gDebugLine = 0;
-static char* gDebugStr[DEBUG_MAX_LINES];
-static uint32_t gDebugTicks[DEBUG_MAX_LINES];
-static uint32_t gDebugColour[DEBUG_MAX_LINES];
-
-static TS_StateTypeDef gTsState;
-
+// touch
+TS_StateTypeDef gTsState;
 enum eHit { eReleased, eProx, ePressed, eScroll };
-static enum eHit gHit = eReleased;
-static int gHitX = 0;
-static int gHitY = 0;
-static int gLastX = 0;
-static int gLastY = 0;
-static int gScroll = 0;
-//}}}
+enum eHit gHit = eReleased;
+int gHitX = 0;
+int gHitY = 0;
+int gLastX = 0;
+int gLastY = 0;
+int gScroll = 0;
 
 //{{{
 int getScrollScale() {
@@ -133,7 +130,7 @@ void initUtils() {
   }
 //}}}
 //{{{
-void showLcd (const char* title, int showTouch) {
+void showLcd (const std::string& title, bool showTouch) {
 
   BSP_LCD_SelectLayer (gLayer);
   BSP_LCD_Clear (LCD_COLOR_BLACK);
@@ -143,7 +140,7 @@ void showLcd (const char* title, int showTouch) {
   gTick = HAL_GetTick();
 
   char str1[40];
-  sprintf (str1, "%s %d %d", title, (int)gTick, (int)wait);
+  sprintf (str1, "%s %d %d", title.c_str(), (int)gTick, (int)wait);
   BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
   BSP_LCD_DisplayStringAtLine (0, str1);
 

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <string>
 
 #include "stm32f7xx_hal.h"
 #include "stm32746g_discovery_lcd.h"
@@ -19,7 +20,7 @@ int getScrollLines();
 void incScrollValue (int inc);
 
 void initUtils();
-void showLcd (const char* title, int showTouch);
+void showLcd (const std::string& title, bool showTouch);
 void flipLcd();
 
 void debug (uint32_t colour, const char* format, ... );

@@ -1,6 +1,5 @@
 // main.cpp
 //{{{  includes
-#include <string>
 #include "../../../system.h"
 #include "../../../utils.h"
 #include "../../../usbd.h"
@@ -686,7 +685,7 @@ int main() {
 
   while (1) {
     touch();
-    showLcd (kVersion.c_str(), 1);
+    showLcd (kVersion, 1);
     BSP_LCD_SetTextColor (LCD_COLOR_GREEN);
     uint16_t sample = gSample;
     for (int i = 0; i < gCentreX; i++) {
