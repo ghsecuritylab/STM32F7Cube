@@ -1,5 +1,5 @@
-// stm32746g_discovery_audio.c
-#include "stm32746g_discovery_audio.h"
+// stm32746g_audio.cpp
+#include "stm32746g_audio.h"
 //{{{  defines
 // CODEC_SLOT0 Left | CODEC_SLOT1 Left | CODEC_SLOT0 Right  | CODEC_SLOT1 Right |
 

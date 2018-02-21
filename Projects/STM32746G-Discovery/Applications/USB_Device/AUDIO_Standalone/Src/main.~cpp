@@ -1,10 +1,9 @@
 // main.cpp
 //{{{  includes
-#include <string>
 #include "../../../system.h"
 #include "../../../utils.h"
 #include "../../../usbd.h"
-#include "../../../stm32746g_discovery_audio.h"
+#include "../../../stm32746g_audio.h"
 //}}}
 std::string kVersion = "USB audio 21/2/18";
 #define AUDIO_OUT_ENDPOINT  0x01

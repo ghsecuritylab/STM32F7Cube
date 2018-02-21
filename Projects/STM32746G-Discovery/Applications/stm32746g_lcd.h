@@ -1,7 +1,7 @@
-//{{{  includes
 #pragma once
-#include "stm32746g_discovery_sdram.h"
+//{{{  includes
 #include "stm32746g_discovery.h"
+#include "stm32746g_discovery_sdram.h"
 #include "../../../Utilities/Fonts/fonts.h"
 //}}}
 //{{{

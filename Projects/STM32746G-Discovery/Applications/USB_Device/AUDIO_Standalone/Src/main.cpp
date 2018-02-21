@@ -3,7 +3,7 @@
 #include "../../../system.h"
 #include "../../../utils.h"
 #include "../../../usbd.h"
-#include "../../../stm32746g_discovery_audio.h"
+#include "../../../stm32746g_audio.h"
 //}}}
 std::string kVersion = "USB audio 21/2/18";
 #define AUDIO_OUT_ENDPOINT  0x01
@@ -624,21 +624,24 @@ static void audioClock (int faster) {
     }
   }
 //}}}
-//{{{
-void BSP_AUDIO_OUT_ClockConfig (SAI_HandleTypeDef* hsai, uint32_t freq, void* Params) {
-  audioClock (0);
-  }
-//}}}
-//{{{
-void BSP_AUDIO_OUT_TransferComplete_CallBack() {
 
-  writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / SLOTS_PACKET_SIZE;
-  if (writePtrOnRead > PACKETS/2) // faster
-    audioClock (1);
-  else if (writePtrOnRead < PACKETS/2) // slower
+extern "C" {
+  //{{{
+  void BSP_AUDIO_OUT_ClockConfig (SAI_HandleTypeDef* hsai, uint32_t freq, void* Params) {
     audioClock (0);
+    }
+  //}}}
+ //{{{
+ void BSP_AUDIO_OUT_TransferComplete_CallBack() {
+
+   writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / SLOTS_PACKET_SIZE;
+   if (writePtrOnRead > PACKETS/2) // faster
+     audioClock (1);
+   else if (writePtrOnRead < PACKETS/2) // slower
+     audioClock (0);
+   }
+ //}}}
   }
-//}}}
 
 //{{{
 void onProx (int x, int y, int z) {

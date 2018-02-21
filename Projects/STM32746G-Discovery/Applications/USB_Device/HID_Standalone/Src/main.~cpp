@@ -818,7 +818,7 @@ int main() {
 
   while (1) {
     touch();
-    showLcd (kVersion.c_str(), 0);
+    showLcd (kVersion, 0);
     flipLcd();
     }
   }
