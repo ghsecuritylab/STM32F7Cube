@@ -766,7 +766,7 @@ uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
 void onProx (int x, int y, int z) {
 
   if (x || y) {
-    uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 0,x,y,0 };
+    uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 0,(uint8_t)x,(uint8_t)y,0 };
     hidSendReport (&gUsbDevice, HID_Buffer);
     debug (LCD_COLOR_MAGENTA, "onProx %d %d %d", x, y, z);
     }
@@ -786,7 +786,7 @@ void onPress (int x, int y) {
 void onMove (int x, int y, int z) {
 
   if (x || y) {
-    //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,x,y,0 };
+    //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,(uint8_t)x,(uint8_t)y,0 };
     //hidSendReport (&gUsbDevice, HID_Buffer);
     debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
     }
