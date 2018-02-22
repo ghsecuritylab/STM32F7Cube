@@ -1,13 +1,5 @@
 // ps2.cpp
 #include "ps2.h"
-// keyboard
-// brown  - V - +5v
-// yellow - C - clock ?
-// red -    O - data
-// black    G - ground
-   A3 - PF8
-   A2 - PF9
-
 //{{{  struct ps2Keymap_t
 typedef struct {
   uint8_t noshift[PS2_KEYMAP_SIZE];
