@@ -1,4 +1,4 @@
-// main.cpp
+// main.cpp - audio class usb
 //{{{  includes
 #include "../../../system.h"
 #include "../../../cLcd.h"
@@ -7,26 +7,25 @@
 
 #include "../../../stm32746g_audio.h"
 //}}}
-//{{{  packet defines
-#define CHANNELS              4
-#define SAMPLE_RATE           48000
-#define BYTES_PER_SAMPLE      2
-
-#define PACKETS_PER_SECOND    1000
-#define PACKETS               8
-#define PACKET_SAMPLES        (SAMPLE_RATE / PACKETS_PER_SECOND)
-#define PACKET_SIZE           (CHANNELS * PACKET_SAMPLES * BYTES_PER_SAMPLE)
-
-#define SLOTS                 4
-#define SLOTS_PACKET_SIZE     (SLOTS * BYTES_PER_SAMPLE * PACKET_SAMPLES)
-#define SLOTS_PACKET_BUF_SIZE (PACKETS * SLOTS_PACKET_SIZE)
-//}}}
 std::string kVersion = "USB audio 22/2/18";
 #define AUDIO_OUT_ENDPOINT  0x01
 
 //{{{
 class cPackets {
 public:
+  static const int CHANNELS = 4;
+  static const int SAMPLE_RATE = 48000;
+  static const int BYTES_PER_SAMPLE = 2;
+
+  static const int PACKETS_PER_SECOND = 1000;
+  static const int PACKETS = 8;
+  static const int PACKET_SAMPLES = SAMPLE_RATE / PACKETS_PER_SECOND;
+  static const int PACKET_SIZE = CHANNELS * PACKET_SAMPLES * BYTES_PER_SAMPLE;
+
+  static const int SLOTS = 4;
+  static const int SLOTS_PACKET_SIZE = SLOTS * BYTES_PER_SAMPLE * PACKET_SAMPLES;
+  static const int SLOTS_PACKET_BUF_SIZE = PACKETS * SLOTS_PACKET_SIZE;
+
   //{{{
   bool getFaster() {
     return mFaster;
@@ -180,7 +179,7 @@ __ALIGN_BEGIN const uint8_t kConfigurationDescriptor[109] __ALIGN_END = {
   1,         // bTerminalID = input 1
   1,1,       // wTerminalType AUDIO_TERMINAL_USB_STREAMING - 0x0101
   0x00,      // bAssocTerminal
-  CHANNELS,  // bNrChannels
+  cPackets::CHANNELS,  // bNrChannels
   0x33,0x00, // wChannelConfig - 0x0033 - leftFront rightFront, leftSurround, rightSurround
   0,         // iChannelNames
   0,         // iTerminal
@@ -231,7 +230,7 @@ __ALIGN_BEGIN const uint8_t kConfigurationDescriptor[109] __ALIGN_END = {
   // Audio Streaming Descriptor Audio Type I Format
   11, 36, 2,
   1,        // bFormatType - type I
-  CHANNELS, // bNrChannels
+  cPackets::CHANNELS, // bNrChannels
   2,        // bSubFrameSize - 2bytes per frame (16bits)
   16,       // bBitResolution - 16bits per sample
   1,        // bSamFreqType - single frequency supported
@@ -242,7 +241,7 @@ __ALIGN_BEGIN const uint8_t kConfigurationDescriptor[109] __ALIGN_END = {
   9, USB_DESC_TYPE_ENDPOINT,
   AUDIO_OUT_ENDPOINT, // bEndpointAddress - out endpoint 1
   5,            // bmAttributes - isochronous,asynchronous
-  PACKET_SIZE & 0xFF, (PACKET_SIZE >> 8) & 0xFF, // wMaxPacketSize bytes
+  cPackets::PACKET_SIZE & 0xFF, (cPackets::PACKET_SIZE >> 8) & 0xFF, // wMaxPacketSize bytes
   1,            // bInterval
   0,            // bRefresh
   0,            // bSynchAddress
@@ -337,20 +336,9 @@ uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
   }
 //}}}
 //}}}
-//{{{
-USBD_DescriptorsTypeDef audioDescriptor = {
-  deviceDescriptor,
-  langIdStringDescriptor,
-  manufacturerStringDescriptor,
-  productStringDescriptor,
-  serialStringDescriptor,
-  configurationStringDescriptor,
-  interfaceStringDescriptor,
-  };
-//}}}
-//{{{  audioClass handler
+//{{{  audioClass handlers
 typedef struct {
-  uint8_t       mBuffer[SLOTS_PACKET_BUF_SIZE];
+  uint8_t       mBuffer[cPackets::SLOTS_PACKET_BUF_SIZE];
   uint8_t       mPlayStarted;
   uint16_t      mWritePtr;
   __IO uint32_t mAltSetting;
@@ -372,7 +360,7 @@ typedef struct {
 static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 
   // Open EP OUT
-  USBD_LL_OpenEP (device, AUDIO_OUT_ENDPOINT, USBD_EP_TYPE_ISOC, PACKET_SIZE);
+  USBD_LL_OpenEP (device, AUDIO_OUT_ENDPOINT, USBD_EP_TYPE_ISOC, cPackets::PACKET_SIZE);
 
   // allocate audioData
   tAudioData* audioData = (tAudioData*)malloc (sizeof (tAudioData));
@@ -385,14 +373,14 @@ static uint8_t usbInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
   audioData->mMinVolume = 0;
   audioData->mMaxVolume = 100;
   audioData->mResVolume = 1;
-  audioData->mFrequency = SAMPLE_RATE;
+  audioData->mFrequency = cPackets::SAMPLE_RATE;
   device->pClassData = audioData;
 
-  BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, 100, SAMPLE_RATE);
+  BSP_AUDIO_OUT_Init (OUTPUT_DEVICE_BOTH, 100, cPackets::SAMPLE_RATE);
   BSP_AUDIO_OUT_SetAudioFrameSlot (SAI_SLOTACTIVE_0 | SAI_SLOTACTIVE_1 | SAI_SLOTACTIVE_2 | SAI_SLOTACTIVE_3);
 
   // Prepare Out endpoint to receive 1st packet
-  USBD_LL_PrepareReceive (device, AUDIO_OUT_ENDPOINT, audioData->mBuffer, PACKET_SIZE);
+  USBD_LL_PrepareReceive (device, AUDIO_OUT_ENDPOINT, audioData->mBuffer, cPackets::PACKET_SIZE);
 
   return USBD_OK;
   }
@@ -575,19 +563,19 @@ static uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
 
   if (epNum == AUDIO_OUT_ENDPOINT) {
     auto audioData = (tAudioData*)device->pClassData;
-    if (!audioData->mPlayStarted && (audioData->mWritePtr >= SLOTS_PACKET_BUF_SIZE/2)) {
+    if (!audioData->mPlayStarted && (audioData->mWritePtr >= cPackets::SLOTS_PACKET_BUF_SIZE/2)) {
       //{{{  start playing
-      BSP_AUDIO_OUT_Play ((uint16_t*)audioData->mBuffer, SLOTS_PACKET_BUF_SIZE);
+      BSP_AUDIO_OUT_Play ((uint16_t*)audioData->mBuffer, cPackets::SLOTS_PACKET_BUF_SIZE);
       audioData->mPlayStarted = 1;
       }
       //}}}
     gPackets.add ((int16_t*)(audioData->mBuffer + audioData->mWritePtr));
 
     // prepare outEndpoint to rx next audio packet
-    audioData->mWritePtr += SLOTS_PACKET_SIZE;
-    if (audioData->mWritePtr >= SLOTS_PACKET_BUF_SIZE)
+    audioData->mWritePtr += cPackets::SLOTS_PACKET_SIZE;
+    if (audioData->mWritePtr >= cPackets::SLOTS_PACKET_BUF_SIZE)
       audioData->mWritePtr = 0;
-    USBD_LL_PrepareReceive (device, AUDIO_OUT_ENDPOINT, &audioData->mBuffer[audioData->mWritePtr], PACKET_SIZE);
+    USBD_LL_PrepareReceive (device, AUDIO_OUT_ENDPOINT, &audioData->mBuffer[audioData->mWritePtr], cPackets::PACKET_SIZE);
     }
 
   return USBD_OK;
@@ -623,23 +611,6 @@ static uint8_t* usbGetDeviceQualifierDescriptor (uint16_t *length) {
   return (uint8_t*)kDeviceQualifierDescriptor;
   }
 //}}}
-
-static USBD_ClassTypeDef audioClass = {
-  usbInit,
-  usbDeInit,
-  usbSetup,
-  usbEp0TxReady,
-  usbEp0RxReady,
-  usbDataIn,
-  usbDataOut,
-  usbSof,
-  usbIsoInInComplete,
-  usbIsoOutInComplete,
-  usbGetConfigDescriptor,
-  usbGetConfigDescriptor,
-  usbGetConfigDescriptor,
-  usbGetDeviceQualifierDescriptor,
-  };
 //}}}
 
 //{{{
@@ -679,14 +650,14 @@ extern "C" {
   //{{{
   void BSP_AUDIO_OUT_TransferComplete_CallBack() {
 
-    auto writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / SLOTS_PACKET_SIZE;
+    auto writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / cPackets::SLOTS_PACKET_SIZE;
 
-    if (writePtrOnRead > PACKETS/2) {
-      if (!gPackets.getFaster()) 
+    if (writePtrOnRead > cPackets::PACKETS/2) {
+      if (!gPackets.getFaster())
         audioClock (true);
       }
-    else if (writePtrOnRead < PACKETS/2) {
-      if (gPackets.getFaster()) 
+    else if (writePtrOnRead < cPackets::PACKETS/2) {
+      if (gPackets.getFaster())
         audioClock (false);
       }
     }
@@ -787,6 +758,35 @@ int main() {
   BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
 
   // init usbDevice library
+  //{{{
+  USBD_DescriptorsTypeDef audioDescriptor = {
+    deviceDescriptor,
+    langIdStringDescriptor,
+    manufacturerStringDescriptor,
+    productStringDescriptor,
+    serialStringDescriptor,
+    configurationStringDescriptor,
+    interfaceStringDescriptor,
+    };
+  //}}}
+  //{{{
+  USBD_ClassTypeDef audioClass = {
+    usbInit,
+    usbDeInit,
+    usbSetup,
+    usbEp0TxReady,
+    usbEp0RxReady,
+    usbDataIn,
+    usbDataOut,
+    usbSof,
+    usbIsoInInComplete,
+    usbIsoOutInComplete,
+    usbGetConfigDescriptor,
+    usbGetConfigDescriptor,
+    usbGetConfigDescriptor,
+    usbGetDeviceQualifierDescriptor,
+    };
+  //}}}
   gUsbDevice.pClassData = NULL;
   USBD_Init (&gUsbDevice, &audioDescriptor, 0);
   USBD_RegisterClass (&gUsbDevice, &audioClass);
