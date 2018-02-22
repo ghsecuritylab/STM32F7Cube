@@ -77,10 +77,10 @@ public:
   //{{{
   void show() {
 
-    auto centreX = BSP_LCD_GetXSize()/2;
-    auto centreY = BSP_LCD_GetYSize()/2;
+    auto centreX = BSP_LCD_GetXSize() / 2;
+    auto centreY = BSP_LCD_GetYSize() / 2;
 
-    BSP_LCD_SetTextColor (LCD_COLOR_GREEN);
+    BSP_LCD_SetTextColor (mFaster ? LCD_COLOR_GREEN : LCD_COLOR_MAGENTA);
     auto sample = mSample;
     for (auto i = 0u; i < centreX; i++) {
       sample = (sample + 1) % centreX;
@@ -90,7 +90,6 @@ public:
   //}}}
 
 private:
-  // waveform
   uint16_t mNumPackets = 0;
   uint16_t mSample = 0;
 

@@ -13,7 +13,6 @@
 typedef struct {
   uint32_t TextColor;
   uint32_t BackColor;
-  sFONT* pFont;
   } LCD_DrawPropTypeDef;
 //}}}
 //{{{  Point
@@ -68,9 +67,6 @@ typedef enum {
 
 #define LCD_FB_START_ADDRESS    ((uint32_t)0xC0000000)
 
-
-#define LCD_DEFAULT_FONT        Font16
-
 #define LCD_RELOAD_IMMEDIATE           ((uint32_t)LTDC_SRCR_IMR)
 #define LCD_RELOAD_VERTICAL_BLANKING   ((uint32_t)LTDC_SRCR_VBR)
 
@@ -99,12 +95,6 @@ void     BSP_LCD_SetTransparency(uint32_t LayerIndex, uint8_t Transparency);
 void     BSP_LCD_SetTransparency_NoReload(uint32_t LayerIndex, uint8_t Transparency);
 void     BSP_LCD_SetLayerAddress(uint32_t LayerIndex, uint32_t Address);
 void     BSP_LCD_SetLayerAddress_NoReload(uint32_t LayerIndex, uint32_t Address);
-void     BSP_LCD_SetColorKeying(uint32_t LayerIndex, uint32_t RGBValue);
-void     BSP_LCD_SetColorKeying_NoReload(uint32_t LayerIndex, uint32_t RGBValue);
-void     BSP_LCD_ResetColorKeying(uint32_t LayerIndex);
-void     BSP_LCD_ResetColorKeying_NoReload(uint32_t LayerIndex);
-void     BSP_LCD_SetLayerWindow(uint16_t LayerIndex, uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
-void     BSP_LCD_SetLayerWindow_NoReload(uint16_t LayerIndex, uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Height);
 void     BSP_LCD_SelectLayer(uint32_t LayerIndex);
 void     BSP_LCD_SetLayerVisible(uint32_t LayerIndex, FunctionalState State);
 void     BSP_LCD_SetLayerVisible_NoReload(uint32_t LayerIndex, FunctionalState State);
@@ -114,8 +104,6 @@ void     BSP_LCD_SetTextColor(uint32_t Color);
 uint32_t BSP_LCD_GetTextColor();
 void     BSP_LCD_SetBackColor(uint32_t Color);
 uint32_t BSP_LCD_GetBackColor();
-void     BSP_LCD_SetFont(sFONT *fonts);
-sFONT*   BSP_LCD_GetFont();
 
 uint32_t BSP_LCD_ReadPixel(uint16_t Xpos, uint16_t Ypos);
 void     BSP_LCD_DrawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t pixel);

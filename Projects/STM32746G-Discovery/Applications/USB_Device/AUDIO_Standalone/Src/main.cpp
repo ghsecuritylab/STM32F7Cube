@@ -682,16 +682,12 @@ extern "C" {
     auto writePtrOnRead = ((tAudioData*)gUsbDevice.pClassData)->mWritePtr / SLOTS_PACKET_SIZE;
 
     if (writePtrOnRead > PACKETS/2) {
-      if (!gPackets.getFaster()) {
+      if (!gPackets.getFaster()) 
         audioClock (true);
-        gLcd.debug (LCD_COLOR_MAGENTA, "faster");
-        }
       }
     else if (writePtrOnRead < PACKETS/2) {
-      if (gPackets.getFaster()) {
+      if (gPackets.getFaster()) 
         audioClock (false);
-        gLcd.debug (LCD_COLOR_GREEN, "slower");
-        }
       }
     }
   //}}}

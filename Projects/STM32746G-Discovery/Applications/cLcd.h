@@ -30,7 +30,6 @@ public:
     BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
     BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
     BSP_LCD_Clear (LCD_COLOR_BLACK);
-    BSP_LCD_SetFont (&Font16);
     BSP_LCD_SetLayerVisible (0, ENABLE);
     BSP_LCD_SetTransparency (0, 255);
 
@@ -39,7 +38,6 @@ public:
     BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
     BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
     BSP_LCD_Clear (LCD_COLOR_BLACK);
-    BSP_LCD_SetFont (&Font16);
     BSP_LCD_SetLayerVisible (1, ENABLE);
     BSP_LCD_SetTransparency (1, 0);
 
@@ -86,7 +84,7 @@ public:
 
   //{{{
   int getScrollScale() {
-    return BSP_LCD_GetFont()->Height / 3;
+    return 4;
     }
   //}}}
   //{{{
