@@ -2,7 +2,8 @@
 //{{{  includes
 #include <string>
 #include "../../../system.h"
-#include "../../../utils.h"
+#include "../../../cLcd.h"
+#include "../../../cTouch.h"
 #include "../../../usbd.h"
 //}}}
 //{{{  keycode, modifier defines
@@ -289,6 +290,7 @@
 std::string kVersion = "USB HID keyboard 21/2/18";
 #define HID_IN_ENDPOINT       0x81
 #define HID_IN_ENDPOINT_SIZE  5
+cLcd gLcd;
 
 //{{{  device descriptors
 #define STM_VID      0x0483
@@ -297,13 +299,13 @@ std::string kVersion = "USB HID keyboard 21/2/18";
 __ALIGN_BEGIN const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12, USB_DESC_TYPE_DEVICE,
   0,2,                       // bcdUSB
-  0x00,                      // bDeviceClass
-  0x00,                      // bDeviceSubClass
-  0x00,                      // bDeviceProtocol
+  0,                         // bDeviceClass
+  0,                         // bDeviceSubClass
+  0,                         // bDeviceProtocol
   USB_MAX_EP0_SIZE,          // bMaxPacketSize
   LOBYTE(STM_VID), HIBYTE(STM_VID),
   LOBYTE(STM_HID_PID), HIBYTE(STM_HID_PID),
-  0, 2,                      // bcdDevice rel. 2.00
+  0,2,                       // bcdDevice rel. 2.00
   USBD_IDX_MFC_STR,          // Index of manufacturer string
   USBD_IDX_PRODUCT_STR,      // Index of product string
   USBD_IDX_SERIAL_STR,       // Index of serial number string
@@ -318,13 +320,13 @@ uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
 // device qualifier descriptor
 __ALIGN_BEGIN const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
   USB_LEN_DEV_QUALIFIER_DESC, USB_DESC_TYPE_DEVICE_QUALIFIER,
-  0x00, 0x02,  // bcdUSb
-  0x00,        // bDeviceClass
-  0x00,        // bDeviceSubClass
-  0x00,        // bDeviceProtocol
-  0x40,        // bMaxPacketSize0
-  0x01,        // bNumConfigurations
-  0x00,        // bReserved
+  0,2,   // bcdUSb
+  0,     // bDeviceClass
+  0,     // bDeviceSubClass
+  0,     // bDeviceProtocol
+  0x40,  // bMaxPacketSize0
+  1,     // bNumConfigurations
+  0,     // bReserved
   };
 //}}}
 //{{{  mouse hid report descriptor
@@ -378,85 +380,85 @@ __ALIGN_BEGIN const uint8_t kHidMouseReportDescriptor[74] __ALIGN_END = {
 //}}}
 //{{{  keyboard hid report descriptor
 __ALIGN_BEGIN uint8_t kHidKeyboardReportDescriptor[78] __ALIGN_END = {
-  0x05, 0x01,        // Usage Page (Generic Desktop Ctrls)
-  0x09, 0x06,        // Usage (Keyboard)
-  0xA1, 0x01,        // Collection (Application)
-    0x85, 0x01,        //  Report ID (1)
-    0x05, 0x07,        //  Usage Page (Kbrd/Keypad)
-    0x75, 0x01,        //  Report Size (1)
-    0x95, 0x08,        //  Report Count (8)
-    0x19, 0xE0,        //  Usage Minimum (0xE0)
-    0x29, 0xE7,        //  Usage Maximum (0xE7)
-    0x15, 0x00,        //  Logical Minimum (0)
-    0x25, 0x01,        //  Logical Maximum (1)
-    0x81, 0x02,        //  Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x95, 0x03,        //  Report Count (3)
-    0x75, 0x08,        //  Report Size (8)
-    0x15, 0x00,        //  Logical Minimum (0)
-    0x25, 0x64,        //  Logical Maximum (100)
-    0x05, 0x07,        //  Usage Page (Kbrd/Keypad)
-    0x19, 0x00,        //  Usage Minimum (0x00)
-    0x29, 0x65,        //  Usage Maximum (0x65)
-    0x81, 0x00,        //  Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
-  0xC0,              // End Collection
+  0x05, 0x01,    // Usage Page (Generic Desktop Ctrls)
+  0x09, 0x06,    // Usage (Keyboard)
+  0xA1, 0x01,    // Collection (Application)
+    0x85, 0x01,    //  Report ID (1)
+    0x05, 0x07,    //  Usage Page (Kbrd/Keypad)
+    0x75, 0x01,    //  Report Size (1)
+    0x95, 0x08,    //  Report Count (8)
+    0x19, 0xE0,    //  Usage Minimum (0xE0)
+    0x29, 0xE7,    //  Usage Maximum (0xE7)
+    0x15, 0x00,    //  Logical Minimum (0)
+    0x25, 0x01,    //  Logical Maximum (1)
+    0x81, 0x02,    //  Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+    0x95, 0x03,    //  Report Count (3)
+    0x75, 0x08,    //  Report Size (8)
+    0x15, 0x00,    //  Logical Minimum (0)
+    0x25, 0x64,    //  Logical Maximum (100)
+    0x05, 0x07,    //  Usage Page (Kbrd/Keypad)
+    0x19, 0x00,    //  Usage Minimum (0x00)
+    0x29, 0x65,    //  Usage Maximum (0x65)
+    0x81, 0x00,    //  Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+  0xC0,          // End Collection
 
-  0x05, 0x0C,        // Usage Page (Consumer)
-  0x09, 0x01,        // Usage (Consumer Control)
-  0xA1, 0x01,        // Collection (Application)
-    0x85, 0x02,        //  Report ID (2)
-    0x05, 0x0C,        //  Usage Page (Consumer)
-    0x15, 0x00,        //  Logical Minimum (0)
-    0x25, 0x01,        //  Logical Maximum (1)
-    0x75, 0x01,        //  Report Size (1)
-    0x95, 0x08,        //  Report Count (8)
-    0x09, 0xB5,        //  Usage (Scan Next Track)
-    0x09, 0xB6,        //  Usage (Scan Previous Track)
-    0x09, 0xB7,        //  Usage (Stop)
-    0x09, 0xB8,        //  Usage (Eject)
-    0x09, 0xCD,        //  Usage (Play/Pause)
-    0x09, 0xE2,        //  Usage (Mute)
-    0x09, 0xE9,        //  Usage (Volume Increment)
-    0x09, 0xEA,        //  Usage (Volume Decrement)
-    0x81, 0x02,        //  Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-  0xC0,              // End Collection
+  0x05, 0x0C,    // Usage Page (Consumer)
+  0x09, 0x01,    // Usage (Consumer Control)
+  0xA1, 0x01,    // Collection (Application)
+    0x85, 0x02,    //  Report ID (2)
+    0x05, 0x0C,    //  Usage Page (Consumer)
+    0x15, 0x00,    //  Logical Minimum (0)
+    0x25, 0x01,    //  Logical Maximum (1)
+    0x75, 0x01,    //  Report Size (1)
+    0x95, 0x08,    //  Report Count (8)
+    0x09, 0xB5,    //  Usage (Scan Next Track)
+    0x09, 0xB6,    //  Usage (Scan Previous Track)
+    0x09, 0xB7,    //  Usage (Stop)
+    0x09, 0xB8,    //  Usage (Eject)
+    0x09, 0xCD,    //  Usage (Play/Pause)
+    0x09, 0xE2,    //  Usage (Mute)
+    0x09, 0xE9,    //  Usage (Volume Increment)
+    0x09, 0xEA,    //  Usage (Volume Decrement)
+    0x81, 0x02,    //  Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+  0xC0,          // End Collection
   };
 //}}}
 //{{{  hid configuration descriptor
 __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
-  0x09, USB_DESC_TYPE_CONFIGURATION,
-  34,00, // wTotalLength - bytes returned
-  0x01,  // bNumInterfaces: 1 interface
-  0x01,  // bConfigurationValue - configuration value
-  0x00,  // iConfiguration - index of string descriptor describing the configuration
+  9, USB_DESC_TYPE_CONFIGURATION,
+  34,0,  // wTotalLength - bytes returned
+  1,     // bNumInterfaces: 1 interface
+  1,     // bConfigurationValue - configuration value
+  0,     // iConfiguration - index of string descriptor describing the configuration
   0xE0,  // bmAttributes: bus powered and Support Remote Wake-up
   0x32,  // MaxPower 100 mA: this current is used for detecting Vbus
 
   // joystick mouse interface descriptor
-  0x09, USB_DESC_TYPE_INTERFACE,
-  0x00,  // bInterfaceNumber - number of Interface
-  0x00,  // bAlternateSetting - alternate setting
-  0x01,  // bNumEndpoints
-  0x03,  // bInterfaceClass: HID
-  //0x01,  // bInterfaceSubClass : 1 = BOOT, 0 = no boot
-  //0x02,  // nInterfaceProtocol : 0 = none, 1 = keyboard, 2 = mouse
-  0x00,  // bInterfaceSubClass -  no boot
-  0x01,  // nInterfaceProtocol - keyboard,
+  9, USB_DESC_TYPE_INTERFACE,
+  0,     // bInterfaceNumber - number of Interface
+  0,     // bAlternateSetting - alternate setting
+  1,     // bNumEndpoints
+  3,     // bInterfaceClass: HID
+  //0x01, // bInterfaceSubClass : 1 = BOOT, 0 = no boot
+  //0x02, // nInterfaceProtocol : 0 = none, 1 = keyboard, 2 = mouse
+  0,     // bInterfaceSubClass -  no boot
+  1,     // nInterfaceProtocol - keyboard,
   0,     // iInterface - index of string descriptor
 
   // joystick mouse HID descriptor
-  0x09, 0x21,
-  0x11,01, // bcdHID: HID Class Spec release number
-  0x00,    // bCountryCode: Hardware target country
-  0x01,    // bNumDescriptors: number HID class descriptors to follow
-  0x22,    // bDescriptorType
-  78,0,    // wItemLength - total length of report descriptor
+  9, 0x21,
+  0x11,1,    // bcdHID: HID Class Spec release number
+  0,         // bCountryCode: Hardware target country
+  1,         // bNumDescriptors: number HID class descriptors to follow
+  0x22,      // bDescriptorType
+  78,0,      // wItemLength - total length of report descriptor
 
   // mouse endpoint descriptor
-  0x07, USB_DESC_TYPE_ENDPOINT,
+  7, USB_DESC_TYPE_ENDPOINT,
   HID_IN_ENDPOINT,      // bEndpointAddress: Endpoint Address (IN)
-  0x03,                 // bmAttributes: Interrupt endpoint
+  3,                    // bmAttributes: Interrupt endpoint
   HID_IN_ENDPOINT_SIZE, // wMaxPacketSize: 4 Byte max
-  0x00,
+  0,
   10,                   // bInterval: Polling Interval (10 ms)
   };
 //}}}
@@ -464,8 +466,8 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
 __ALIGN_BEGIN const uint8_t kHidDescriptor[9] __ALIGN_END = {
   0x09, 0x21,
   0x11,1,    // bcdHID: HID Class Spec release number
-  0x00,      // bCountryCode: Hardware target country
-  0x01,      // bNumDescriptors: Number of HID class descriptors to follow
+  0,         // bCountryCode: Hardware target country
+  1,         // bNumDescriptors: Number of HID class descriptors to follow
   0x22,      // bDescriptorType
   78,0,      // wItemLength: Total length of Report descriptor
   };
@@ -592,30 +594,30 @@ uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   auto hidData = (tHidData*)device->pClassData;
-  debug (LCD_COLOR_YELLOW, "setup bmReq:%x req:%x v:%x l:%d",
-                           req->bmRequest, req->bRequest, req->wValue, req->wLength);
+  gLcd.debug (LCD_COLOR_YELLOW, "setup bmReq:%x req:%x v:%x l:%d",
+                                req->bmRequest, req->bRequest, req->wValue, req->wLength);
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest) {
         case USB_REQ_GET_DESCRIPTOR: {
           if (req->wValue >> 8 == 0x22) { // hidReportDescriptor
-            debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
+            gLcd.debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
             //USBD_CtlSendData (device, (uint8_t*)kHidMouseReportDescriptor, 74);
             USBD_CtlSendData (device, (uint8_t*)kHidKeyboardReportDescriptor, 78);
             }
           else if (req->wValue >> 8 == 0x21) { // hidDescriptor
-            debug (LCD_COLOR_GREEN, "- getDescriptor hid");
+            gLcd.debug (LCD_COLOR_GREEN, "- getDescriptor hid");
             USBD_CtlSendData (device, (uint8_t*)kHidDescriptor, 9);
             }
           break;
           }
         case USB_REQ_GET_INTERFACE :
-          debug (LCD_COLOR_GREEN, "- getInterface");
+          gLcd.debug (LCD_COLOR_GREEN, "- getInterface");
           USBD_CtlSendData (device, (uint8_t*)&hidData->mAltSetting, 1);
           break;
         case USB_REQ_SET_INTERFACE :
-          debug (LCD_COLOR_GREEN, "- setInterface");
+          gLcd.debug (LCD_COLOR_GREEN, "- setInterface");
           hidData->mAltSetting = (uint8_t)(req->wValue);
           break;
         }
@@ -625,19 +627,19 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
       switch (req->bRequest) {
         case 0x0B: // HID_REQ_SET_PROTOCOL:
           hidData->mProtocol = (uint8_t)(req->wValue);
-          debug (LCD_COLOR_GREEN, "- setProtocol %d", req->wValue);
+          gLcd.debug (LCD_COLOR_GREEN, "- setProtocol %d", req->wValue);
           break;
         case 0x03: // HID_REQ_GET_PROTOCOL:
           USBD_CtlSendData (device, (uint8_t*)&hidData->mProtocol, 1);
-          debug (LCD_COLOR_GREEN, "- getProtocol %d", hidData->mProtocol);
+          gLcd.debug (LCD_COLOR_GREEN, "- getProtocol %d", hidData->mProtocol);
           break;
         case 0x0A: // reqSetIdle
           hidData->mIdleState = (uint8_t)(req->wValue >> 8);
-          debug (LCD_COLOR_GREEN, "- setIdle %d", req->wValue);
+          gLcd.debug (LCD_COLOR_GREEN, "- setIdle %d", req->wValue);
           break;
         case 0x02: // reqGetIdle
           USBD_CtlSendData (device, (uint8_t*)&hidData->mIdleState, 1);
-          debug (LCD_COLOR_GREEN, "- getIdle %d", hidData->mIdleState);
+          gLcd.debug (LCD_COLOR_GREEN, "- getIdle %d", hidData->mIdleState);
           break;
         default:
           USBD_CtlError (device, req);
@@ -753,63 +755,123 @@ uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
   //}
 //}}}
 
-//{{{
-void onProx (int x, int y, int z) {
+class cAppTouch : public cTouch {
+public:
+  cAppTouch (int x, int y) : cTouch(x,y) {}
 
-  if (x || y) {
-    //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 0,(uint8_t)x,(uint8_t)y,0 };
-   // hidSendReport (&gUsbDevice, HID_Buffer);
-    debug (LCD_COLOR_MAGENTA, "onProx %d %d %d", x, y, z);
+protected:
+  //{{{
+  void onProx (int x, int y, int z) {
+
+    if (x || y) {
+      //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 0,(uint8_t)x,(uint8_t)y,0 };
+     // hidSendReport (&gUsbDevice, HID_Buffer);
+      gLcd.debug (LCD_COLOR_MAGENTA, "onProx %d %d %d", x, y, z);
+      }
     }
-  }
-//}}}
-//{{{
-void onPress (int x, int y) {
+  //}}}
+  //{{{
+  void onPress (int x, int y) {
 
-  //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,0,0,0 };
-  //hidSendReport (&gUsbDevice, HID_Buffer);
-  hidSendKeyboardReport (&gUsbDevice);
-
-  debug (LCD_COLOR_GREEN, "onPress %d %d", x, y);
-  }
-//}}}
-//{{{
-void onMove (int x, int y, int z) {
-
-  if (x || y) {
-    //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,(uint8_t)x,(uint8_t)y,0 };
+    //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,0,0,0 };
     //hidSendReport (&gUsbDevice, HID_Buffer);
-    debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
-    }
-  }
-//}}}
-//{{{
-void onScroll (int x, int y, int z) {
-  incScrollValue (y);
-  }
-//}}}
-//{{{
-void onRelease (int x, int y) {
+    hidSendKeyboardReport (&gUsbDevice);
 
-  //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 0,0,0,0 };
-  //hidSendReport (&gUsbDevice, HID_Buffer);
-  debug (LCD_COLOR_GREEN, "onRelease %d %d", x, y);
-  }
-//}}}
+    gLcd.debug (LCD_COLOR_GREEN, "onPress %d %d", x, y);
+    }
+  //}}}
+  //{{{
+  void onMove (int x, int y, int z) {
+
+    if (x || y) {
+      //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,(uint8_t)x,(uint8_t)y,0 };
+      //hidSendReport (&gUsbDevice, HID_Buffer);
+      gLcd.debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
+      }
+    }
+  //}}}
+  //{{{
+  void onScroll (int x, int y, int z) {
+    gLcd.incScrollValue (y);
+    }
+  //}}}
+  //{{{
+  void onRelease (int x, int y) {
+
+    //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 0,0,0,0 };
+    //hidSendReport (&gUsbDevice, HID_Buffer);
+    gLcd.debug (LCD_COLOR_GREEN, "onRelease %d %d", x, y);
+    }
+  //}}}
+  };
 
 //{{{
 int main() {
 
-  initUtils();
+  SCB_EnableICache();
+  SCB_EnableDCache();
+  HAL_Init();
+  //{{{  config system clock
+  // System Clock source            = PLL (HSE)
+  // SYSCLK(Hz)                     = 216000000
+  // HCLK(Hz)                       = 216000000
+  // AHB Prescaler                  = 1
+  // APB1 Prescaler                 = 4
+  // APB2 Prescaler                 = 2
+  // HSE Frequency(Hz)              = 25000000
+  // PLL_M                          = 25
+  // PLL_N                          = 432
+  // PLL_P                          = 2
+  // PLLSAI_N                       = 384
+  // PLLSAI_P                       = 8
+  // VDD(V)                         = 3.3
+  // Main regulator output voltage  = Scale1 mode
+  // Flash Latency(WS)              = 7
+
+  // Enable HSE Oscillator and activate PLL with HSE as source
+  RCC_OscInitTypeDef RCC_OscInitStruct;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSIState = RCC_HSI_OFF;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 25;
+  RCC_OscInitStruct.PLL.PLLN = 432;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = 9;
+  if (HAL_RCC_OscConfig (&RCC_OscInitStruct) != HAL_OK)
+    while (1) {}
+
+  // Activate the OverDrive to reach the 216 Mhz Frequency
+  if (HAL_PWREx_EnableOverDrive() != HAL_OK)
+    while (1) {}
+
+  // Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 clocks dividers
+  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK |
+                                 RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2);
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
+  if (HAL_RCC_ClockConfig (&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK)
+    while (1) {}
+  //}}}
+
+  BSP_LED_Init (LED1);
+  BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
+
+  gLcd.init();
+  cAppTouch touch (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
 
   USBD_Init (&gUsbDevice, &hidDescriptor, 0);
   USBD_RegisterClass (&gUsbDevice, &hidClass);
   USBD_Start (&gUsbDevice);
 
   while (true) {
-    touch();
-    showLcd (kVersion, 0);
-    flipLcd();
+    touch.poll();
+    gLcd.show (kVersion);
+    gLcd.flip();
     }
   }
 //}}}

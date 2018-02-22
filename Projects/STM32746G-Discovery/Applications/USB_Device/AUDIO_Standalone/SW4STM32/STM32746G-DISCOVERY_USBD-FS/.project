@@ -72,11 +72,6 @@
 			<locationURI>PARENT-4-PROJECT_LOC/system.c</locationURI>
 		</link>
 		<link>
-			<name>app/utils.cpp</name>
-			<type>1</type>
-			<locationURI>PARENT-4-PROJECT_LOC/utils.cpp</locationURI>
-		</link>
-		<link>
 			<name>app/wm8994.c</name>
 			<type>1</type>
 			<locationURI>copy_PARENT123456/wm8994.c</locationURI>

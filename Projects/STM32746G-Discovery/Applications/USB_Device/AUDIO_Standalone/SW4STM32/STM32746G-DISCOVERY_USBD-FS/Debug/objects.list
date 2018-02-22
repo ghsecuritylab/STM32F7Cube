@@ -31,5 +31,4 @@
 "app/stm32746g_audio.o"
 "app/stm32746g_lcd.o"
 "app/system.o"
-"app/utils.o"
 "app/wm8994.o"
