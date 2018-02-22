@@ -307,10 +307,10 @@ void BSP_LCD_Reload (uint32_t ReloadType)
 }
 //}}}
 
-void BSP_LCD_SetTextColor (uint32_t Color) { DrawProp[ActiveLayer].TextColor = Color; }
 uint32_t BSP_LCD_GetTextColor() { return DrawProp[ActiveLayer].TextColor; }
-void BSP_LCD_SetBackColor (uint32_t Color) { DrawProp[ActiveLayer].BackColor = Color; }
 uint32_t BSP_LCD_GetBackColor() { return DrawProp[ActiveLayer].BackColor; }
+void BSP_LCD_SetTextColor (uint32_t Color) { DrawProp[ActiveLayer].TextColor = Color; }
+void BSP_LCD_SetBackColor (uint32_t Color) { DrawProp[ActiveLayer].BackColor = Color; }
 
 //{{{
 uint32_t BSP_LCD_ReadPixel (uint16_t Xpos, uint16_t Ypos) {
