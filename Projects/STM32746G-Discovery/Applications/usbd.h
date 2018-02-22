@@ -320,7 +320,7 @@ USBD_StatusTypeDef USBD_CtlContinueSendData (USBD_HandleTypeDef* device, uint8_t
 //{{{
 USBD_StatusTypeDef USBD_CtlPrepareRx (USBD_HandleTypeDef* device, uint8_t* pbuf, uint16_t len) {
 
-  //Set EP0 State
+  // Set EP0 State
   device->ep0_state = USBD_EP0_DATA_OUT;
   device->ep_out[0].total_length = len;
   device->ep_out[0].rem_length = len;
@@ -377,7 +377,7 @@ USBD_StatusTypeDef USBD_Init (USBD_HandleTypeDef* device, USBD_DescriptorsTypeDe
   device->dev_state = USBD_STATE_DEFAULT;
   device->id = id;
 
-  /* Set LL Driver parameters */
+  // Set LL Driver parameters
   gPcdHandle.Instance = USB_OTG_FS;
   gPcdHandle.Init.dev_endpoints = 4;
   gPcdHandle.Init.use_dedicated_ep1 = 0;

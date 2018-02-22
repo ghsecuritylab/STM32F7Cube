@@ -3,6 +3,7 @@
 #include "../../../system.h"
 #include "../../../utils.h"
 #include "../../../usbd.h"
+
 #include "../../../stm32746g_audio.h"
 //}}}
 std::string kVersion = "USB audio 21/2/18";

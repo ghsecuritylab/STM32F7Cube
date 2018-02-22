@@ -44,23 +44,23 @@ bool gFaster = true;
 //}}}
 
 //{{{  device descriptors
-#define USBD_VID  0x0483
-#define USBD_PID  0x5730
+#define STM_VID        0x0483
+#define STM_AUDIO_PID  0x5730
 
 __ALIGN_BEGIN const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   0x12, USB_DESC_TYPE_DEVICE,
-  0x01, 0x01,                          // bcdUSB 1.1
-  0x00,                                // bDeviceClass
-  0x00,                                // bDeviceSubClass
-  0x00,                                // bDeviceProtocol
-  USB_MAX_EP0_SIZE,                    // bMaxPacketSize
-  LOBYTE(USBD_VID), HIBYTE(USBD_VID),  // vid
-  LOBYTE(USBD_PID), HIBYTE(USBD_PID),  // pid
-  0x01, 0x01,                          // bcdDevice rel 1.01
-  USBD_IDX_MFC_STR,                    // Index of manufacturer string
-  USBD_IDX_PRODUCT_STR,                // Index of product string
-  USBD_IDX_SERIAL_STR,                 // Index of serial number string
-  USBD_MAX_NUM_CONFIGURATION           // bNumConfigurations
+  0x01, 0x01,                 // bcdUSB 1.1
+  0x00,                       // bDeviceClass
+  0x00,                       // bDeviceSubClass
+  0x00,                       // bDeviceProtocol
+  USB_MAX_EP0_SIZE,           // bMaxPacketSize
+  LOBYTE(STM_VID), HIBYTE(STM_VID),
+  LOBYTE(STM_AUDIO_PID), HIBYTE(STM_AUDIO_PID),
+  0x01, 0x01,                 // bcdDevice rel 1.01
+  USBD_IDX_MFC_STR,           // Index of manufacturer string
+  USBD_IDX_PRODUCT_STR,       // Index of product string
+  USBD_IDX_SERIAL_STR,        // Index of serial number string
+  USBD_MAX_NUM_CONFIGURATION  // bNumConfigurations
   };
 
 uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
