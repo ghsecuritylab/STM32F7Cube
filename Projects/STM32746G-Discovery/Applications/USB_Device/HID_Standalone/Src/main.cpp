@@ -290,6 +290,7 @@
 std::string kVersion = "USB HID keyboard 21/2/18";
 #define HID_IN_ENDPOINT       0x81
 #define HID_IN_ENDPOINT_SIZE  5
+
 cLcd gLcd;
 
 //{{{  device descriptors
@@ -455,11 +456,11 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
 
   // mouse endpoint descriptor
   7, USB_DESC_TYPE_ENDPOINT,
-  HID_IN_ENDPOINT,      // bEndpointAddress: Endpoint Address (IN)
-  3,                    // bmAttributes: Interrupt endpoint
-  HID_IN_ENDPOINT_SIZE, // wMaxPacketSize: 4 Byte max
+  HID_IN_ENDPOINT,      // bEndpointAddress - endpoint address (IN)
+  3,                    // bmAttributes - interrupt endpoint
+  HID_IN_ENDPOINT_SIZE, // wMaxPacketSize
   0,
-  10,                   // bInterval: Polling Interval (10 ms)
+  10,                   // bInterval - polling interval (10 ms)
   };
 //}}}
 //{{{  device configuration descriptor
@@ -765,7 +766,7 @@ protected:
 
     if (x || y) {
       //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 0,(uint8_t)x,(uint8_t)y,0 };
-     // hidSendReport (&gUsbDevice, HID_Buffer);
+      // hidSendReport (&gUsbDevice, HID_Buffer);
       gLcd.debug (LCD_COLOR_MAGENTA, "onProx %d %d %d", x, y, z);
       }
     }
@@ -858,11 +859,9 @@ int main() {
     while (1) {}
   //}}}
 
-  BSP_LED_Init (LED1);
-  BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
-
   gLcd.init();
   cAppTouch touch (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
+  BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
 
   USBD_Init (&gUsbDevice, &hidDescriptor, 0);
   USBD_RegisterClass (&gUsbDevice, &hidClass);
