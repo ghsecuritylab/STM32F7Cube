@@ -41,8 +41,10 @@ public:
     return false;
     }
   //}}}
+
   //{{{
   void add (int16_t* ptr) {
+
     for (int sample = 0; sample < PACKET_SAMPLES; sample++) {
       //  swap FR,RL and sum
       int16_t srcRL = *(ptr+2);
@@ -58,7 +60,7 @@ public:
 
     mNumPackets++;
     if (mNumPackets >= 20) {
-      //{{{  save every 20ms
+      // save every 20ms
       mNumPackets = 0;
       mFL[mSample] = mSumFL >> 16;
       mFR[mSample] = mSumFR >> 16;
@@ -70,7 +72,6 @@ public:
       mSumRL = 0;
       mSumRR = 0;
       }
-      //}}}
     }
   //}}}
   //{{{
