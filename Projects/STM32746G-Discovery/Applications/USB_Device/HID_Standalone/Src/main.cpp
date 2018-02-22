@@ -1206,7 +1206,7 @@ void initPs2gpio() {
 
   __HAL_RCC_GPIOF_CLK_ENABLE();
 
-  // PS2 clock
+  // init PS2 clock
   GPIO_InitTypeDef GPIO_Init_Structure;
   GPIO_Init_Structure.Mode = GPIO_MODE_IT_RISING;
   GPIO_Init_Structure.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -1214,14 +1214,14 @@ void initPs2gpio() {
   GPIO_Init_Structure.Pin = GPIO_PIN_8;
   HAL_GPIO_Init (GPIOF, &GPIO_Init_Structure);
 
-  // PS2 data
+  // init PS2 data
   GPIO_Init_Structure.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_Init_Structure.Speed = GPIO_SPEED_FREQ_HIGH;
   GPIO_Init_Structure.Pull = GPIO_PULLUP;
   GPIO_Init_Structure.Pin = GPIO_PIN_9;
   HAL_GPIO_Init (GPIOF, &GPIO_Init_Structure);
 
-  // Enable and set EXTI line 8 Interrupt to the lowest priority
+  // enable and set EXTI line 8 Interrupt to the lowest priority
   HAL_NVIC_SetPriority (EXTI9_5_IRQn, 2, 0);
   HAL_NVIC_EnableIRQ (EXTI9_5_IRQn);
 
@@ -1244,7 +1244,7 @@ void initPs2keyboard() {
 
   for (int i = 0; i < 8; i++) {
     // send leds
-    ps2send (0xED); 
+    ps2send (0xED);
     ps2send (i);
     HAL_Delay (100);
     }
