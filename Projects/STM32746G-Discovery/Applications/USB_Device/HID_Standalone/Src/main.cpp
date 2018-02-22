@@ -291,6 +291,41 @@ std::string kVersion = "USB HID keyboard 21/2/18";
 #define HID_IN_ENDPOINT       0x81
 #define HID_IN_ENDPOINT_SIZE  5
 
+//{{{
+class cWaveform {
+public:
+  //{{{
+  void add (int a, int b) {
+
+    mA[mSample] = a;
+    mB[mSample] = b;
+    mSample = (mSample+1) % (BSP_LCD_GetXSize()/2);
+    }
+  //}}}
+  //{{{
+  void show() {
+
+    auto centreX = BSP_LCD_GetXSize() / 2;
+    auto centreY = BSP_LCD_GetYSize() / 2;
+
+    auto sample = mSample;
+    for (auto i = 0u; i < centreX; i++) {
+      sample = (sample + 1) % centreX;
+      BSP_LCD_FillRect (i*2, centreY - mA[sample], 2, mA[sample] + mB[sample]);
+      }
+    }
+  //}}}
+
+private:
+
+  uint16_t mSample = 0;
+
+  uint16_t mA[240];
+  uint16_t mB[240];
+  };
+//}}}
+cWaveform gWaveform;
+
 cLcd gLcd;
 
 //{{{  device descriptors
@@ -778,6 +813,435 @@ protected:
   //}}}
   };
 
+//{{{  ps/2
+//{{{  ps2 keyboard defines
+#define PS2_KEYMAP_SIZE     136
+
+#define PS2_TAB        9
+#define PS2_ENTER      13
+#define PS2_BACKSPACE  127
+#define PS2_ESC        27
+#define PS2_INSERT     0
+#define PS2_DELETE     127
+#define PS2_HOME       0
+#define PS2_END        0
+#define PS2_PAGEUP     25
+#define PS2_PAGEDOWN   26
+#define PS2_UPARROW    11
+#define PS2_LEFTARROW  8
+#define PS2_DOWNARROW  10
+#define PS2_RIGHTARROW 21
+
+#define PS2_F1         0
+#define PS2_F2         0
+#define PS2_F3         0
+#define PS2_F4         0
+#define PS2_F5         0
+#define PS2_F6         0
+#define PS2_F7         0
+#define PS2_F8         0
+#define PS2_F9         0
+#define PS2_F10        0
+#define PS2_F11        0
+#define PS2_F12        0
+#define PS2_SCROLL     0
+
+#define PS2_INVERTED_EXCLAMATION  161
+#define PS2_CENT_SIGN       162
+#define PS2_POUND_SIGN      163
+#define PS2_CURRENCY_SIGN   164
+#define PS2_YEN_SIGN        165
+#define PS2_BROKEN_BAR      166
+#define PS2_SECTION_SIGN    167
+#define PS2_DIAERESIS       168
+#define PS2_COPYRIGHT_SIGN  169
+#define PS2_FEMININE_ORDINAL 170
+#define PS2_LEFT_DOUBLE_ANGLE_QUOTE 171
+#define PS2_NOT_SIGN        172
+#define PS2_HYPHEN          173
+#define PS2_REGISTERED_SIGN 174
+#define PS2_MACRON          175
+#define PS2_DEGREE_SIGN     176
+#define PS2_PLUS_MINUS_SIGN 177
+#define PS2_SUPERSCRIPT_TWO 178
+#define PS2_SUPERSCRIPT_THREE 179
+#define PS2_ACUTE_ACCENT    180
+#define PS2_MICRO_SIGN      181
+#define PS2_PILCROW_SIGN    182
+#define PS2_MIDDLE_DOT      183
+#define PS2_CEDILLA         184
+#define PS2_SUPERSCRIPT_ONE 185
+#define PS2_MASCULINE_ORDINAL 186
+#define PS2_RIGHT_DOUBLE_ANGLE_QUOTE 187
+#define PS2_FRACTION_ONE_QUARTER 188
+#define PS2_FRACTION_ONE_HALF 189
+#define PS2_FRACTION_THREE_QUARTERS 190
+#define PS2_INVERTED_QUESTION MARK  191
+#define PS2_A_GRAVE         192
+#define PS2_A_ACUTE         193
+#define PS2_A_CIRCUMFLEX    194
+#define PS2_A_TILDE         195
+#define PS2_A_DIAERESIS     196
+#define PS2_A_RING_ABOVE    197
+#define PS2_AE              198
+#define PS2_C_CEDILLA       199
+#define PS2_E_GRAVE         200
+#define PS2_E_ACUTE         201
+#define PS2_E_CIRCUMFLEX    202
+#define PS2_E_DIAERESIS     203
+#define PS2_I_GRAVE         204
+#define PS2_I_ACUTE         205
+#define PS2_I_CIRCUMFLEX    206
+#define PS2_I_DIAERESIS     207
+#define PS2_ETH             208
+#define PS2_N_TILDE         209
+#define PS2_O_GRAVE         210
+#define PS2_O_ACUTE         211
+#define PS2_O_CIRCUMFLEX    212
+#define PS2_O_TILDE         213
+#define PS2_O_DIAERESIS     214
+#define PS2_MULTIPLICATION  215
+#define PS2_O_STROKE        216
+#define PS2_U_GRAVE         217
+#define PS2_U_ACUTE         218
+#define PS2_U_CIRCUMFLEX    219
+#define PS2_U_DIAERESIS     220
+#define PS2_Y_ACUTE         221
+#define PS2_THORN           222
+#define PS2_SHARP_S         223
+#define PS2_a_GRAVE         224
+#define PS2_a_ACUTE         225
+#define PS2_a_CIRCUMFLEX    226
+#define PS2_a_TILDE         227
+#define PS2_a_DIAERESIS     228
+#define PS2_a_RING_ABOVE    229
+#define PS2_ae              230
+#define PS2_c_CEDILLA       231
+#define PS2_e_GRAVE         232
+#define PS2_e_ACUTE         233
+#define PS2_e_CIRCUMFLEX    234
+#define PS2_e_DIAERESIS     235
+#define PS2_i_GRAVE         236
+#define PS2_i_ACUTE         237
+#define PS2_i_CIRCUMFLEX    238
+#define PS2_i_DIAERESIS     239
+#define PS2_eth             240
+#define PS2_n_TILDE         241
+#define PS2_o_GRAVE         242
+#define PS2_o_ACUTE         243
+#define PS2_o_CIRCUMFLEX    244
+#define PS2_o_TILDE         245
+#define PS2_o_DIAERESIS     246
+#define PS2_DIVISION        247
+#define PS2_o_STROKE        248
+#define PS2_u_GRAVE         249
+#define PS2_u_ACUTE         250
+#define PS2_u_CIRCUMFLEX    251
+#define PS2_u_DIAERESIS     252
+#define PS2_y_ACUTE         253
+#define PS2_thorn           254
+#define PS2_y_DIAERESIS     255
+//}}}
+//{{{  struct ps2Keymap_t
+typedef struct {
+  uint8_t noshift[PS2_KEYMAP_SIZE];
+  uint8_t shift[PS2_KEYMAP_SIZE];
+  uint8_t uses_altgr;
+  uint8_t altgr[PS2_KEYMAP_SIZE];
+  } ps2Keymap_t;
+//}}}
+//{{{
+const ps2Keymap_t kPs2Keymap = {
+  // without shift
+  {0, PS2_F9, 0, PS2_F5, PS2_F3, PS2_F1, PS2_F2, PS2_F12,
+   0, PS2_F10, PS2_F8, PS2_F6, PS2_F4, PS2_TAB, '`', 0,
+   0, 0 /*Lalt*/, 0 /*Lshift*/, 0, 0 /*Lctrl*/, 'q', '1', 0,
+   0, 0, 'z', 's', 'a', 'w', '2', 0,
+   0, 'c', 'x', 'd', 'e', '4', '3', 0,
+   0, ' ', 'v', 'f', 't', 'r', '5', 0,
+   0, 'n', 'b', 'h', 'g', 'y', '6', 0,
+   0, 0, 'm', 'j', 'u', '7', '8', 0,
+   0, ',', 'k', 'i', 'o', '0', '9', 0,
+   0, '.', '/', 'l', ';', 'p', '-', 0,
+   0, 0, '\'', 0, '[', '=', 0, 0,
+   0 /*CapsLock*/, 0 /*Rshift*/, PS2_ENTER /*Enter*/, ']', 0, '\\', 0, 0,
+   0, 0, 0, 0, 0, 0, PS2_BACKSPACE, 0,
+   0, '1', 0, '4', '7', 0, 0, 0,
+   '0', '.', '2', '5', '6', '8', PS2_ESC, 0 /*NumLock*/,
+   PS2_F11, '+', '3', '-', '*', '9', PS2_SCROLL, 0,
+   0, 0, 0, PS2_F7 },
+
+  // with shift
+  {0, PS2_F9, 0, PS2_F5, PS2_F3, PS2_F1, PS2_F2, PS2_F12,
+   0, PS2_F10, PS2_F8, PS2_F6, PS2_F4, PS2_TAB, '~', 0,
+   0, 0 /*Lalt*/, 0 /*Lshift*/, 0, 0 /*Lctrl*/, 'Q', '!', 0,
+   0, 0, 'Z', 'S', 'A', 'W', '@', 0,
+   0, 'C', 'X', 'D', 'E', '$', '#', 0,
+   0, ' ', 'V', 'F', 'T', 'R', '%', 0,
+   0, 'N', 'B', 'H', 'G', 'Y', '^', 0,
+   0, 0, 'M', 'J', 'U', '&', '*', 0,
+   0, '<', 'K', 'I', 'O', ')', '(', 0,
+   0, '>', '?', 'L', ':', 'P', '_', 0,
+   0, 0, '"', 0, '{', '+', 0, 0,
+   0 /*CapsLock*/, 0 /*Rshift*/, PS2_ENTER /*Enter*/, '}', 0, '|', 0, 0,
+   0, 0, 0, 0, 0, 0, PS2_BACKSPACE, 0,
+   0, '1', 0, '4', '7', 0, 0, 0,
+   '0', '.', '2', '5', '6', '8', PS2_ESC, 0 /*NumLock*/,
+   PS2_F11, '+', '3', '-', '*', '9', PS2_SCROLL, 0,
+   0, 0, 0, PS2_F7 },
+
+  0
+  };
+//}}}
+//{{{  vars
+int bitPos = -1;
+uint16_t data = 0;
+bool raw = true;
+bool ps2rx = true;
+volatile int inPtr = 0;
+volatile int outPtr = 0;
+int rxData[32];
+bool stream = false;
+int streamByte = -1;
+uint8_t streamBytes[6];
+bool rxExpandCode = false;
+bool rxReleaseCode = false;
+bool shifted = false;
+bool ctrled = false;
+
+int touchX = 0;
+int touchY = 0;
+int touchZ = 0;
+//}}}
+
+//{{{
+bool getPf8() {
+  return (GPIOF->IDR & GPIO_PIN_8) != 0;
+  }
+//}}}
+//{{{
+bool getPf9() {
+  return (GPIOF->IDR & GPIO_PIN_9) != 0;
+  }
+//}}}
+
+extern "C" { void EXTI9_5_IRQHandler(); }
+//{{{
+void EXTI9_5_IRQHandler() {
+
+  if (__HAL_GPIO_EXTI_GET_IT (GPIO_PIN_8) != RESET) {
+    __HAL_GPIO_EXTI_CLEAR_IT (GPIO_PIN_8);
+
+    if (ps2rx) {
+      bool bit = (GPIOF->IDR & GPIO_PIN_9) != 0;
+
+      if (bitPos == -1) {
+        //{{{  wait for lo start bit
+        if (!bit) {
+          // lo start bit
+          bitPos = 0;
+          data = 0;
+          }
+        }
+        //}}}
+      else if (bitPos < 8) {
+        // get data bits 0..7
+        data = data | (bit << bitPos);
+        bitPos++;
+        }
+      else if (bitPos == 8) {
+        //{{{  parity bit - got data
+        if (stream) {
+          if (streamByte == -1) {
+            if ((data & 0xC0) == 0x80) {
+              streamByte = 0;
+              streamBytes[streamByte] =  data;
+              }
+            }
+          else {
+            streamByte++;
+            if ((streamByte == 3) && ((data & 0xc0) != 0xc0))
+              streamByte = -1;
+            else {
+              streamBytes[streamByte] = data;
+               if (streamByte == 5) {
+                 touchX = ((streamBytes[3] & 0x10) << 8) | ((streamBytes[1] & 0x0F) << 8) | streamBytes[4];
+                 touchY = ((streamBytes[3] & 0x20) << 7) | ((streamBytes[1] & 0xF0) << 4) | streamBytes[5];
+                 touchZ = streamBytes[2];
+                 streamByte = -1;
+                 }
+               }
+            }
+          }
+        else if (raw) {
+          rxData[inPtr] = data | (0x100 * rxReleaseCode);
+          inPtr = (inPtr + 1) % 32;
+          }
+        else if (data == 0xE0)
+          rxExpandCode = true;
+        else if (data == 0xF0)
+          rxReleaseCode = true;
+        else if (data == 0x12) // SHIFT_L;
+          shifted = !rxReleaseCode;
+        else if (data == 0x59) // SHIFT_R;
+          shifted = !rxReleaseCode;
+        else if (data == 0x14) // CTRL_L
+          ctrled = !rxReleaseCode;
+        else {
+          if (rxExpandCode) {
+            if (data == 0x70)
+              data = PS2_INSERT;
+            else if (data == 0x6C)
+              data = PS2_HOME;
+            else if (data == 0x7D)
+              data = PS2_PAGEUP;
+            else if (data == 0x71)
+              data = PS2_DELETE;
+            else if (data == 0x6C)
+              data = PS2_HOME;
+            else if (data == 0x69)
+              data = PS2_END;
+            else if (data == 0x6C)
+              data = PS2_PAGEDOWN;
+            else if (data == 0x75)
+              data = PS2_UPARROW;
+            else if (data == 0x6B)
+              data = PS2_LEFTARROW;
+            else if (data == 0x72)
+              data = PS2_DOWNARROW;
+            else if (data == 0x74)
+              data = PS2_RIGHTARROW;
+            else if (data == 0x4A)
+              data = '/';
+            else if (data == 0x5A)
+              data = PS2_ENTER;
+            else
+              data |= 0x200;
+            }
+          else if (shifted)
+            data = kPs2Keymap.shift[data];
+          else
+            data = kPs2Keymap.noshift[data];
+
+          rxData[inPtr] = data | (0x100 * rxReleaseCode);
+          inPtr = (inPtr + 1) % 32;
+          rxExpandCode = false;
+          rxReleaseCode = false;
+          }
+
+        bitPos++;
+        }
+        //}}}
+      else if (bitPos == 9) {
+        //{{{  expect hi stop bit
+        if (bit)
+          bitPos = -1;
+        }
+        //}}}
+      }
+    }
+  }
+//}}}
+
+//{{{
+uint16_t ps2get() {
+
+  while (inPtr == outPtr) {}
+  uint16_t ch = rxData[outPtr];
+  outPtr = (outPtr + 1) % 32;
+  return ch;
+  }
+//}}}
+//{{{
+void ps2send (uint8_t value)  {
+
+  HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_RESET); // set clock lo, release inhibit, if necessary
+  HAL_Delay (2); // Wait out any final clock pulse, 100us
+
+  ps2rx = false;
+  HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, GPIO_PIN_RESET); // set data lo, start bit
+  HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_SET);   // set clock hi, float
+
+  uint8_t parity = 1;
+  for (int bit = 0; bit < 8; bit++) {
+    while (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for rising edge
+    HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, (value & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET); // set data to i’th data bit
+    parity = parity + value;  // Accumulate parity
+    value = value >> 1;       // Shift right to get next bit
+    while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
+    }
+
+  while (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for rising edge
+  HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, (parity & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET); // set data to parity bit
+  while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
+
+  while (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for rising edge
+  HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, GPIO_PIN_SET); // set data hi, stop bit
+  while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
+
+  while (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for rising edge
+  //if (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8) == true)
+  //  lcd->info ("ps2send - missing line control bit");
+  while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
+  ps2rx = true;
+
+  //if (ps2get() != 0xFA)
+  //  lcd->info ("ps2send - no 0xFA ack");
+  }
+//}}}
+
+//{{{
+void initPs2gpio() {
+
+  bitPos = -1;
+  inPtr = 0;
+  outPtr = 0;
+
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+
+  // PS2 clock
+  GPIO_InitTypeDef GPIO_Init_Structure;
+  GPIO_Init_Structure.Mode = GPIO_MODE_IT_RISING;
+  GPIO_Init_Structure.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_Init_Structure.Pull = GPIO_PULLUP;
+  GPIO_Init_Structure.Pin = GPIO_PIN_8;
+  HAL_GPIO_Init (GPIOF, &GPIO_Init_Structure);
+
+  // PS2 data
+  GPIO_Init_Structure.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_Init_Structure.Speed = GPIO_SPEED_FREQ_HIGH;
+  GPIO_Init_Structure.Pull = GPIO_PULLUP;
+  GPIO_Init_Structure.Pin = GPIO_PIN_9;
+  HAL_GPIO_Init (GPIOF, &GPIO_Init_Structure);
+
+  // Enable and set EXTI line 8 Interrupt to the lowest priority
+  HAL_NVIC_SetPriority (EXTI9_5_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ (EXTI9_5_IRQn);
+
+  HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_SET);
+  HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
+
+  HAL_Delay (100);
+  }
+//}}}
+//{{{
+void initPs2keyboard() {
+
+  ps2send (0xFF);
+  //if (ps2get() != 0xAA)
+  //  lcd->info ("initPs2keyboard - missing 0xAA reset");
+
+  for (int i = 0; i < 8; i++) {
+    ps2send (0xED); // send leds
+    ps2send (i);
+    HAL_Delay (100);
+    }
+
+  ps2send (0x0F2); // sendId
+  //lcd->info ("keyboard id " + hex (ps2get()) + hex(ps2get()));
+  }
+//}}}
+//}}}
 //{{{
 int main() {
 
@@ -868,9 +1332,16 @@ int main() {
   USBD_RegisterClass (&gUsbDevice, &hidClass);
   USBD_Start (&gUsbDevice);
 
+  initPs2gpio();
+  //initPs2keyboard();
+
+  int count = 0;
   while (true) {
+    gWaveform.add (getPf8() * 64, getPf9() * 32);
+    count++;
     touch.poll();
     gLcd.show (kVersion);
+    gWaveform.show();
     gLcd.flip();
     }
   }

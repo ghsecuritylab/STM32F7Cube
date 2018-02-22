@@ -203,8 +203,8 @@ void EXTI2_IRQHandler() {
 
 //{{{
 uint16_t ps2get() {
-  while (inPtr == outPtr) {}
 
+  while (inPtr == outPtr) {}
   uint16_t ch = rxData[outPtr];
   outPtr = (outPtr + 1) % 32;
   return ch;
