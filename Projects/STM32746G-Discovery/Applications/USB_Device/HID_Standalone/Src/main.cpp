@@ -419,7 +419,7 @@ std::string kVersion = "USB HID keyboard 21/2/18";
 #define HID_IN_ENDPOINT       0x81
 #define HID_IN_ENDPOINT_SIZE  5
 
-cLcd gLcd(14);
+cLcd gLcd (14);
 
 //{{{
 class cPs2 {
@@ -449,6 +449,43 @@ public:
     gLcd.debug (LCD_COLOR_YELLOW, "keyboard id %x %x", getRawChar(), getRawChar());
 
     resetChar();
+    }
+  //}}}
+  //{{{
+  void initTouchpad() {
+
+    sendChar (0xFF);  // Touchpad reset
+    //if (ps2get() != 0xAA)
+    //  lcd->info ("initPs2touchpad - missing 0xAA reset");
+    //if (ps2get() != 0x00)
+    //  lcd->info ("initPs2touchpad - missing 0x00 reset");
+
+    //sendTouchpadSpecialCommand (0x00);
+    //ps2send (0xE9); // touchpad statusRequest prefixed by specialCommand
+    //auto minor = ps2get();
+    //ps2get();  // 0x47
+    //auto major = ps2get();
+    //lcd->info ("Identify " + hex (major & 0x0F) + "." + hex (minor) + " modelCode:" + hex (major >> 4));
+
+    //sendTouchpadSpecialCommand (0x02);
+    //ps2send (0xE9); // touchpad statusRequest prefixed by specialCommand
+    //auto capMsb = ps2get();
+    //ps2get();  // 0x47
+    //auto capLsb = PS2get();
+    //lcd->info ("Capabilities " + hex ((capMsb << 8) | capLsb));
+
+    //sendTouchpadSpecialCommand (0x03);
+    //ps2send (0xE9); // touchpad statusRequest prefixed by specialCommand
+    //ps2send modelId1 = ps2get();
+    //auto modelId2 = ps2get();
+    //auto modelId3 = ps2get();
+    //lcd->info ("ModelId " + hex ((modelId1 << 16) | (modelId2 << 8) | modelId3));
+
+    sendTouchpadSpecialCommand (0x80);
+    sendChar (0xF3); // touchpad setSampleRate prefixed by specialCommand
+    sendChar (0x14); // - setSampleRate = 20
+    sendChar (0xF4); // touchpad enable streaming
+    mStream = true;
     }
   //}}}
 
@@ -708,6 +745,16 @@ private:
 
     if (getRawChar() != 0xFA)
       gLcd.debug (LCD_COLOR_RED, "send - no 0xFA ack");
+    }
+  //}}}
+  //{{{
+  void sendTouchpadSpecialCommand (uint8_t arg) {
+  // send touchpad special command sequence
+
+    for (int i = 0; i < 4; i++) {
+      sendChar (0xE8);   // touchpad setResolution
+      sendChar ((arg >> (6-2*i)) & 3);
+      }
     }
   //}}}
 
