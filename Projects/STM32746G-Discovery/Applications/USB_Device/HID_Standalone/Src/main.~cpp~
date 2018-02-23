@@ -419,7 +419,7 @@ std::string kVersion = "USB HID keyboard 21/2/18";
 #define HID_IN_ENDPOINT       0x81
 #define HID_IN_ENDPOINT_SIZE  5
 
-cLcd gLcd (12);
+cLcd gLcd (14);
 
 //{{{
 class cPs2 {
@@ -514,12 +514,8 @@ public:
   void resetChar() {
     mInPtr = 0;
     mOutPtr = 0;
-
     mInRawPtr = 0;
     mOutRawPtr = 0;
-
-    mCurCode = 0;
-    mCurChar = 0;
     }
   //}}}
   //{{{
@@ -538,102 +534,103 @@ public:
           //{{{  wait for lo start bit
           if (!bit) { // lo start bit
             mBitPos = 0;
-            mCode = 0;
+            mByte = 0;
             }
           }
           //}}}
         else if (mBitPos < 8) {
-          //{{{  get mCode bits 0..7
-          mCode = mCode | (bit << mBitPos);
+          //{{{  get mByte bits 0..7
+          mByte = mByte | (bit << mBitPos);
           mBitPos++;
           }
           //}}}
-        else if (mBitPos == 8) { // parity bit - got mCode
+        else if (mBitPos == 8) { // parity bit - got mByte
           if (mStream) {
             //{{{  stream
-            if (mStreamCode == -1) {
-              if ((mCode & 0xC0) == 0x80) {
-                mStreamCode = 0;
-                mStreamCodes[mStreamCode] =  mCode;
+            if (mStreamByte == -1) {
+              if ((mByte & 0xC0) == 0x80) {
+                mStreamByte = 0;
+                mStreamBytes[mStreamByte] =  mByte;
                 }
               }
 
             else {
-              mStreamCode++;
-              if ((mStreamCode == 3) && ((mCode & 0xc0) != 0xc0))
-                mStreamCode = -1;
+              mStreamByte++;
+              if ((mStreamByte == 3) && ((mByte & 0xc0) != 0xc0))
+                mStreamByte = -1;
               else {
-                mStreamCodes[mStreamCode] = mCode;
-                if (mStreamCode == 5) {
-                  mTouchX = ((mStreamCodes[3] & 0x10) << 8) | ((mStreamCodes[1] & 0x0F) << 8) | mStreamCodes[4];
-                  mTouchY = ((mStreamCodes[3] & 0x20) << 7) | ((mStreamCodes[1] & 0xF0) << 4) | mStreamCodes[5];
-                  mTouchZ = mStreamCodes[2];
-                  mStreamCode = -1;
+                mStreamBytes[mStreamByte] = mByte;
+                if (mStreamByte == 5) {
+                  mTouchX = ((mStreamBytes[3] & 0x10) << 8) | ((mStreamBytes[1] & 0x0F) << 8) | mStreamBytes[4];
+                  mTouchY = ((mStreamBytes[3] & 0x20) << 7) | ((mStreamBytes[1] & 0xF0) << 4) | mStreamBytes[5];
+                  mTouchZ = mStreamBytes[2];
+                  mStreamByte = -1;
                   }
                 }
               }
             }
             //}}}
           else {
-            mRxRawData[mInRawPtr] = mCode;
+            mRxRawData[mInRawPtr] = mByte;
             mInRawPtr = (mInRawPtr + 1) % 32;
-            mCurCode++;
-            mCodes[mCurCode % kMaxCodes] = mCode;
+            mCode++;
+            mCodes[mCode % kMaxCodes] = mByte;
 
-            if (mCode == 0xE0)
+            if (mByte == 0xE0)
               mRxExpandCode = true;
-            else if (mCode == 0xF0)
+            else if (mByte == 0xF0)
               mRxReleaseCode = true;
-            else if (mCode == 0x12) // SHIFT_L;
+            else if (mByte == 0x12) // SHIFT_L;
               mShifted = !mRxReleaseCode;
-            else if (mCode == 0x59) // SHIFT_R;
+            else if (mByte == 0x59) // SHIFT_R;
               mShifted = !mRxReleaseCode;
-            else if (mCode == 0x14) // CTRL_L
+            else if (mByte == 0x14) // CTRL_L
               mCtrled = !mRxReleaseCode;
             else {
               if (mRxExpandCode) {
                 //{{{  expandCode
-                if (mCode == 0x70)
-                  mCode = PS2_INSERT;
-                else if (mCode == 0x6C)
-                  mCode = PS2_HOME;
-                else if (mCode == 0x7D)
-                  mCode = PS2_PAGEUP;
-                else if (mCode == 0x71)
-                  mCode = PS2_DELETE;
-                else if (mCode == 0x6C)
-                  mCode = PS2_HOME;
-                else if (mCode == 0x69)
-                  mCode = PS2_END;
-                else if (mCode == 0x6C)
-                  mCode = PS2_PAGEDOWN;
-                else if (mCode == 0x75)
-                  mCode = PS2_UPARROW;
-                else if (mCode == 0x6B)
-                  mCode = PS2_LEFTARROW;
-                else if (mCode == 0x72)
-                  mCode = PS2_DOWNARROW;
-                else if (mCode == 0x74)
-                  mCode = PS2_RIGHTARROW;
-                else if (mCode == 0x4A)
-                  mCode = '/';
-                else if (mCode == 0x5A)
-                  mCode = PS2_ENTER;
+                if (mByte == 0x70)
+                  mByte = PS2_INSERT;
+                else if (mByte == 0x6C)
+                  mByte = PS2_HOME;
+                else if (mByte == 0x7D)
+                  mByte = PS2_PAGEUP;
+                else if (mByte == 0x71)
+                  mByte = PS2_DELETE;
+                else if (mByte == 0x6C)
+                  mByte = PS2_HOME;
+                else if (mByte == 0x69)
+                  mByte = PS2_END;
+                else if (mByte == 0x6C)
+                  mByte = PS2_PAGEDOWN;
+                else if (mByte == 0x75)
+                  mByte = PS2_UPARROW;
+                else if (mByte == 0x6B)
+                  mByte = PS2_LEFTARROW;
+                else if (mByte == 0x72)
+                  mByte = PS2_DOWNARROW;
+                else if (mByte == 0x74)
+                  mByte = PS2_RIGHTARROW;
+                else if (mByte == 0x4A)
+                  mByte = '/';
+                else if (mByte == 0x5A)
+                  mByte = PS2_ENTER;
                 else
-                  mCode |= 0x200;
+                  mByte |= 0x200;
                 }
                 //}}}
               else if (mShifted)
-                mCode = kPs2Keymap.shift[mCode];
+                mByte = kPs2Keymap.shift[mByte];
               else
-                mCode = kPs2Keymap.noshift[mCode];
+                mByte = kPs2Keymap.noshift[mByte];
 
-              mCode |= mRxReleaseCode * 0x100;
-              mRxData[mInPtr] = mCode;
+              mRxData[mInPtr] = mByte | (0x100 * mRxReleaseCode);
               mInPtr = (mInPtr + 1) % 32;
-              mCurChar++;
-              mChars[mCurChar % kMaxChars] = mCode;
 
+              if (!mRxReleaseCode) {
+                mChar++;
+                mChars[mChar % kMaxChars] = mByte;
+                }
               mRxExpandCode = false;
               mRxReleaseCode = false;
               }
@@ -654,14 +651,15 @@ public:
   //{{{
   void showChars() {
 
-    auto ch = mCurChar - kMaxChars + 1;
+    BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
+
+    auto ch = mChar - kMaxChars;
     for (auto i = 0u; i < kMaxChars; i++) {
       if (ch > 0) {
         char str[2];
-        BSP_LCD_SetTextColor (mChars[ch % kMaxChars] & 0x100 ? LCD_COLOR_GREEN : LCD_COLOR_YELLOW);
-        str[0] = mChars[ch % kMaxChars] & 0xFF;
+        str[0] = mChars[ch % kMaxChars];
         str[1] = 0;
-        BSP_LCD_DisplayStringAtLineColumn (13, i, str);
+        BSP_LCD_DisplayStringAtLineColumn (14, i, str);
         }
       ch++;
       }
@@ -672,11 +670,11 @@ public:
 
     BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
 
-    auto code = mCurCode - kMaxCodes + 1;
+    auto code = mCode - kMaxCodes;
     for (auto i = 0u; i < kMaxCodes; i++) {
       if (code > 0) {
         char str[4];
-        sprintf (str, "%02x", mCodes[code % kMaxCodes]);
+        sprintf (str, "%2x", mCodes[code]);
         BSP_LCD_DisplayStringAtLineColumn (14, i*3, str);
         }
       code++;
@@ -692,7 +690,7 @@ public:
     auto waveY = BSP_LCD_GetYSize() - 2*lineHeight;
 
     bool lastBit = false;
-    auto sample = mSample - kMaxSamples + 1;
+    auto sample = mSample - kMaxSamples;
     for (auto i = 0u; i < kMaxSamples; i++) {
       if (sample > 0) {
         bool bit =  mBitArray[sample % kMaxSamples];
@@ -723,8 +721,8 @@ public:
 private:
   static const int kBitWidth = 8;
   static const int kMaxSamples = 480 / kBitWidth;
-  static const int kMaxCodes = 480 / (11*3);
-  static const int kMaxChars = 480 / 11;
+  static const int kMaxCodes = 480 / (12*3);
+  static const int kMaxChars = 480 / 12;
   //{{{
   void initGpio() {
 
@@ -857,7 +855,7 @@ private:
   // bits
   bool mRx = true;
   int mBitPos = -1;
-  uint16_t mCode = 0;
+  uint16_t mByte = 0;
 
   // keyboard
   volatile int mInRawPtr = 0;
@@ -868,9 +866,9 @@ private:
   volatile int mOutPtr = 0;
   int mRxData[32];
 
-  int mCurCode = 0;
+  int mCode = 0;
+  int mChar = 0;
   int mCodes[kMaxCodes];
-  int mCurChar = 0;
   int mChars[kMaxChars];
 
   bool mRxExpandCode = false;
@@ -880,8 +878,8 @@ private:
 
   // touchpad
   bool mStream = false;
-  int mStreamCode = -1;
-  uint8_t mStreamCodes[6];
+  int mStreamByte = -1;
+  uint8_t mStreamBytes[6];
   int mTouchX = 0;
   int mTouchY = 0;
   int mTouchZ = 0;
@@ -1479,17 +1477,13 @@ int main() {
     count++;
     touch.poll();
     gLcd.show (kVersion);
-    gPs2.showChars();
-    gPs2.showCodes();
     gPs2.showWave();
     gLcd.flip();
 
     while (gPs2.hasRawChar())
-      gPs2.getRawChar();
-    while (gPs2.hasChar()) {
-      auto ch = gPs2.getChar();
-      gLcd.debug (ch & 0x100 ? LCD_COLOR_GREEN : LCD_COLOR_YELLOW, "key %03x", ch);
-      }
+      gLcd.debug (LCD_COLOR_YELLOW, "code %x", gPs2.getRawChar());
+    while (gPs2.hasChar())
+      gLcd.debug (LCD_COLOR_GREEN, "key %x", gPs2.getChar());
     }
   }
 //}}}
