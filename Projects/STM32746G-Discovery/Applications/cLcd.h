@@ -20,6 +20,8 @@
 
 class cLcd {
 public:
+  cLcd() {}
+  cLcd (unsigned displayLines) : mDisplayLines (displayLines) {}
   //{{{
   void init() {
 
@@ -60,14 +62,16 @@ public:
     BSP_LCD_DisplayStringAtLine (0, str1);
 
     if (!BSP_PB_GetState (BUTTON_KEY))
-      for (auto displayLine = 0u; (displayLine < mDebugLine) && (displayLine < kDebugShowLines); displayLine++) {
-        int debugLine = (mDebugLine <= kDebugShowLines) ?
-                          displayLine : mDebugLine - kDebugShowLines + displayLine - getScrollLines();
-        debugLine = debugLine % kDebugMaxLines;
+      for (auto displayLine = 0u; (displayLine < mDebugLine) && (displayLine < mDisplayLines); displayLine++) {
+        int debugLine = (mDebugLine < mDisplayLines) ?
+          displayLine : (mDebugLine - mDisplayLines + displayLine - getScrollLines())  % kDebugMaxLines;
+
         BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
         char tickStr[20];
-        sprintf (tickStr, "%2d.%03d", (int)mLines[debugLine].mTicks / 1000, (int)mLines[debugLine].mTicks % 1000);
+        auto ticks = mLines[debugLine].mTicks;
+        sprintf (tickStr, "%2d.%03d", (int)ticks / 1000, (int)ticks % 1000);
         BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 0, tickStr);
+
         BSP_LCD_SetTextColor (mLines[debugLine].mColour);
         BSP_LCD_DisplayStringAtLineColumn (1+displayLine, 7, mLines[debugLine].mStr);
         }
@@ -99,8 +103,8 @@ public:
 
     if (mScroll < 0)
       mScroll = 0;
-    else if (getScrollLines() >  mDebugLine - kDebugShowLines)
-      mScroll = (mDebugLine - kDebugShowLines) * getScrollScale();
+    else if (getScrollLines() >  mDebugLine - mDisplayLines)
+      mScroll = (mDebugLine - mDisplayLines) * getScrollScale();
     }
   //}}}
 
@@ -113,16 +117,14 @@ public:
     vsnprintf (str, 40, format, args);
     va_end (args);
 
-    mLines[mDebugLine].mStr = str;
-    mLines[mDebugLine].mTicks = HAL_GetTick();
-    mLines[mDebugLine].mColour = colour;
-
-    mDebugLine = (mDebugLine+1) % kDebugMaxLines;
+    mLines[mDebugLine % kDebugMaxLines].mStr = str;
+    mLines[mDebugLine % kDebugMaxLines].mTicks = HAL_GetTick();
+    mLines[mDebugLine % kDebugMaxLines].mColour = colour;
+    mDebugLine++;
     }
   //}}}
 
 private:
-  static const int kDebugShowLines = 16;
   static const int kDebugMaxLines = 200;
   //{{{
   class cDebugItem {
@@ -144,8 +146,9 @@ private:
   int mLayer = 0;
   uint32_t mTick = 0;
 
-  std::array <cDebugItem,kDebugMaxLines> mLines;
+  unsigned mDisplayLines = 16;
   unsigned mDebugLine = 0;
+  std::array <cDebugItem,kDebugMaxLines> mLines;
   int mScroll = 0;
   };
 

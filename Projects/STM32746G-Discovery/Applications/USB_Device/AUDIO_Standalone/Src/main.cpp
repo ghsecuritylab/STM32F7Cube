@@ -104,7 +104,7 @@ private:
   bool mFaster = true;
   };
 //}}}
-cLcd gLcd;
+cLcd gLcd(16);
 cPackets gPackets;
 
 //{{{  device descriptors

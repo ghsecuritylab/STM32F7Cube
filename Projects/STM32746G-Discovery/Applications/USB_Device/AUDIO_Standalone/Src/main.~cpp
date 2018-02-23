@@ -15,7 +15,12 @@ class cPackets {
 public:
   static const int CHANNELS = 4;
   static const int SAMPLE_RATE = 48000;
+  static const int BYTES_PER_SAMPLE = 2;
+  static const int PACKETS_PER_SECOND = 1000;
+  static const int PACKETS = 8;
+  static const int PACKET_SAMPLES = SAMPLE_RATE / PACKETS_PER_SECOND;
   static const int PACKET_SIZE = CHANNELS * PACKET_SAMPLES * BYTES_PER_SAMPLE;
+  static const int SLOTS = 4;
   static const int SLOTS_PACKET_SIZE = SLOTS * BYTES_PER_SAMPLE * PACKET_SAMPLES;
   static const int SLOTS_PACKET_BUF_SIZE = PACKETS * SLOTS_PACKET_SIZE;
 
@@ -82,11 +87,6 @@ public:
   //}}}
 
 private:
-  static const int BYTES_PER_SAMPLE = 2;
-  static const int PACKETS_PER_SECOND = 1000;
-  static const int PACKETS = 8;
-  static const int PACKET_SAMPLES = SAMPLE_RATE / PACKETS_PER_SECOND;
-  static const int SLOTS = 4;
 
   uint16_t mNumPackets = 0;
   uint16_t mSample = 0;

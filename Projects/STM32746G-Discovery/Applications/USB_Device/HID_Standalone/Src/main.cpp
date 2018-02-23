@@ -1,8 +1,4 @@
 // main.cpp - hid class usb
-// brown  - V - +5v
-// yellow - C - A3 - PF8 - clock
-// red -    O - A2 - PF9 - data
-// black    G - ground
 //{{{  includes
 #include <string>
 #include "../../../system.h"
@@ -423,29 +419,33 @@ std::string kVersion = "USB HID keyboard 21/2/18";
 #define HID_IN_ENDPOINT       0x81
 #define HID_IN_ENDPOINT_SIZE  5
 
-cLcd gLcd;
+cLcd gLcd(14);
 
 //{{{
 class cPs2 {
+// brown  - V - +5v
+// yellow - C - A3 - PF8 - clock
+// red -    O - A2 - PF9 - data
+// black    G - ground
 public:
   //{{{
   void initKeyboard() {
 
     initGpio();
 
-    ps2send (0xFF);
+    sendChar (0xFF);
     if (getChar() != 0xAA)
       gLcd.debug (LCD_COLOR_RED, "initPs2keyboard - missing 0xAA reset");
 
     for (int i = 0; i < 8; i++) {
       // send leds
-      ps2send (0xED);
-      ps2send (i);
+      sendChar (0xED);
+      sendChar (i);
       HAL_Delay (100);
       }
 
     // send getId
-    ps2send (0x0F2);
+    sendChar (0x0F2);
     gLcd.debug (LCD_COLOR_YELLOW, "keyboard id %x %x", getChar(), getChar());
     }
   //}}}
@@ -472,32 +472,25 @@ public:
 
       if (mRx) {
         bool bit = (GPIOF->IDR & GPIO_PIN_9) != 0;
-
         mSample = (mSample+1) % kMaxSamples;
         mBitArray[mSample] = bit;
         mBitPosArray[mSample] = mBitPos;
 
         if (mBitPos == -1) {
-          // wait for lo start bit
-          if (!bit) {
-            // lo start bit
+          //{{{  wait for lo start bit
+          if (!bit) { // lo start bit
             mBitPos = 0;
             mByte = 0;
             }
           }
+          //}}}
         else if (mBitPos < 8) {
-          // get mByte bits 0..7
+          //{{{  get mByte bits 0..7
           mByte = mByte | (bit << mBitPos);
           mBitPos++;
           }
-        else if (mBitPos == 9) {
-          // expect hi stop bit
-          mBitPos = -1;
-          if (!bit)
-            gLcd.debug (LCD_COLOR_RED, "lo stop bit");
-          }
-        else if (mBitPos == 8) {
-          //{{{  parity bit - got mByte
+          //}}}
+        else if (mBitPos == 8) { // parity bit - got mByte
           if (mStream) {
             //{{{  stream
             if (mStreamByte == -1) {
@@ -506,6 +499,7 @@ public:
                 mStreamBytes[mStreamByte] =  mByte;
                 }
               }
+
             else {
               mStreamByte++;
               if ((mStreamByte == 3) && ((mByte & 0xc0) != 0xc0))
@@ -540,6 +534,7 @@ public:
             mCtrled = !mRxReleaseCode;
           else {
             if (mRxExpandCode) {
+              //{{{  expandCode
               if (mByte == 0x70)
                 mByte = PS2_INSERT;
               else if (mByte == 0x6C)
@@ -569,6 +564,7 @@ public:
               else
                 mByte |= 0x200;
               }
+              //}}}
             else if (mShifted)
               mByte = kPs2Keymap.shift[mByte];
             else
@@ -579,8 +575,13 @@ public:
             mRxExpandCode = false;
             mRxReleaseCode = false;
             }
-
           mBitPos++;
+          }
+        else if (mBitPos == 9) {
+          //{{{  expect hi stop bit
+          mBitPos = -1;
+          if (!bit)
+            gLcd.debug (LCD_COLOR_RED, "lo stop bit");
           }
           //}}}
         }
@@ -592,9 +593,10 @@ public:
 
     int bitWidth = 8;
     auto samples = BSP_LCD_GetXSize() / bitWidth;
-    auto waveY = BSP_LCD_GetYSize() / 5;
     int bitHeight = 12;
     int clockHeight = 12;
+    int lineHeight = 16;
+    auto waveY = BSP_LCD_GetYSize() - 2*lineHeight;
 
     bool lastBit = false;
     auto sample = mSample - samples;
@@ -607,7 +609,7 @@ public:
         if (bit != lastBit) {
           // changed - show edge
           BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-          BSP_LCD_FillRect (i*bitWidth, waveY - bitHeight, 1, bitHeight);
+          BSP_LCD_FillRect (i*bitWidth, waveY, 1, bitHeight);
           lastBit = bit;
           }
 
@@ -618,14 +620,14 @@ public:
           case 9:  BSP_LCD_SetTextColor (LCD_COLOR_MAGENTA); break;
           default: BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
           }
-        BSP_LCD_FillRect (i*bitWidth, waveY - (bit ? bitHeight : 2), bitWidth, 2);
+        BSP_LCD_FillRect (i*bitWidth, waveY + (bit ? 0 : bitHeight-2), bitWidth, 2);
         }
 
       BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-      BSP_LCD_FillRect (i*bitWidth + (bitWidth/4), waveY + clockHeight, 1, clockHeight);
-      BSP_LCD_FillRect (i*bitWidth + (bitWidth/4), waveY + clockHeight , bitWidth/2, 1);
-      BSP_LCD_FillRect (i*bitWidth + (bitWidth*3/4), waveY + clockHeight, 1, clockHeight);
-      BSP_LCD_FillRect (i*bitWidth + (bitWidth*3/4), waveY + clockHeight+ clockHeight, bitWidth/2, 1);
+      BSP_LCD_FillRect (i*bitWidth + (bitWidth/4), waveY + lineHeight, 1, clockHeight);
+      BSP_LCD_FillRect (i*bitWidth + (bitWidth/4), waveY + lineHeight , bitWidth/2, 1);
+      BSP_LCD_FillRect (i*bitWidth + (bitWidth*3/4), waveY + lineHeight, 1, clockHeight);
+      BSP_LCD_FillRect (i*bitWidth + (bitWidth*3/4), waveY + lineHeight + clockHeight, bitWidth/2, 1);
       }
     }
   //}}}
@@ -662,7 +664,7 @@ private:
     }
   //}}}
   //{{{
-  void ps2send (uint8_t value)  {
+  void sendChar (uint8_t value)  {
 
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_RESET); // set clock lo, release inhibit, if necessary
     HAL_Delay (2); // Wait out any final clock pulse, 100us
@@ -690,7 +692,7 @@ private:
 
     while (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for rising edge
     //if (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8) == true)
-    //  lcd->info ("ps2send - missing line control bit");
+    //  lcd->info ("sendChar - missing line control bit");
     while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
     mRx = true;
 
@@ -1325,9 +1327,9 @@ int main() {
   //}}}
 
   gLcd.init();
+  gPs2.initKeyboard();
   cAppTouch touch (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
   BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
-  gPs2.initKeyboard();
 
   //{{{  hidClass
   USBD_ClassTypeDef hidClass = {
