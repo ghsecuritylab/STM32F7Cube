@@ -477,6 +477,8 @@ public:
   void resetChar() {
     mInPtr = 0;
     mOutPtr = 0;
+    mInRawPtr = 0;
+    mOutRawPtr = 0;
     }
   //}}}
   //{{{
