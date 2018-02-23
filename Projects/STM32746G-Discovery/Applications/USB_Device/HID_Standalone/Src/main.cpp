@@ -434,34 +434,49 @@ public:
     initGpio();
 
     sendChar (0xFF);
-    if (getChar() != 0xAA)
+    if (getRawChar() != 0xAA)
       gLcd.debug (LCD_COLOR_RED, "initPs2keyboard - missing 0xAA reset");
 
-    for (int i = 0; i < 8; i++) {
+    //for (int i = 0; i < 8; i++) {
       // send leds
-      sendChar (0xED);
-      sendChar (i);
-      HAL_Delay (100);
-      }
+    //  sendChar (0xED);
+    //  sendChar (i);
+    //  HAL_Delay (100);
+    //  }
 
     // send getId
     sendChar (0x0F2);
-    gLcd.debug (LCD_COLOR_YELLOW, "keyboard id %x %x", getChar(), getChar());
+    gLcd.debug (LCD_COLOR_YELLOW, "keyboard id %x %x", getRawChar(), getRawChar());
+
+    resetChar();
     }
   //}}}
 
-  //{{{
-  bool hasChar() {
-    return mInPtr != mOutPtr;
-    }
-  //}}}
+  bool hasChar() { return mInPtr != mOutPtr; }
+  bool hasRawChar() { return mInRawPtr != mOutRawPtr; }
   //{{{
   uint16_t getChar() {
 
-    while (!hasChar()) {}
+    while (!hasChar()) { HAL_Delay (1); }
     uint16_t ch = mRxData[mOutPtr];
     mOutPtr = (mOutPtr + 1) % 32;
     return ch;
+    }
+  //}}}
+  //{{{
+  uint16_t getRawChar() {
+
+    while (!hasRawChar()) { HAL_Delay (1); }
+    uint16_t ch = mRxRawData[mOutRawPtr];
+    mOutRawPtr = (mOutRawPtr + 1) % 32;
+    return ch;
+    }
+  //}}}
+
+  //{{{
+  void resetChar() {
+    mInPtr = 0;
+    mOutPtr = 0;
     }
   //}}}
   //{{{
@@ -516,66 +531,65 @@ public:
               }
             }
             //}}}
-          else if (mRaw) {
-            //{{{  raw
-            mRxData[mInPtr] = mByte | (0x100 * mRxReleaseCode);
-            mInPtr = (mInPtr + 1) % 32;
-            }
-            //}}}
-          else if (mByte == 0xE0)
-            mRxExpandCode = true;
-          else if (mByte == 0xF0)
-            mRxReleaseCode = true;
-          else if (mByte == 0x12) // SHIFT_L;
-            mShifted = !mRxReleaseCode;
-          else if (mByte == 0x59) // SHIFT_R;
-            mShifted = !mRxReleaseCode;
-          else if (mByte == 0x14) // CTRL_L
-            mCtrled = !mRxReleaseCode;
           else {
-            if (mRxExpandCode) {
-              //{{{  expandCode
-              if (mByte == 0x70)
-                mByte = PS2_INSERT;
-              else if (mByte == 0x6C)
-                mByte = PS2_HOME;
-              else if (mByte == 0x7D)
-                mByte = PS2_PAGEUP;
-              else if (mByte == 0x71)
-                mByte = PS2_DELETE;
-              else if (mByte == 0x6C)
-                mByte = PS2_HOME;
-              else if (mByte == 0x69)
-                mByte = PS2_END;
-              else if (mByte == 0x6C)
-                mByte = PS2_PAGEDOWN;
-              else if (mByte == 0x75)
-                mByte = PS2_UPARROW;
-              else if (mByte == 0x6B)
-                mByte = PS2_LEFTARROW;
-              else if (mByte == 0x72)
-                mByte = PS2_DOWNARROW;
-              else if (mByte == 0x74)
-                mByte = PS2_RIGHTARROW;
-              else if (mByte == 0x4A)
-                mByte = '/';
-              else if (mByte == 0x5A)
-                mByte = PS2_ENTER;
-              else
-                mByte |= 0x200;
-              }
-              //}}}
-            else if (mShifted)
-              mByte = kPs2Keymap.shift[mByte];
-            else
-              mByte = kPs2Keymap.noshift[mByte];
+            mRxRawData[mInRawPtr] = mByte | (0x100 * mRxReleaseCode);
+            mInRawPtr = (mInRawPtr + 1) % 32;
 
-            mRxData[mInPtr] = mByte | (0x100 * mRxReleaseCode);
-            mInPtr = (mInPtr + 1) % 32;
-            mRxExpandCode = false;
-            mRxReleaseCode = false;
+            if (mByte == 0xE0)
+              mRxExpandCode = true;
+            else if (mByte == 0xF0)
+              mRxReleaseCode = true;
+            else if (mByte == 0x12) // SHIFT_L;
+              mShifted = !mRxReleaseCode;
+            else if (mByte == 0x59) // SHIFT_R;
+              mShifted = !mRxReleaseCode;
+            else if (mByte == 0x14) // CTRL_L
+              mCtrled = !mRxReleaseCode;
+            else {
+              if (mRxExpandCode) {
+                //{{{  expandCode
+                if (mByte == 0x70)
+                  mByte = PS2_INSERT;
+                else if (mByte == 0x6C)
+                  mByte = PS2_HOME;
+                else if (mByte == 0x7D)
+                  mByte = PS2_PAGEUP;
+                else if (mByte == 0x71)
+                  mByte = PS2_DELETE;
+                else if (mByte == 0x6C)
+                  mByte = PS2_HOME;
+                else if (mByte == 0x69)
+                  mByte = PS2_END;
+                else if (mByte == 0x6C)
+                  mByte = PS2_PAGEDOWN;
+                else if (mByte == 0x75)
+                  mByte = PS2_UPARROW;
+                else if (mByte == 0x6B)
+                  mByte = PS2_LEFTARROW;
+                else if (mByte == 0x72)
+                  mByte = PS2_DOWNARROW;
+                else if (mByte == 0x74)
+                  mByte = PS2_RIGHTARROW;
+                else if (mByte == 0x4A)
+                  mByte = '/';
+                else if (mByte == 0x5A)
+                  mByte = PS2_ENTER;
+                else
+                  mByte |= 0x200;
+                }
+                //}}}
+              else if (mShifted)
+                mByte = kPs2Keymap.shift[mByte];
+              else
+                mByte = kPs2Keymap.noshift[mByte];
+
+              mRxData[mInPtr] = mByte | (0x100 * mRxReleaseCode);
+              mInPtr = (mInPtr + 1) % 32;
+              mRxExpandCode = false;
+              mRxReleaseCode = false;
+              }
+            mBitPos++;
             }
-          mBitPos++;
           }
         else if (mBitPos == 9) {
           //{{{  expect hi stop bit
@@ -690,7 +704,7 @@ private:
     while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
     mRx = true;
 
-    if (getChar() != 0xFA)
+    if (getRawChar() != 0xFA)
       gLcd.debug (LCD_COLOR_RED, "send - no 0xFA ack");
     }
   //}}}
@@ -746,14 +760,17 @@ private:
     0
     };
   //}}}
-
+  //{{{  vars
   // bits
   bool mRx = true;
-  bool mRaw = true;
   int mBitPos = -1;
   uint16_t mByte = 0;
 
   // keyboard
+  volatile int mInRawPtr = 0;
+  volatile int mOutRawPtr = 0;
+  int mRxRawData[32];
+
   volatile int mInPtr = 0;
   volatile int mOutPtr = 0;
   int mRxData[32];
@@ -775,6 +792,7 @@ private:
   uint16_t mSample = 0;
   bool mBitArray[kMaxSamples];
   int mBitPosArray[kMaxSamples];
+  //}}}
   };
 //}}}
 cPs2 gPs2;
@@ -1366,8 +1384,10 @@ int main() {
     gPs2.show();
     gLcd.flip();
 
+    while (gPs2.hasRawChar())
+      gLcd.debug (LCD_COLOR_YELLOW, "code %x", gPs2.getRawChar());
     while (gPs2.hasChar())
-      gLcd.debug (LCD_COLOR_YELLOW, "key %x", gPs2.getChar());
+      gLcd.debug (LCD_COLOR_GREEN, "key %x", gPs2.getChar());
     }
   }
 //}}}
