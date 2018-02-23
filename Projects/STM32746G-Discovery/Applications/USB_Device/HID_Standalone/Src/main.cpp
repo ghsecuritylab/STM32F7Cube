@@ -452,15 +452,15 @@ public:
 
   //{{{
   bool hasChar() {
-    return inPtr != outPtr;
+    return mInPtr != mOutPtr;
     }
   //}}}
   //{{{
   uint16_t getChar() {
 
-    while (inPtr == outPtr) {}
-    uint16_t ch = rxData[outPtr];
-    outPtr = (outPtr + 1) % 32;
+    while (!hasChar()) {}
+    uint16_t ch = mRxData[mOutPtr];
+    mOutPtr = (mOutPtr + 1) % 32;
     return ch;
     }
   //}}}
@@ -470,113 +470,116 @@ public:
     if (__HAL_GPIO_EXTI_GET_IT (GPIO_PIN_8) != RESET) {
       __HAL_GPIO_EXTI_CLEAR_IT (GPIO_PIN_8);
 
-      if (ps2rx) {
+      if (mRx) {
         bool bit = (GPIOF->IDR & GPIO_PIN_9) != 0;
-        add (bit, bitPos);
 
-        if (bitPos == -1) {
+        mSample = (mSample+1) % 1024;
+        mBitArray[mSample] = bit;
+        mBitPosArray[mSample] = mBitPos;
+
+        if (mBitPos == -1) {
           // wait for lo start bit
           if (!bit) {
             // lo start bit
-            bitPos = 0;
-            data = 0;
+            mBitPos = 0;
+            mByte = 0;
             }
           }
-        else if (bitPos < 8) {
-          // get data bits 0..7
-          data = data | (bit << bitPos);
-          bitPos++;
+        else if (mBitPos < 8) {
+          // get mByte bits 0..7
+          mByte = mByte | (bit << mBitPos);
+          mBitPos++;
           }
-        else if (bitPos == 9) {
+        else if (mBitPos == 9) {
           // expect hi stop bit
           if (bit)
-            bitPos = -1;
+            mBitPos = -1;
           }
-        else if (bitPos == 8) {
-          //{{{  parity bit - got data
-          if (stream) {
+        else if (mBitPos == 8) {
+          //{{{  parity bit - got mByte
+          if (mStream) {
             //{{{  stream
-            if (streamByte == -1) {
-              if ((data & 0xC0) == 0x80) {
-                streamByte = 0;
-                streamBytes[streamByte] =  data;
+            if (mStreamByte == -1) {
+              if ((mByte & 0xC0) == 0x80) {
+                mStreamByte = 0;
+                mStreamBytes[mStreamByte] =  mByte;
                 }
               }
             else {
-              streamByte++;
-              if ((streamByte == 3) && ((data & 0xc0) != 0xc0))
-                streamByte = -1;
+              mStreamByte++;
+              if ((mStreamByte == 3) && ((mByte & 0xc0) != 0xc0))
+                mStreamByte = -1;
               else {
-                streamBytes[streamByte] = data;
-                 if (streamByte == 5) {
-                   touchX = ((streamBytes[3] & 0x10) << 8) | ((streamBytes[1] & 0x0F) << 8) | streamBytes[4];
-                   touchY = ((streamBytes[3] & 0x20) << 7) | ((streamBytes[1] & 0xF0) << 4) | streamBytes[5];
-                   touchZ = streamBytes[2];
-                   streamByte = -1;
-                   }
-                 }
+                mStreamBytes[mStreamByte] = mByte;
+                if (mStreamByte == 5) {
+                  mTouchX = ((mStreamBytes[3] & 0x10) << 8) | ((mStreamBytes[1] & 0x0F) << 8) | mStreamBytes[4];
+                  mTouchY = ((mStreamBytes[3] & 0x20) << 7) | ((mStreamBytes[1] & 0xF0) << 4) | mStreamBytes[5];
+                  mTouchZ = mStreamBytes[2];
+                  mStreamByte = -1;
+                  }
+                }
               }
             }
             //}}}
-          else if (raw) {
+          else if (mRaw) {
             //{{{  raw
-            rxData[inPtr] = data | (0x100 * rxReleaseCode);
-            inPtr = (inPtr + 1) % 32;
+            mRxData[mInPtr] = mByte | (0x100 * mRxReleaseCode);
+            mInPtr = (mInPtr + 1) % 32;
             }
             //}}}
-          else if (data == 0xE0)
-            rxExpandCode = true;
-          else if (data == 0xF0)
-            rxReleaseCode = true;
-          else if (data == 0x12) // SHIFT_L;
-            shifted = !rxReleaseCode;
-          else if (data == 0x59) // SHIFT_R;
-            shifted = !rxReleaseCode;
-          else if (data == 0x14) // CTRL_L
-            ctrled = !rxReleaseCode;
+          else if (mByte == 0xE0)
+            mRxExpandCode = true;
+          else if (mByte == 0xF0)
+            mRxReleaseCode = true;
+          else if (mByte == 0x12) // SHIFT_L;
+            mShifted = !mRxReleaseCode;
+          else if (mByte == 0x59) // SHIFT_R;
+            mShifted = !mRxReleaseCode;
+          else if (mByte == 0x14) // CTRL_L
+            mCtrled = !mRxReleaseCode;
           else {
-            if (rxExpandCode) {
-              if (data == 0x70)
-                data = PS2_INSERT;
-              else if (data == 0x6C)
-                data = PS2_HOME;
-              else if (data == 0x7D)
-                data = PS2_PAGEUP;
-              else if (data == 0x71)
-                data = PS2_DELETE;
-              else if (data == 0x6C)
-                data = PS2_HOME;
-              else if (data == 0x69)
-                data = PS2_END;
-              else if (data == 0x6C)
-                data = PS2_PAGEDOWN;
-              else if (data == 0x75)
-                data = PS2_UPARROW;
-              else if (data == 0x6B)
-                data = PS2_LEFTARROW;
-              else if (data == 0x72)
-                data = PS2_DOWNARROW;
-              else if (data == 0x74)
-                data = PS2_RIGHTARROW;
-              else if (data == 0x4A)
-                data = '/';
-              else if (data == 0x5A)
-                data = PS2_ENTER;
+            if (mRxExpandCode) {
+              if (mByte == 0x70)
+                mByte = PS2_INSERT;
+              else if (mByte == 0x6C)
+                mByte = PS2_HOME;
+              else if (mByte == 0x7D)
+                mByte = PS2_PAGEUP;
+              else if (mByte == 0x71)
+                mByte = PS2_DELETE;
+              else if (mByte == 0x6C)
+                mByte = PS2_HOME;
+              else if (mByte == 0x69)
+                mByte = PS2_END;
+              else if (mByte == 0x6C)
+                mByte = PS2_PAGEDOWN;
+              else if (mByte == 0x75)
+                mByte = PS2_UPARROW;
+              else if (mByte == 0x6B)
+                mByte = PS2_LEFTARROW;
+              else if (mByte == 0x72)
+                mByte = PS2_DOWNARROW;
+              else if (mByte == 0x74)
+                mByte = PS2_RIGHTARROW;
+              else if (mByte == 0x4A)
+                mByte = '/';
+              else if (mByte == 0x5A)
+                mByte = PS2_ENTER;
               else
-                data |= 0x200;
+                mByte |= 0x200;
               }
-            else if (shifted)
-              data = kPs2Keymap.shift[data];
+            else if (mShifted)
+              mByte = kPs2Keymap.shift[mByte];
             else
-              data = kPs2Keymap.noshift[data];
+              mByte = kPs2Keymap.noshift[mByte];
 
-            rxData[inPtr] = data | (0x100 * rxReleaseCode);
-            inPtr = (inPtr + 1) % 32;
-            rxExpandCode = false;
-            rxReleaseCode = false;
+            mRxData[mInPtr] = mByte | (0x100 * mRxReleaseCode);
+            mInPtr = (mInPtr + 1) % 32;
+            mRxExpandCode = false;
+            mRxReleaseCode = false;
             }
 
-          bitPos++;
+          mBitPos++;
           }
           //}}}
         }
@@ -585,30 +588,43 @@ public:
   //}}}
   //{{{
   void show() {
+
     int bitWidth = 8;
     auto samples = BSP_LCD_GetXSize() / bitWidth;
-    auto centreY = BSP_LCD_GetYSize() / 5;
-    int bitHeight = 24;
+    auto waveY = BSP_LCD_GetYSize() / 5;
+    int bitHeight = 12;
+    int clockHeight = 12;
 
-    bool phase = false;
-    bool lastData = false;
-    auto sample = mSample;
+    bool lastBit = false;
+    auto sample = mSample - samples;
     for (auto i = 0u; i < samples; i++) {
-      sample = (sample + 1) % samples;
-      bool data =  mData[sample];
-      int bitPos = mBitPos[sample];
-      if (data != lastData) {
-        BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-        BSP_LCD_FillRect (i*bitWidth, centreY - bitHeight, 1, bitHeight);
+      if (sample > 0) {
+        bool bit =  mBitArray[sample % 1024];
+        int bitPos = mBitPosArray[sample % 1024];
+        sample++;
+
+        if (bit != lastBit) {
+          // changed - show edge
+          BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+          BSP_LCD_FillRect (i*bitWidth, waveY - bitHeight, 1, bitHeight);
+          lastBit = bit;
+          }
+
+        // show bit
+        switch (bitPos) {
+          case -1: BSP_LCD_SetTextColor (LCD_COLOR_RED); break;
+          case 8:  BSP_LCD_SetTextColor (LCD_COLOR_YELLOW); break;
+          case 9:  BSP_LCD_SetTextColor (LCD_COLOR_MAGENTA); break;
+          default: BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+          }
+        BSP_LCD_FillRect (i*bitWidth, waveY - (bit ? bitHeight : 2), bitWidth, 2);
         }
-      BSP_LCD_SetTextColor (bitPos == -1 ? LCD_COLOR_RED : LCD_COLOR_WHITE);
-      BSP_LCD_FillRect (i*bitWidth, centreY - (data*bitHeight), bitWidth, 1);
-      lastData = data;
 
       BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-      BSP_LCD_FillRect (i*bitWidth, centreY + bitHeight, 1, bitHeight);
-      BSP_LCD_FillRect (i*bitWidth, centreY + bitHeight + (phase * bitHeight), bitWidth, 1);
-      phase = !phase;
+      BSP_LCD_FillRect (i*bitWidth + (bitWidth/4), waveY + clockHeight, 1, clockHeight);
+      BSP_LCD_FillRect (i*bitWidth + (bitWidth/4), waveY + clockHeight , bitWidth/2, 1);
+      BSP_LCD_FillRect (i*bitWidth + (bitWidth*3/4), waveY + clockHeight, 1, clockHeight);
+      BSP_LCD_FillRect (i*bitWidth + (bitWidth*3/4), waveY + clockHeight+ clockHeight, bitWidth/2, 1);
       }
     }
   //}}}
@@ -641,10 +657,6 @@ private:
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_SET);
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, GPIO_PIN_SET);
     HAL_Delay (100);
-
-    bitPos = -1;
-    inPtr = 0;
-    outPtr = 0;
     }
   //}}}
   //{{{
@@ -653,7 +665,7 @@ private:
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_RESET); // set clock lo, release inhibit, if necessary
     HAL_Delay (2); // Wait out any final clock pulse, 100us
 
-    ps2rx = false;
+    mRx = false;
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, GPIO_PIN_RESET); // set data lo, start bit
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_SET);   // set clock hi, float
 
@@ -678,18 +690,10 @@ private:
     //if (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8) == true)
     //  lcd->info ("ps2send - missing line control bit");
     while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
-    ps2rx = true;
+    mRx = true;
 
-    //if (ps2get() != 0xFA)
-    //  lcd->info ("ps2send - no 0xFA ack");
-    }
-  //}}}
-  //{{{
-  void add (bool data, int bitPos) {
-
-    mData[mSample] = data;
-    mBitPos[mSample] = bitPos;
-    mSample = (mSample+1) % (BSP_LCD_GetXSize()/4);
+    if (getChar() != 0xFA)
+      gLcd.debug (LCD_COLOR_RED, "send - no 0xFA ack");
     }
   //}}}
 
@@ -746,33 +750,33 @@ private:
   //}}}
 
   // bits
-  bool raw = true;
-  bool ps2rx = true;
-  int bitPos = -1;
-  uint16_t data = 0;
+  bool mRaw = true;
+  bool mRx = true;
+  int mBitPos = -1;
+  uint16_t mByte = 0;
 
   // keyboard
-  volatile int inPtr = 0;
-  volatile int outPtr = 0;
-  int rxData[32];
+  volatile int mInPtr = 0;
+  volatile int mOutPtr = 0;
+  int mRxData[32];
 
-  bool stream = false;
-  int streamByte = -1;
-  uint8_t streamBytes[6];
-  bool rxExpandCode = false;
-  bool rxReleaseCode = false;
-  bool shifted = false;
-  bool ctrled = false;
+  bool mRxExpandCode = false;
+  bool mRxReleaseCode = false;
+  bool mShifted = false;
+  bool mCtrled = false;
 
   // touchpad
-  int touchX = 0;
-  int touchY = 0;
-  int touchZ = 0;
+  bool mStream = false;
+  int mStreamByte = -1;
+  uint8_t mStreamBytes[6];
+  int mTouchX = 0;
+  int mTouchY = 0;
+  int mTouchZ = 0;
 
   // waveform
   uint16_t mSample = 0;
-  bool mData[480];
-  int mBitPos[480];
+  bool mBitArray[1024];
+  int mBitPosArray[1024];
   };
 //}}}
 cPs2 gPs2;
