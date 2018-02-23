@@ -473,7 +473,7 @@ public:
       if (mRx) {
         bool bit = (GPIOF->IDR & GPIO_PIN_9) != 0;
 
-        mSample = (mSample+1) % 1024;
+        mSample = (mSample+1) % kMaxSamples;
         mBitArray[mSample] = bit;
         mBitPosArray[mSample] = mBitPos;
 
@@ -492,8 +492,9 @@ public:
           }
         else if (mBitPos == 9) {
           // expect hi stop bit
-          if (bit)
-            mBitPos = -1;
+          mBitPos = -1;
+          if (!bit)
+            gLcd.debug (LCD_COLOR_RED, "lo stop bit");
           }
         else if (mBitPos == 8) {
           //{{{  parity bit - got mByte
@@ -599,8 +600,8 @@ public:
     auto sample = mSample - samples;
     for (auto i = 0u; i < samples; i++) {
       if (sample > 0) {
-        bool bit =  mBitArray[sample % 1024];
-        int bitPos = mBitPosArray[sample % 1024];
+        bool bit =  mBitArray[sample % kMaxSamples];
+        int bitPos = mBitPosArray[sample % kMaxSamples];
         sample++;
 
         if (bit != lastBit) {
@@ -630,6 +631,7 @@ public:
   //}}}
 
 private:
+  static const int kMaxSamples = 480;
   //{{{
   void initGpio() {
 
@@ -775,8 +777,8 @@ private:
 
   // waveform
   uint16_t mSample = 0;
-  bool mBitArray[1024];
-  int mBitPosArray[1024];
+  bool mBitArray[kMaxSamples];
+  int mBitPosArray[kMaxSamples];
   };
 //}}}
 cPs2 gPs2;
