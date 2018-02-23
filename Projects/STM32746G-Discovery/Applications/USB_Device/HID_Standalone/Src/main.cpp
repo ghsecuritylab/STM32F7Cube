@@ -534,7 +534,7 @@ public:
             }
             //}}}
           else {
-            mRxRawData[mInRawPtr] = mByte | (0x100 * mRxReleaseCode);
+            mRxRawData[mInRawPtr] = mByte;
             mInRawPtr = (mInRawPtr + 1) % 32;
 
             if (mByte == 0xE0)
