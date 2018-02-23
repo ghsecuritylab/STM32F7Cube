@@ -472,9 +472,9 @@ public:
 
       if (mRx) {
         bool bit = (GPIOF->IDR & GPIO_PIN_9) != 0;
-        mSample = (mSample+1) % kMaxSamples;
-        mBitArray[mSample] = bit;
-        mBitPosArray[mSample] = mBitPos;
+        mSample++;
+        mBitArray[mSample % kMaxSamples] = bit;
+        mBitPosArray[mSample % kMaxSamples] = mBitPos;
 
         if (mBitPos == -1) {
           //{{{  wait for lo start bit
@@ -591,16 +591,14 @@ public:
   //{{{
   void show() {
 
-    int bitWidth = 8;
-    auto samples = BSP_LCD_GetXSize() / bitWidth;
     int bitHeight = 12;
     int clockHeight = 12;
     int lineHeight = 16;
     auto waveY = BSP_LCD_GetYSize() - 2*lineHeight;
 
     bool lastBit = false;
-    auto sample = mSample - samples;
-    for (auto i = 0u; i < samples; i++) {
+    auto sample = mSample - kMaxSamples;
+    for (auto i = 0u; i < kMaxSamples; i++) {
       if (sample > 0) {
         bool bit =  mBitArray[sample % kMaxSamples];
         int bitPos = mBitPosArray[sample % kMaxSamples];
@@ -609,7 +607,7 @@ public:
         if (bit != lastBit) {
           // changed - show edge
           BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-          BSP_LCD_FillRect (i*bitWidth, waveY, 1, bitHeight);
+          BSP_LCD_FillRect (i*kBitWidth, waveY, 1, bitHeight);
           lastBit = bit;
           }
 
@@ -620,20 +618,21 @@ public:
           case 9:  BSP_LCD_SetTextColor (LCD_COLOR_MAGENTA); break;
           default: BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
           }
-        BSP_LCD_FillRect (i*bitWidth, waveY + (bit ? 0 : bitHeight-2), bitWidth, 2);
+        BSP_LCD_FillRect (i*kBitWidth, waveY + (bit ? 0 : bitHeight-2), kBitWidth, 2);
         }
 
       BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-      BSP_LCD_FillRect (i*bitWidth + (bitWidth/4), waveY + lineHeight, 1, clockHeight);
-      BSP_LCD_FillRect (i*bitWidth + (bitWidth/4), waveY + lineHeight , bitWidth/2, 1);
-      BSP_LCD_FillRect (i*bitWidth + (bitWidth*3/4), waveY + lineHeight, 1, clockHeight);
-      BSP_LCD_FillRect (i*bitWidth + (bitWidth*3/4), waveY + lineHeight + clockHeight, bitWidth/2, 1);
+      BSP_LCD_FillRect (i*kBitWidth + (kBitWidth/4), waveY + lineHeight, 1, clockHeight);
+      BSP_LCD_FillRect (i*kBitWidth + (kBitWidth/4), waveY + lineHeight , kBitWidth/2, 1);
+      BSP_LCD_FillRect (i*kBitWidth + (kBitWidth*3/4), waveY + lineHeight, 1, clockHeight);
+      BSP_LCD_FillRect (i*kBitWidth + (kBitWidth*3/4), waveY + lineHeight + clockHeight, kBitWidth/2, 1);
       }
     }
   //}}}
 
 private:
-  static const int kMaxSamples = 480;
+  static const int kBitWidth = 8;
+  static const int kMaxSamples = 480 / kBitWidth;
   //{{{
   void initGpio() {
 
@@ -754,8 +753,8 @@ private:
   //}}}
 
   // bits
-  bool mRaw = true;
   bool mRx = true;
+  bool mRaw = true;
   int mBitPos = -1;
   uint16_t mByte = 0;
 
