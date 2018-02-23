@@ -605,19 +605,14 @@ public:
         sample++;
 
         if (bit != lastBit) {
-          // changed - show edge
-          BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
+          // draw edge
+          BSP_LCD_SetTextColor (bitPos == -1 ? LCD_COLOR_RED : LCD_COLOR_WHITE);
           BSP_LCD_FillRect (i*kBitWidth, waveY, 1, bitHeight);
           lastBit = bit;
           }
 
-        // show bit
-        switch (bitPos) {
-          case -1: BSP_LCD_SetTextColor (LCD_COLOR_RED); break;
-          case 8:  BSP_LCD_SetTextColor (LCD_COLOR_YELLOW); break;
-          case 9:  BSP_LCD_SetTextColor (LCD_COLOR_MAGENTA); break;
-          default: BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
-          }
+        // draw bit
+        BSP_LCD_SetTextColor ((bitPos == -1) || (bitPos == 9) ? LCD_COLOR_RED : LCD_COLOR_WHITE);
         BSP_LCD_FillRect (i*kBitWidth, waveY + (bit ? 0 : bitHeight-2), kBitWidth, 2);
         }
 
