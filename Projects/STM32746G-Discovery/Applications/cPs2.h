@@ -1,9 +1,9 @@
 // cPs2.h
 #pragma once
-// brown  - V - +5v
-// yellow - C - A3 - PF8 - clock
-// red -    O - A2 - PF9 - data
-// black    G - ground
+// keyboard brown  - touchpad red    - V - +5v
+// keyboard yellow - touchpad yellow - C - A3 - PF8 - clock
+// keyboard red    - touchpad green  - O - A2 - PF9 - data
+// keyboard black  - touchpad black  - G - ground
 //{{{  includes
 #include "../../../system.h"
 #include "../../../cLcd.h"
@@ -448,40 +448,44 @@ public:
 
     initGpio();
 
+    // reset
     sendChar (0xFF);
-    if (getRawChar() != 0xAA)
-      mLcd->debug (LCD_COLOR_RED, "initPs2keyboard - missing 0xAA reset");
 
-    //if (ps2get() != 0xAA)
-    //  lcd->info ("initPs2touchpad - missing 0xAA reset");
-    //if (ps2get() != 0x00)
-    //  lcd->info ("initPs2touchpad - missing 0x00 reset");
+    // reset reply
+    auto reply = getRawChar();
+    if (reply != 0xAA)
+      mLcd->debug (LCD_COLOR_RED, "initTouchpad - no 0xAA reply", reply);
+    reply = getRawChar();
+    if (reply != 0x00)
+      mLcd->debug (LCD_COLOR_RED, "initTouchpad - missing 0x00 reset");
+    mLcd->debug (LCD_COLOR_YELLOW, "initTouchpad - reset");
 
-    //sendTouchpadSpecialCommand (0x00);
-    //ps2send (0xE9); // touchpad statusRequest prefixed by specialCommand
-    //auto minor = ps2get();
-    //ps2get();  // 0x47
-    //auto major = ps2get();
-    //lcd->info ("Identify " + hex (major & 0x0F) + "." + hex (minor) + " modelCode:" + hex (major >> 4));
+    sendTouchpadSpecialCommand (0x00);
+    sendChar (0xE9); // touchpad statusRequest prefixed by specialCommand
+    auto minor = getRawChar();
+    getRawChar();  // 0x47
+    auto major = getRawChar();
+    mLcd->debug (LCD_COLOR_YELLOW, "Identify %x.%x.%x", major & 0x0F, minor, major >> 4);
 
-    //sendTouchpadSpecialCommand (0x02);
-    //ps2send (0xE9); // touchpad statusRequest prefixed by specialCommand
-    //auto capMsb = ps2get();
-    //ps2get();  // 0x47
-    //auto capLsb = PS2get();
-    //lcd->info ("Capabilities " + hex ((capMsb << 8) | capLsb));
+    sendTouchpadSpecialCommand (0x02);
+    sendChar (0xE9); // touchpad statusRequest prefixed by specialCommand
+    auto capMsb = getRawChar();
+    auto mid = getRawChar();  // 0x47
+    auto capLsb = getRawChar();
+    mLcd->debug (LCD_COLOR_YELLOW, "Capabilities %x %x", mid, (capMsb << 8) | capLsb);
 
-    //sendTouchpadSpecialCommand (0x03);
-    //ps2send (0xE9); // touchpad statusRequest prefixed by specialCommand
-    //ps2send modelId1 = ps2get();
-    //auto modelId2 = ps2get();
-    //auto modelId3 = ps2get();
-    //lcd->info ("ModelId " + hex ((modelId1 << 16) | (modelId2 << 8) | modelId3));
+    sendTouchpadSpecialCommand (0x03);
+    sendChar (0xE9); // touchpad statusRequest prefixed by specialCommand
+    auto modelId1 = getRawChar();
+    auto modelId2 = getRawChar();
+    auto modelId3 = getRawChar();
+    mLcd->debug (LCD_COLOR_YELLOW, "ModelId %x %x %x", modelId1, modelId2, modelId3);
 
     sendTouchpadSpecialCommand (0x80);
     sendChar (0xF3); // touchpad setSampleRate prefixed by specialCommand
     sendChar (0x14); // - setSampleRate = 20
     sendChar (0xF4); // touchpad enable streaming
+
     mStream = true;
     }
   //}}}
@@ -545,13 +549,18 @@ public:
           mBitPos++;
           }
           //}}}
-        else if (mBitPos == 8) { // parity bit - got mCode
+        else if (mBitPos == 8) {
+          // parity bit - got mCode
+          mCurCode++;
+          mCodes[mCurCode % kMaxCodes] = mCode;
+          mBitPos++;
+
           if (mStream) {
-            //{{{  stream
+            //{{{  touchpad stream
             if (mStreamCode == -1) {
               if ((mCode & 0xC0) == 0x80) {
                 mStreamCode = 0;
-                mStreamCodes[mStreamCode] =  mCode;
+                mStreamCodes[mStreamCode] = mCode;
                 }
               }
 
@@ -572,10 +581,9 @@ public:
             }
             //}}}
           else {
+            //{{{  char code
             mRxRawData[mInRawPtr] = mCode;
             mInRawPtr = (mInRawPtr + 1) % kMaxRing;
-            mCurCode++;
-            mCodes[mCurCode % kMaxCodes] = mCode;
 
             if (mCode == 0xE0)
               mRxExpandCode = true;
@@ -637,8 +645,8 @@ public:
               mRxExpandCode = false;
               mRxReleaseCode = false;
               }
-            mBitPos++;
             }
+            //}}}
           }
         else if (mBitPos == 9) {
           //{{{  expect hi stop bit
@@ -649,6 +657,43 @@ public:
           //}}}
         }
       }
+    }
+  //}}}
+  //{{{
+  void showTouch() {
+
+    BSP_LCD_SetTextColor (LCD_COLOR_YELLOW);
+
+    char str[8];
+    sprintf (str, "%d", mTouchX);
+    BSP_LCD_DisplayStringAtLineColumn (13, 0, str);
+
+    sprintf (str, "%d", mTouchY);
+    BSP_LCD_DisplayStringAtLineColumn (13, 6, str);
+
+    sprintf (str, "%d", mTouchZ);
+    BSP_LCD_DisplayStringAtLineColumn (13, 12, str);
+
+    sprintf (str, "%d", mStreamCode);
+    BSP_LCD_DisplayStringAtLineColumn (13, 18, str);
+
+    sprintf (str, "%x", mStreamCodes[0]);
+    BSP_LCD_DisplayStringAtLineColumn (13, 22, str);
+
+    sprintf (str, "%x", mStreamCodes[1]);
+    BSP_LCD_DisplayStringAtLineColumn (13, 25, str);
+
+    sprintf (str, "%x", mStreamCodes[2]);
+    BSP_LCD_DisplayStringAtLineColumn (13, 28, str);
+
+    sprintf (str, "%x", mStreamCodes[3]);
+    BSP_LCD_DisplayStringAtLineColumn (13, 31, str);
+
+    sprintf (str, "%x", mStreamCodes[4]);
+    BSP_LCD_DisplayStringAtLineColumn (13, 34, str);
+
+    sprintf (str, "%x", mStreamCodes[5]);
+    BSP_LCD_DisplayStringAtLineColumn (13, 37, str);
     }
   //}}}
   //{{{
@@ -755,6 +800,7 @@ private:
     HAL_Delay (100);
     }
   //}}}
+
   //{{{
   void sendChar (uint8_t value)  {
 
@@ -796,8 +842,9 @@ private:
   void sendTouchpadSpecialCommand (uint8_t arg) {
   // send touchpad special command sequence
 
+    // touchpad setResolution
     for (int i = 0; i < 4; i++) {
-      sendChar (0xE8);   // touchpad setResolution
+      sendChar (0xE8);
       sendChar ((arg >> (6-2*i)) & 3);
       }
     }
