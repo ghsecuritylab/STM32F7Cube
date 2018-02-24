@@ -18,35 +18,31 @@ public:
     }
   //}}}
   //{{{
-  void pollTouch() {
+  void handleTouch (int touch, int x, int y, int z) {
 
     BSP_TS_GetState (&mTsState);
 
-    if (mTsState.touchDetected) {
-      //lcd->debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d g:%d",
-      //       mTsState.touchDetected, mTsState.touchX[0],mTsState.touchY[0], mTsState.touchWeight[0],
-      //       mTsState.touchEventId[0], mTsState.touchArea[0], mTsState.gestureId);
-
+    if (touch) {
       // pressed
-      if (mTsState.touchDetected > 1) {
+      if (touch > 1) {
         mHit = eScroll;
-        onScroll (mTsState.touchX[0] - mLastX, mTsState.touchY[0] - mLastY, mTsState.touchWeight[0]);
+        onScroll (x - mLastX, y - mLastY, z);
         }
       else if (mHit == ePressed)
-        onMove (mTsState.touchX[0] - mLastX, mTsState.touchY[0] - mLastY, mTsState.touchWeight[0]);
-      else if ((mHit == eReleased) && (mTsState.touchWeight[0] > 50)) {
+        onMove (x - mLastX, y - mLastY, z);
+      else if ((mHit == eReleased) && (z > 50)) {
         // press
-        mHitX = mTsState.touchX[0];
-        mHitY = mTsState.touchY[0];
+        mHitX = x;
+        mHitY = y;
         onPress (mHitX, mHitY);
         mHit = ePressed;
         }
       else if (mHit == eProx)
-        onProx (mTsState.touchX[0] - mLastX, mTsState.touchY[0] - mLastY, mTsState.touchWeight[0]);
+        onProx (x - mLastX, y - mLastY, z);
       else
         mHit = eProx;
-      mLastX = mTsState.touchX[0];
-      mLastY = mTsState.touchY[0];
+      mLastX = x;
+      mLastY = y;
       }
     else {
       // release
@@ -56,6 +52,18 @@ public:
       }
     }
   //}}}
+  //{{{
+  void pollTouch() {
+
+    BSP_TS_GetState (&mTsState);
+    //lcd->debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d g:%d",
+    //       mTsState.touchDetected, mTsState.touchX[0],mTsState.touchY[0], mTsState.touchWeight[0],
+    //       mTsState.touchEventId[0], mTsState.touchArea[0], mTsState.gestureId);
+
+    handleTouch (mTsState.touchDetected, mTsState.touchX[0], mTsState.touchY[0], mTsState.touchWeight[0]);
+    }
+  //}}}
+
   //{{{
   void show() {
     for (unsigned int i = 0u; i < mTsState.touchDetected; i++) {

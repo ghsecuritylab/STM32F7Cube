@@ -510,6 +510,15 @@ public:
     return ch;
     }
   //}}}
+  //{{{
+  bool getTouch (int& touch, int& x, int& y, int& z) {
+    touch = mTouchZ > 0;
+    x = mTouchX;
+    y = mTouchY;
+    z = mTouchZ;
+    return mTouchZ > 0;
+    }
+  //}}}
 
   //{{{
   void resetChar() {

@@ -517,7 +517,13 @@ void cApp::run() {
   USBD_Start (&gUsbDevice);
 
   while (true) {
-    pollTouch();
+    if (false)
+      pollTouch();
+    else {
+      int touch, x, y, z;
+      mPs2->getTouch (touch, x, y, z);
+      handleTouch (x || y, x, y, z);
+      }
     mLcd->show (kVersion);
     //mPs2->showChars();
     mPs2->showTouch();
