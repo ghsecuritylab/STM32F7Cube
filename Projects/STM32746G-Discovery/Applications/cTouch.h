@@ -1,7 +1,7 @@
 // cTouch.h
 #pragma once
 //{{{  includes
-#include "stm32f7xx_hal.h"
+#include "../../../cLcd.h"
 #include "stm32746g_discovery_ts.h"
 //}}}
 //{{{
@@ -18,16 +18,15 @@ public:
     }
   //}}}
   //{{{
-  void poll() {
+  void pollTouch() {
 
     BSP_TS_GetState (&mTsState);
 
-    //if (mTsState.touchDetected)
-    //  debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d g:%d",
-    //         mTsState.touchDetected, mTsState.touchX[0],mTsState.touchY[0], mTsState.touchWeight[0],
-    //         mTsState.touchEventId[0], mTsState.touchArea[0], mTsState.gestureId);
-
     if (mTsState.touchDetected) {
+      //lcd->debug (LCD_COLOR_YELLOW, "%d x:%d y:%d w:%d e:%d a:%d g:%d",
+      //       mTsState.touchDetected, mTsState.touchX[0],mTsState.touchY[0], mTsState.touchWeight[0],
+      //       mTsState.touchEventId[0], mTsState.touchArea[0], mTsState.gestureId);
+
       // pressed
       if (mTsState.touchDetected > 1) {
         mHit = eScroll;

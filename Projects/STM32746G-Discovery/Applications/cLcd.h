@@ -20,8 +20,7 @@
 
 class cLcd {
 public:
-  cLcd() {}
-  cLcd (unsigned displayLines) : mDisplayLines (displayLines) {}
+  cLcd (int displayLines) : mDisplayLines (displayLines) {}
   //{{{
   void init() {
 
@@ -62,8 +61,8 @@ public:
     BSP_LCD_DisplayStringAtLine (0, str1);
 
     if (!BSP_PB_GetState (BUTTON_KEY))
-      for (auto displayLine = 0u; (displayLine < mDebugLine) && (displayLine < mDisplayLines); displayLine++) {
-        int debugLine = (mDebugLine < mDisplayLines) ?
+      for (auto displayLine = 0u; (displayLine < mDebugLine) && ((int)displayLine < mDisplayLines); displayLine++) {
+        int debugLine = ((int)mDebugLine < mDisplayLines) ?
           displayLine : (mDebugLine - mDisplayLines + displayLine - getScrollLines())  % kDebugMaxLines;
 
         BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
@@ -146,7 +145,7 @@ private:
   int mLayer = 0;
   uint32_t mTick = 0;
 
-  unsigned mDisplayLines = 16;
+  int mDisplayLines;
   unsigned mDebugLine = 0;
   std::array <cDebugItem,kDebugMaxLines> mLines;
   int mScroll = 0;
