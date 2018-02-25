@@ -105,12 +105,12 @@ uint32_t BSP_LCD_GetBackColor();
 void     BSP_LCD_SetTextColor (uint32_t Color);
 void     BSP_LCD_SetBackColor (uint32_t Color);
 
-uint32_t BSP_LCD_ReadPixel (uint16_t Xpos, uint16_t Ypos);
-void     BSP_LCD_DrawPixel (uint16_t Xpos, uint16_t Ypos, uint32_t pixel);
+uint32_t BSP_LCD_ReadPixel (uint16_t x, uint16_t y);
+void     BSP_LCD_DrawPixel (uint16_t x, uint16_t y, uint32_t pixel);
 void     BSP_LCD_Clear (uint32_t Color);
 void     BSP_LCD_ClearStringLine (uint32_t Line);
-void     BSP_LCD_DisplayChar (uint16_t Xpos, uint16_t Ypos, uint8_t Ascii);
-void     BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, char* text, Text_AlignModeTypdef mode);
+void     BSP_LCD_DisplayChar (uint16_t x, uint16_t y, uint8_t ascii);
+void     BSP_LCD_DisplayStringAt (uint16_t x, uint16_t y, char* text, Text_AlignModeTypdef mode);
 void     BSP_LCD_DisplayStringAtLine (uint16_t line, char* ptr);
 void     BSP_LCD_DisplayStringAtLineColumn (uint16_t line, uint16_t column, char* ptr);
 

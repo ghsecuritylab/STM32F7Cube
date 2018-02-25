@@ -7,7 +7,7 @@
 #include "../../../cPs2.h"
 #include "../../../usbd.h"
 //}}}
-std::string kVersion = "USB HID keyboard ps2 23/2/18";
+std::string kVersion = "USB HID keyboard ps2 24/2/18";
 #define HID_IN_ENDPOINT       0x81
 #define HID_IN_ENDPOINT_SIZE  5
 

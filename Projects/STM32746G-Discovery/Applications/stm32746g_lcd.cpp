@@ -23,33 +23,8 @@ DMA2D_HandleTypeDef hDma2dHandler;
 uint32_t ActiveLayer = 0;
 LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
 
-//{{{
-void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t* fontChar) {
-
-  auto width = Font16.Width;
-  auto byteAlignedWidth = (width+7)/8;
-  auto offset = 8*(byteAlignedWidth) - width - 1;
-  auto colour = DrawProp[ActiveLayer].TextColor;
-  auto ptr = ((uint32_t*)hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + (Ypos * BSP_LCD_GetXSize()) + Xpos;
-
-  for (auto fontLine = 0u; fontLine < Font16.Height; fontLine++) {
-    auto fontPtr = (uint8_t*)fontChar + byteAlignedWidth * fontLine;
-    uint16_t fontLineBits = *fontPtr++;
-    if (byteAlignedWidth == 2) 
-      fontLineBits = (fontLineBits << 8) | *fontPtr;
-
-    uint16_t bit = 1 << (width + offset);
-    auto endPtr = ptr + width;
-    while (ptr != endPtr) {
-      if (fontLineBits & bit)
-        *ptr = colour;
-      ptr++;
-      bit >>= 1;
-      }
-    ptr += BSP_LCD_GetXSize() - width;
-    }
-  }
-//}}}
+uint32_t TextColor = LCD_COLOR_WHITE;
+uint32_t BackColor = LCD_COLOR_BLACK;
 //{{{
 void FillTriangle (uint16_t x1, uint16_t x2, uint16_t x3, uint16_t y1, uint16_t y2, uint16_t y3)
 {
@@ -216,8 +191,8 @@ uint8_t BSP_LCD_DeInit() {
   }
 //}}}
 //{{{
-void BSP_LCD_LayerDefaultInit (uint16_t LayerIndex, uint32_t FB_Address)
-{
+void BSP_LCD_LayerDefaultInit (uint16_t LayerIndex, uint32_t FB_Address) {
+
   LCD_LayerCfgTypeDef  layer_cfg;
 
   // Layer Init
@@ -238,10 +213,7 @@ void BSP_LCD_LayerDefaultInit (uint16_t LayerIndex, uint32_t FB_Address)
   layer_cfg.ImageHeight = BSP_LCD_GetYSize();
 
   HAL_LTDC_ConfigLayer(&hLtdcHandler, &layer_cfg, LayerIndex);
-
-  DrawProp[LayerIndex].BackColor = LCD_COLOR_WHITE;
-  DrawProp[LayerIndex].TextColor = LCD_COLOR_BLACK;
-}
+  }
 //}}}
 
 //{{{
@@ -302,10 +274,10 @@ void BSP_LCD_Reload (uint32_t ReloadType)
 }
 //}}}
 
-uint32_t BSP_LCD_GetTextColor() { return DrawProp[ActiveLayer].TextColor; }
-uint32_t BSP_LCD_GetBackColor() { return DrawProp[ActiveLayer].BackColor; }
-void BSP_LCD_SetTextColor (uint32_t Color) { DrawProp[ActiveLayer].TextColor = Color; }
-void BSP_LCD_SetBackColor (uint32_t Color) { DrawProp[ActiveLayer].BackColor = Color; }
+uint32_t BSP_LCD_GetTextColor() { return TextColor; }
+uint32_t BSP_LCD_GetBackColor() { return BackColor; }
+void BSP_LCD_SetTextColor (uint32_t Color) { TextColor = Color; }
+void BSP_LCD_SetBackColor (uint32_t Color) { BackColor = Color; }
 
 //{{{
 uint32_t BSP_LCD_ReadPixel (uint16_t Xpos, uint16_t Ypos) {
@@ -334,23 +306,42 @@ uint32_t BSP_LCD_ReadPixel (uint16_t Xpos, uint16_t Ypos) {
 //{{{
 void BSP_LCD_ClearStringLine (uint32_t Line) {
 
-  uint32_t color_backup = DrawProp[ActiveLayer].TextColor;
-  DrawProp[ActiveLayer].TextColor = DrawProp[ActiveLayer].BackColor;
-
   // Draw rectangle with background color
-  BSP_LCD_FillRect(0, Line * Font16.Height, BSP_LCD_GetXSize(), Font16.Height);
+  uint32_t color_backup = TextColor;
+  TextColor = BackColor;
+  BSP_LCD_FillRect (0, Line * Font16.Height, BSP_LCD_GetXSize(), Font16.Height);
+  TextColor = color_backup;
+  }
+//}}}
+//{{{
+void BSP_LCD_DisplayChar (uint16_t x, uint16_t y, uint8_t ascii) {
 
-  DrawProp[ActiveLayer].TextColor = color_backup;
-  BSP_LCD_SetTextColor(DrawProp[ActiveLayer].TextColor);
+  const uint16_t width = Font16.Width;
+  const uint16_t byteAlignedWidth = (width+7)/8;
+  const uint16_t offset = 8*(byteAlignedWidth) - width - 1;
+  const uint8_t* fontChar = &Font16.table [(ascii-' ') * Font16.Height * byteAlignedWidth];
+  auto ptr = ((uint32_t*)hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + (y * BSP_LCD_GetXSize()) + x;
+
+  for (auto fontLine = 0u; fontLine < Font16.Height; fontLine++) {
+    auto fontPtr = (uint8_t*)fontChar + byteAlignedWidth * fontLine;
+    uint16_t fontLineBits = *fontPtr++;
+    if (byteAlignedWidth == 2)
+      fontLineBits = (fontLineBits << 8) | *fontPtr;
+
+    uint16_t bit = 1 << (width + offset);
+    auto endPtr = ptr + width;
+    while (ptr != endPtr) {
+      if (fontLineBits & bit)
+        *ptr = TextColor;
+      ptr++;
+      bit >>= 1;
+      }
+    ptr += BSP_LCD_GetXSize() - width;
+    }
   }
 //}}}
 //{{{
-void BSP_LCD_DisplayChar (uint16_t Xpos, uint16_t Ypos, uint8_t Ascii) {
-  DrawChar (Xpos, Ypos, &Font16.table[(Ascii-' ') * Font16.Height * ((Font16.Width + 7) / 8)]);
-  }
-//}}}
-//{{{
-void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, char* text, Text_AlignModeTypdef mode) {
+void BSP_LCD_DisplayStringAt (uint16_t x, uint16_t y, char* text, Text_AlignModeTypdef mode) {
 
   uint16_t column = 1;
   switch (mode) {
@@ -360,7 +351,7 @@ void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, char* text, Text_Ali
       uint32_t size = 0;
       while (*ptr++)
         size++;
-      column = xpos + ((xSize - size) * Font16.Width) / 2;
+      column = x + ((xSize - size) * Font16.Width) / 2;
       break;
       }
 
@@ -370,12 +361,12 @@ void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, char* text, Text_Ali
       uint32_t size = 0;
       while (*ptr++)
         size++;
-      column = -xpos + ((xSize - size) * Font16.Width);
+      column = -x + ((xSize - size) * Font16.Width);
       break;
       }
 
     case LEFT_MODE:
-      column = xpos;
+      column = x;
       break;
     }
 
@@ -384,7 +375,7 @@ void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, char* text, Text_Ali
     column = 1;
 
   while (*text && (column < BSP_LCD_GetXSize())) {
-    BSP_LCD_DisplayChar (column, ypos, *text++);
+    BSP_LCD_DisplayChar (column, y, *text++);
     column += Font16.Width;
     }
   }
@@ -412,7 +403,7 @@ void BSP_LCD_DrawHLine (uint16_t Xpos, uint16_t Ypos, uint16_t Length)
     Xaddress = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 4*(BSP_LCD_GetXSize()*Ypos + Xpos);
 
   // Write line
-  FillBuffer  (ActiveLayer, (uint32_t *)Xaddress, Length, 1, 0, DrawProp[ActiveLayer].TextColor);
+  FillBuffer  (ActiveLayer, (uint32_t *)Xaddress, Length, 1, 0, TextColor);
   }
 //}}}
 //{{{
@@ -427,7 +418,7 @@ void BSP_LCD_DrawVLine (uint16_t Xpos, uint16_t Ypos, uint16_t Length)
     Xaddress = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 4*(BSP_LCD_GetXSize()*Ypos + Xpos);
 
   // Write line
-  FillBuffer(ActiveLayer, (uint32_t *)Xaddress, 1, Length, (BSP_LCD_GetXSize() - 1), DrawProp[ActiveLayer].TextColor);
+  FillBuffer(ActiveLayer, (uint32_t *)Xaddress, 1, Length, (BSP_LCD_GetXSize() - 1), TextColor);
 }
 //}}}
 //{{{
@@ -485,7 +476,7 @@ void BSP_LCD_DrawLine (uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 
   for (curpixel = 0; curpixel <= num_pixels; curpixel++)
   {
-    BSP_LCD_DrawPixel(x, y, DrawProp[ActiveLayer].TextColor);   // Draw the current pixel
+    BSP_LCD_DrawPixel(x, y, TextColor);   // Draw the current pixel
     num += num_add;                            // Increase the numerator by the top of the fraction
     if (num >= den)                           // Check if numerator >= denominator
     {
@@ -522,14 +513,14 @@ void BSP_LCD_DrawCircle (uint16_t Xpos, uint16_t Ypos, uint16_t Radius)
   current_y = Radius;
 
   while (current_x <= current_y) {
-    BSP_LCD_DrawPixel ((Xpos + current_x), (Ypos - current_y), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel ((Xpos - current_x), (Ypos - current_y), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel ((Xpos + current_y), (Ypos - current_x), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel ((Xpos - current_y), (Ypos - current_x), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel ((Xpos + current_x), (Ypos + current_y), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel ((Xpos - current_x), (Ypos + current_y), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel ((Xpos + current_y), (Ypos + current_x), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel ((Xpos - current_y), (Ypos + current_x), DrawProp[ActiveLayer].TextColor);
+    BSP_LCD_DrawPixel ((Xpos + current_x), (Ypos - current_y), TextColor);
+    BSP_LCD_DrawPixel ((Xpos - current_x), (Ypos - current_y), TextColor);
+    BSP_LCD_DrawPixel ((Xpos + current_y), (Ypos - current_x), TextColor);
+    BSP_LCD_DrawPixel ((Xpos - current_y), (Ypos - current_x), TextColor);
+    BSP_LCD_DrawPixel ((Xpos + current_x), (Ypos + current_y), TextColor);
+    BSP_LCD_DrawPixel ((Xpos - current_x), (Ypos + current_y), TextColor);
+    BSP_LCD_DrawPixel ((Xpos + current_y), (Ypos + current_x), TextColor);
+    BSP_LCD_DrawPixel ((Xpos - current_y), (Ypos + current_x), TextColor);
 
     if (decision < 0)
       decision += (current_x << 2) + 6;
@@ -572,10 +563,10 @@ void BSP_LCD_DrawEllipse (int Xpos, int Ypos, int XRadius, int YRadius)
   k = (float)(rad2/rad1);
 
   do {
-    BSP_LCD_DrawPixel((Xpos-(uint16_t)(x/k)), (Ypos+y), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel((Xpos+(uint16_t)(x/k)), (Ypos+y), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel((Xpos+(uint16_t)(x/k)), (Ypos-y), DrawProp[ActiveLayer].TextColor);
-    BSP_LCD_DrawPixel((Xpos-(uint16_t)(x/k)), (Ypos-y), DrawProp[ActiveLayer].TextColor);
+    BSP_LCD_DrawPixel((Xpos-(uint16_t)(x/k)), (Ypos+y), TextColor);
+    BSP_LCD_DrawPixel((Xpos+(uint16_t)(x/k)), (Ypos+y), TextColor);
+    BSP_LCD_DrawPixel((Xpos+(uint16_t)(x/k)), (Ypos-y), TextColor);
+    BSP_LCD_DrawPixel((Xpos-(uint16_t)(x/k)), (Ypos-y), TextColor);
 
     e2 = err;
     if (e2 <= x) {
@@ -652,17 +643,14 @@ void BSP_LCD_FillRect (uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t He
 {
   uint32_t  x_address = 0;
 
-  // Set the text color
-  BSP_LCD_SetTextColor(DrawProp[ActiveLayer].TextColor);
-
   // Get the rectangle start address
-  if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565)
+  if (hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565)
     x_address = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 2*(BSP_LCD_GetXSize()*Ypos + Xpos);
   else
     x_address = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 4*(BSP_LCD_GetXSize()*Ypos + Xpos);
 
   // Fill the rectangle
-  FillBuffer(ActiveLayer, (uint32_t *)x_address, Width, Height, (BSP_LCD_GetXSize() - Width), DrawProp[ActiveLayer].TextColor);
+  FillBuffer (ActiveLayer, (uint32_t *)x_address, Width, Height, (BSP_LCD_GetXSize() - Width), TextColor);
 }
 //}}}
 //{{{
@@ -677,34 +665,25 @@ void BSP_LCD_FillCircle (uint16_t Xpos, uint16_t Ypos, uint16_t Radius)
   current_x = 0;
   current_y = Radius;
 
-  BSP_LCD_SetTextColor(DrawProp[ActiveLayer].TextColor);
-
-  while (current_x <= current_y)
-  {
-    if(current_y > 0)
-    {
+  while (current_x <= current_y) {
+    if(current_y > 0) {
       BSP_LCD_DrawHLine(Xpos - current_y, Ypos + current_x, 2*current_y);
       BSP_LCD_DrawHLine(Xpos - current_y, Ypos - current_x, 2*current_y);
     }
 
-    if(current_x > 0)
-    {
+    if(current_x > 0) {
       BSP_LCD_DrawHLine(Xpos - current_x, Ypos - current_y, 2*current_x);
       BSP_LCD_DrawHLine(Xpos - current_x, Ypos + current_y, 2*current_x);
     }
     if (decision < 0)
-    {
       decision += (current_x << 2) + 6;
-    }
-    else
-    {
+    else {
       decision += ((current_x - current_y) << 2) + 10;
       current_y--;
     }
     current_x++;
   }
 
-  BSP_LCD_SetTextColor(DrawProp[ActiveLayer].TextColor);
   BSP_LCD_DrawCircle(Xpos, Ypos, Radius);
 }
 //}}}
@@ -803,8 +782,8 @@ void BSP_LCD_DisplayOff()
 //}}}
 
 //{{{
-__weak void BSP_LCD_MspInit (LTDC_HandleTypeDef *hltdc, void *Params)
-{
+__weak void BSP_LCD_MspInit (LTDC_HandleTypeDef* hltdc, void* Params) {
+
   GPIO_InitTypeDef gpio_init_structure;
 
   // Enable the LTDC and DMA2D clocks
@@ -820,7 +799,7 @@ __weak void BSP_LCD_MspInit (LTDC_HandleTypeDef *hltdc, void *Params)
   LCD_DISP_GPIO_CLK_ENABLE();
   LCD_BL_CTRL_GPIO_CLK_ENABLE();
 
-  //** LTDC Pins configuration **
+  // LTDC Pins configuration **
   // GPIOE configuration
   gpio_init_structure.Pin       = GPIO_PIN_4;
   gpio_init_structure.Mode      = GPIO_MODE_AF_PP;
@@ -925,5 +904,5 @@ __weak void BSP_LCD_ClockConfig (LTDC_HandleTypeDef *hltdc, void *Params) {
   periph_clk_init_struct.PLLSAI.PLLSAIR = RK043FN48H_FREQUENCY_DIVIDER;
   periph_clk_init_struct.PLLSAIDivR = RCC_PLLSAIDIVR_4;
   HAL_RCCEx_PeriphCLKConfig(&periph_clk_init_struct);
-}
+  }
 //}}}

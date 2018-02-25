@@ -28,16 +28,12 @@ public:
 
     BSP_LCD_LayerDefaultInit (0, LCD_FB_START_ADDRESS);
     BSP_LCD_SelectLayer(0);
-    BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
-    BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
     BSP_LCD_Clear (LCD_COLOR_BLACK);
     BSP_LCD_SetLayerVisible (0, ENABLE);
     BSP_LCD_SetTransparency (0, 255);
 
     BSP_LCD_LayerDefaultInit (1, LCD_FB_START_ADDRESS + (BSP_LCD_GetXSize() * BSP_LCD_GetYSize() * 4));
     BSP_LCD_SelectLayer(1);
-    BSP_LCD_SetBackColor (LCD_COLOR_BLACK);
-    BSP_LCD_SetTextColor (LCD_COLOR_WHITE);
     BSP_LCD_Clear (LCD_COLOR_BLACK);
     BSP_LCD_SetLayerVisible (1, ENABLE);
     BSP_LCD_SetTransparency (1, 0);
