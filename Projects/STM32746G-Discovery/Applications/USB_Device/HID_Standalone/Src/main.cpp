@@ -480,7 +480,6 @@ void cApp::run (bool keyboard) {
 
   // init ps2 keyboard
   mPs2 = new cPs2 (mLcd);
-
   if (keyboard)
     mPs2->initKeyboard();
   else
@@ -648,6 +647,6 @@ int main() {
   BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
 
   gApp = new cApp (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-  gApp->run (false);
+  gApp->run (true);
   }
 //}}}

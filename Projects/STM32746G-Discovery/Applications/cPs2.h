@@ -420,22 +420,19 @@
 
 class cPs2 {
 public:
-  cPs2 (cLcd* lcd) : mLcd(lcd) {}
+  //{{{
+  cPs2 (cLcd* lcd) : mLcd(lcd) {
+    initGpio();
+    }
+  //}}}
 
   //{{{
   void initKeyboard() {
 
-    initGpio();
     sendChar (0xFF);
     if (getRawChar() != 0xAA)
       mLcd->debug (LCD_COLOR_RED, "initPs2keyboard - missing 0xAA reset");
 
-    //for (int i = 0; i < 8; i++) {
-      // send leds
-    //  sendChar (0xED);
-    //  sendChar (i);
-    //  HAL_Delay (100);
-    //  }
     // send getId
     sendChar (0x0F2);
     mLcd->debug (LCD_COLOR_YELLOW, "keyboard id %x %x", getRawChar(), getRawChar());
@@ -446,8 +443,6 @@ public:
   //{{{
   void initTouchpad() {
 
-    initGpio();
-
     // reset
     sendChar (0xFF);
 
@@ -455,6 +450,7 @@ public:
     auto reply = getRawChar();
     if (reply != 0xAA)
       mLcd->debug (LCD_COLOR_RED, "initTouchpad - no 0xAA reply", reply);
+
     reply = getRawChar();
     if (reply != 0x00)
       mLcd->debug (LCD_COLOR_RED, "initTouchpad - missing 0x00 reset");
@@ -512,6 +508,7 @@ public:
   //}}}
   //{{{
   bool getTouch (int& touch, int& x, int& y, int& z) {
+
     touch = mTouchZ > 0;
     x = mTouchX;
     y = mTouchY;
@@ -521,7 +518,17 @@ public:
   //}}}
 
   //{{{
+  void sendLeds (int i) {
+
+    sendChar (0xED);
+    sendChar (i);
+    HAL_Delay (100);
+    }
+  //}}}
+
+  //{{{
   void resetChar() {
+
     mInPtr = 0;
     mOutPtr = 0;
 
