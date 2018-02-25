@@ -18,7 +18,7 @@ public:
   cLcd* getLcd() { return mLcd; }
   cPs2* getPs2() { return mPs2; }
 
-  void run();
+  void run (bool keyboard);
 
 protected:
   virtual void onProx (int x, int y, int z);
@@ -34,6 +34,7 @@ private:
   };
 //}}}
 cApp* gApp;
+extern "C" { void EXTI9_5_IRQHandler() { gApp->getPs2()->irq(); } }
 
 //{{{  device descriptors
 #define STM_VID      0x0483
@@ -471,7 +472,7 @@ uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
 //}}}
 
 //{{{
-void cApp::run() {
+void cApp::run (bool keyboard) {
 
   // init lcd
   mLcd = new cLcd (12);
@@ -479,8 +480,11 @@ void cApp::run() {
 
   // init ps2 keyboard
   mPs2 = new cPs2 (mLcd);
-  //mPs2->initKeyboard();
-  mPs2->initTouchpad();
+
+  if (keyboard)
+    mPs2->initKeyboard();
+  else
+    mPs2->initTouchpad();
 
   // init usb
   //{{{  hidClass
@@ -517,26 +521,31 @@ void cApp::run() {
   USBD_Start (&gUsbDevice);
 
   while (true) {
-    if (false)
+    if (keyboard)
       pollTouch();
     else {
       int touch, x, y, z;
       mPs2->getTouch (touch, x, y, z);
       handleTouch (x || y, x, y, z);
       }
+
     mLcd->show (kVersion);
-    //mPs2->showChars();
-    mPs2->showTouch();
+    if (keyboard)
+      mPs2->showChars();
+    else
+      mPs2->showTouch();
     mPs2->showCodes();
     mPs2->showWave();
     mLcd->flip();
 
-    //while (mPs2->hasRawChar())
-    //  mPs2->getRawChar();
-    //while (mPs2->hasChar()) {
-    //  auto ch = mPs2->getChar();
-      //mLcd->debug (ch & 0x100 ? LCD_COLOR_GREEN : LCD_COLOR_YELLOW, "key %03x", ch);
-    //  }
+    if (keyboard) {
+      while (mPs2->hasRawChar())
+        mPs2->getRawChar();
+      while (mPs2->hasChar()) {
+        auto ch = mPs2->getChar();
+        mLcd->debug (ch & 0x100 ? LCD_COLOR_GREEN : LCD_COLOR_YELLOW, "key %03x", ch);
+        }
+      }
     }
   }
 //}}}
@@ -583,8 +592,6 @@ void cApp::onRelease (int x, int y) {
   mLcd->debug (LCD_COLOR_GREEN, "onRelease %d %d", x, y);
   }
 //}}}
-
-extern "C" { void EXTI9_5_IRQHandler() { gApp->getPs2()->irq(); } }
 
 //{{{
 int main() {
@@ -638,10 +645,9 @@ int main() {
   if (HAL_RCC_ClockConfig (&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK)
     while (1) {}
   //}}}
-
   BSP_PB_Init (BUTTON_KEY, BUTTON_MODE_GPIO);
 
   gApp = new cApp (BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
-  gApp->run();
+  gApp->run (false);
   }
 //}}}

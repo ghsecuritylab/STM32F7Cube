@@ -24,34 +24,29 @@ uint32_t ActiveLayer = 0;
 LCD_DrawPropTypeDef DrawProp[MAX_LAYER_NUMBER];
 
 //{{{
-void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t* c) {
+void DrawChar (uint16_t Xpos, uint16_t Ypos, const uint8_t* fontChar) {
 
   auto width = Font16.Width;
-  auto offset = 8 *((width+7)/8) -  width;
+  auto byteAlignedWidth = (width+7)/8;
+  auto offset = 8*(byteAlignedWidth) - width - 1;
   auto colour = DrawProp[ActiveLayer].TextColor;
-  auto add = ((uint32_t*)hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + Xpos;
+  auto ptr = ((uint32_t*)hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + (Ypos * BSP_LCD_GetXSize()) + Xpos;
 
-  for (auto i = 0u; i < Font16.Height; i++) {
-    auto pchar = ((uint8_t*)c + (width+7)/8 * i);
-    uint32_t line;
-    switch (((width+7)/8)) {
-      case 1:
-        line =  pchar[0];
-        break;
-      case 2:
-        line =  (pchar[0] << 8) | pchar[1];
-        break;
-      case 3:
-      default:
-        line =  (pchar[0] << 16) | (pchar[1] << 8) | pchar[2];
-        break;
+  for (auto fontLine = 0u; fontLine < Font16.Height; fontLine++) {
+    auto fontPtr = (uint8_t*)fontChar + byteAlignedWidth * fontLine;
+    uint16_t fontLineBits = *fontPtr++;
+    if (byteAlignedWidth == 2) 
+      fontLineBits = (fontLineBits << 8) | *fontPtr;
+
+    uint16_t bit = 1 << (width + offset);
+    auto endPtr = ptr + width;
+    while (ptr != endPtr) {
+      if (fontLineBits & bit)
+        *ptr = colour;
+      ptr++;
+      bit >>= 1;
       }
-
-    for (auto j = 0u; j < width; j++)
-      if (line & (1 << (width- j + offset- 1)))
-        *(add + Ypos * BSP_LCD_GetXSize() + j) = colour;
-
-    Ypos++;
+    ptr += BSP_LCD_GetXSize() - width;
     }
   }
 //}}}
@@ -350,11 +345,9 @@ void BSP_LCD_ClearStringLine (uint32_t Line) {
   }
 //}}}
 //{{{
-void BSP_LCD_DisplayChar (uint16_t Xpos, uint16_t Ypos, uint8_t Ascii)
-{
-  DrawChar(Xpos, Ypos, &Font16.table[(Ascii-' ') *\
-    Font16.Height * ((Font16.Width + 7) / 8)]);
-}
+void BSP_LCD_DisplayChar (uint16_t Xpos, uint16_t Ypos, uint8_t Ascii) {
+  DrawChar (Xpos, Ypos, &Font16.table[(Ascii-' ') * Font16.Height * ((Font16.Width + 7) / 8)]);
+  }
 //}}}
 //{{{
 void BSP_LCD_DisplayStringAt (uint16_t xpos, uint16_t ypos, char* text, Text_AlignModeTypdef mode) {
