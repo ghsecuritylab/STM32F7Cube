@@ -525,7 +525,6 @@ public:
     HAL_Delay (100);
     }
   //}}}
-
   //{{{
   void resetChar() {
 
@@ -539,142 +538,7 @@ public:
     mCurChar = 0;
     }
   //}}}
-  //{{{
-  void irq() {
 
-    if (__HAL_GPIO_EXTI_GET_IT (GPIO_PIN_8) != RESET) {
-      __HAL_GPIO_EXTI_CLEAR_IT (GPIO_PIN_8);
-
-      if (mRx) {
-        bool bit = (GPIOF->IDR & GPIO_PIN_9) != 0;
-        mSample++;
-        mBitArray[mSample % kMaxSamples] = bit;
-        mBitPosArray[mSample % kMaxSamples] = mBitPos;
-
-        if (mBitPos == -1) {
-          //{{{  wait for lo start bit
-          if (!bit) { // lo start bit
-            mBitPos = 0;
-            mCode = 0;
-            }
-          }
-          //}}}
-        else if (mBitPos < 8) {
-          //{{{  get mCode bits 0..7
-          mCode = mCode | (bit << mBitPos);
-          mBitPos++;
-          }
-          //}}}
-        else if (mBitPos == 8) {
-          // parity bit - got mCode
-          mCurCode++;
-          mCodes[mCurCode % kMaxCodes] = mCode;
-          mBitPos++;
-
-          if (mStream) {
-            //{{{  touchpad stream
-            if (mStreamCode == -1) {
-              if ((mCode & 0xC0) == 0x80) {
-                mStreamCode = 0;
-                mStreamCodes[mStreamCode] = mCode;
-                }
-              }
-
-            else {
-              mStreamCode++;
-              if ((mStreamCode == 3) && ((mCode & 0xc0) != 0xc0))
-                mStreamCode = -1;
-              else {
-                mStreamCodes[mStreamCode] = mCode;
-                if (mStreamCode == 5) {
-                  mTouchX = ((mStreamCodes[3] & 0x10) << 8) | ((mStreamCodes[1] & 0x0F) << 8) | mStreamCodes[4];
-                  mTouchY = ((mStreamCodes[3] & 0x20) << 7) | ((mStreamCodes[1] & 0xF0) << 4) | mStreamCodes[5];
-                  mTouchZ = mStreamCodes[2];
-                  mStreamCode = -1;
-                  }
-                }
-              }
-            }
-            //}}}
-          else {
-            //{{{  char code
-            mRxRawData[mInRawPtr] = mCode;
-            mInRawPtr = (mInRawPtr + 1) % kMaxRing;
-
-            if (mCode == 0xE0)
-              mRxExpandCode = true;
-            else if (mCode == 0xF0)
-              mRxReleaseCode = true;
-            else if (mCode == 0x12) // SHIFT_L;
-              mShifted = !mRxReleaseCode;
-            else if (mCode == 0x59) // SHIFT_R;
-              mShifted = !mRxReleaseCode;
-            else if (mCode == 0x14) // CTRL_L
-              mCtrled = !mRxReleaseCode;
-            else {
-              if (mRxExpandCode) {
-                //{{{  expandCode
-                if (mCode == 0x70)
-                  mCode = PS2_INSERT;
-                else if (mCode == 0x6C)
-                  mCode = PS2_HOME;
-                else if (mCode == 0x7D)
-                  mCode = PS2_PAGEUP;
-                else if (mCode == 0x71)
-                  mCode = PS2_DELETE;
-                else if (mCode == 0x6C)
-                  mCode = PS2_HOME;
-                else if (mCode == 0x69)
-                  mCode = PS2_END;
-                else if (mCode == 0x6C)
-                  mCode = PS2_PAGEDOWN;
-                else if (mCode == 0x75)
-                  mCode = PS2_UPARROW;
-                else if (mCode == 0x6B)
-                  mCode = PS2_LEFTARROW;
-                else if (mCode == 0x72)
-                  mCode = PS2_DOWNARROW;
-                else if (mCode == 0x74)
-                  mCode = PS2_RIGHTARROW;
-                else if (mCode == 0x4A)
-                  mCode = '/';
-                else if (mCode == 0x5A)
-                  mCode = PS2_ENTER;
-                else
-                  mCode |= 0x200;
-                }
-                //}}}
-              else if (mShifted)
-                mCode = kPs2Keymap.shift[mCode];
-              else
-                mCode = kPs2Keymap.noshift[mCode];
-
-
-              if (!mRxReleaseCode) {
-                mCurChar++;
-                mChars[mCurChar % kMaxChars] = mCode;
-                }
-
-              mRxData[mInPtr] = mCode | (mRxReleaseCode * 0x100);
-              mInPtr = (mInPtr + 1) % kMaxRing;
-
-              mRxExpandCode = false;
-              mRxReleaseCode = false;
-              }
-            }
-            //}}}
-          }
-        else if (mBitPos == 9) {
-          //{{{  expect hi stop bit
-          mBitPos = -1;
-          if (!bit)
-            mLcd->debug (LCD_COLOR_RED, "lo stop bit");
-          }
-          //}}}
-        }
-      }
-    }
-  //}}}
   //{{{
   void showTouch() {
 
@@ -781,6 +645,162 @@ public:
     }
   //}}}
 
+  //{{{
+  void onIrq() {
+
+    if (__HAL_GPIO_EXTI_GET_IT (GPIO_PIN_8) != RESET) {
+      __HAL_GPIO_EXTI_CLEAR_IT (GPIO_PIN_8);
+
+      if (mRx) {
+        bool bit = (GPIOF->IDR & GPIO_PIN_9) != 0;
+
+        mSample++;
+        mBitArray[mSample % kMaxSamples] = bit;
+        mBitPosArray[mSample % kMaxSamples] = mBitPos;
+
+        switch (mBitPos) {
+          case -1:
+            //{{{  wait for lo start bit
+            if (!bit) { // lo start bit
+              mBitPos = 0;
+              mCode = 0;
+              }
+            break;
+            //}}}
+          case 0:
+          case 1:
+          case 2:
+          case 3:
+          case 4:
+          case 5:
+          case 6:
+          case 7:
+            //{{{  bits 0..7
+            mCode = mCode | (bit << mBitPos);
+            mBitPos++;
+            break;
+            //}}}
+          case 8:
+            //{{{  parity bit
+            mBitPos++;
+
+            // add to codes debug buffer
+            mCurCode++;
+            mCodes[mCurCode % kMaxCodes] = mCode;
+
+            if (mStream) {
+              //{{{  add to touchpad stream
+              if (mStreamCode == -1) {
+                if ((mCode & 0xC0) == 0x80) {
+                  mStreamCode = 0;
+                  mStreamCodes[mStreamCode] = mCode;
+                  }
+                }
+
+              else {
+                mStreamCode++;
+                if ((mStreamCode == 3) && ((mCode & 0xc0) != 0xc0))
+                  mStreamCode = -1;
+                else {
+                  mStreamCodes[mStreamCode] = mCode;
+                  if (mStreamCode == 5) {
+                    mTouchX = ((mStreamCodes[3] & 0x10) << 8) | ((mStreamCodes[1] & 0x0F) << 8) | mStreamCodes[4];
+                    mTouchY = ((mStreamCodes[3] & 0x20) << 7) | ((mStreamCodes[1] & 0xF0) << 4) | mStreamCodes[5];
+                    mTouchZ = mStreamCodes[2];
+                    mStreamCode = -1;
+                    }
+                  }
+                }
+              }
+              //}}}
+            else {
+              //{{{  add char code
+              mRxRawData[mInRawPtr] = mCode;
+              mInRawPtr = (mInRawPtr + 1) % kMaxRing;
+
+              if (mCode == 0xE0)
+                mRxExpandCode = true;
+              else if (mCode == 0xE1)
+                mPauseCode = true;
+              else if (mCode == 0xF0)
+                mRxReleaseCode = true;
+              else if (mCode == 0x12) // SHIFT_L;
+                mShiftedL = !mRxReleaseCode;
+              else if (mCode == 0x1F) // WINDOWS_L;
+                mWindowsL = !mRxReleaseCode;
+              else if (mCode == 0x27) // WINDOWS_R;
+                mWindowsR = !mRxReleaseCode;
+              else if (mCode == 0x59) // SHIFT_R;
+                mShiftedR = !mRxReleaseCode;
+              else if (mCode == 0x14) // CTRL_L
+                mControlled = !mRxReleaseCode;
+              else {
+                if (mRxExpandCode) {
+                  //{{{  expandCode
+                  if (mCode == 0x4A)
+                    mCode = '/';
+                  else if (mCode == 0x5A)
+                    mCode = PS2_ENTER;
+                  else if (mCode == 0x69)
+                    mCode = PS2_END;
+                  else if (mCode == 0x6B)
+                    mCode = PS2_LEFTARROW;
+                  else if (mCode == 0x6C)
+                    mCode = PS2_HOME;
+                  else if (mCode == 0x70)
+                    mCode = PS2_INSERT;
+                  else if (mCode == 0x71)
+                    mCode = PS2_DELETE;
+                  else if (mCode == 0x72)
+                    mCode = PS2_DOWNARROW;
+                  else if (mCode == 0x74)
+                    mCode = PS2_RIGHTARROW;
+                  else if (mCode == 0x75)
+                    mCode = PS2_UPARROW;
+                  else if (mCode == 0x7D)
+                    mCode = PS2_PAGEUP;
+                  else if (mCode == 0x7A)
+                    mCode = PS2_PAGEDOWN;
+                  else
+                    mCode |= 0x200;
+                  }
+                  //}}}
+                else if (mShiftedL || mShiftedR)
+                  mCode = kPs2Keymap.shift[mCode];
+                else
+                  mCode = kPs2Keymap.noshift[mCode];
+
+                if (!mRxReleaseCode) {
+                  // add to decoded chars debug buffer
+                  mCurChar++;
+                  mChars[mCurChar % kMaxChars] = mCode;
+                  }
+
+                // add to partially decoded char ring buffer
+                mRxData[mInPtr] = mCode | (mRxReleaseCode * 0x100);
+                mInPtr = (mInPtr + 1) % kMaxRing;
+
+                mRxExpandCode = false;
+                mRxReleaseCode = false;
+                mPauseCode = false;
+                }
+              }
+              //}}}
+            break;
+            //}}}
+          case 9:
+            //{{{  hi stop bit
+            mBitPos = -1;
+            if (!bit)
+              mLcd->debug (LCD_COLOR_RED, "lo stop bit");
+            break;
+            //}}}
+          }
+        }
+      }
+    }
+  //}}}
+
 private:
   static const int kBitWidth = 8;
   static const int kMaxSamples = 480 / kBitWidth;
@@ -858,8 +878,7 @@ private:
   void sendTouchpadSpecialCommand (uint8_t arg) {
   // send touchpad special command sequence
 
-    // touchpad setResolution
-    for (int i = 0; i < 4; i++) {
+    for (auto i = 0u; i < 4; i++) {
       sendChar (0xE8);
       sendChar ((arg >> (6-2*i)) & 3);
       }
@@ -941,8 +960,12 @@ private:
 
   bool mRxExpandCode = false;
   bool mRxReleaseCode = false;
-  bool mShifted = false;
-  bool mCtrled = false;
+  bool mPauseCode = false;
+  bool mShiftedL = false;
+  bool mShiftedR = false;
+  bool mControlled = false;
+  bool mWindowsL = false;
+  bool mWindowsR = false;
 
   // touchpad
   bool mStream = false;

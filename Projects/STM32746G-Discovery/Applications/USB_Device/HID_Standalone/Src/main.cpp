@@ -7,7 +7,7 @@
 #include "../../../cPs2.h"
 #include "../../../usbd.h"
 //}}}
-std::string kVersion = "USB HID keyboard ps2 24/2/18";
+std::string kVersion = "USB HID keyboard ps2 26/2/18";
 #define HID_IN_ENDPOINT       0x81
 #define HID_IN_ENDPOINT_SIZE  5
 
@@ -34,14 +34,14 @@ private:
   };
 //}}}
 cApp* gApp;
-extern "C" { void EXTI9_5_IRQHandler() { gApp->getPs2()->irq(); } }
+extern "C" { void EXTI9_5_IRQHandler() { gApp->getPs2()->onIrq(); } }
 
 //{{{  device descriptors
 #define STM_VID      0x0483
 #define STM_HID_PID  0x5710
 
 __ALIGN_BEGIN const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
-  0x12, USB_DESC_TYPE_DEVICE,
+  sizeof(kDeviceDescriptor), USB_DESC_TYPE_DEVICE,
   0,2,                       // bcdUSB
   0,                         // bDeviceClass
   0,                         // bDeviceSubClass
@@ -63,7 +63,7 @@ uint8_t* deviceDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
 
 // device qualifier descriptor
 __ALIGN_BEGIN const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_DESC] __ALIGN_END = {
-  USB_LEN_DEV_QUALIFIER_DESC, USB_DESC_TYPE_DEVICE_QUALIFIER,
+  sizeof(kHidDeviceQualifierDescriptor), USB_DESC_TYPE_DEVICE_QUALIFIER,
   0,2,   // bcdUSb
   0,     // bDeviceClass
   0,     // bDeviceSubClass
@@ -73,62 +73,13 @@ __ALIGN_BEGIN const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_
   0,     // bReserved
   };
 //}}}
-//{{{  mouse hid report descriptor
-__ALIGN_BEGIN const uint8_t kHidMouseReportDescriptor[74] __ALIGN_END = {
-  0x05, 0x01, // Usage Page (Generic Desktop),
-  0x09, 0x02, // Usage (Mouse),
-  0xA1, 0x01, // Collection (Application),
-    0x09, 0x01, // Usage (Pointer),
-    0xA1, 0x00, // Collection (Physical),
-      0x05, 0x09, // Usage Page (Buttons),
-      0x19, 0x01, // Usage Minimum (01),
-      0x29, 0x03, // Usage Maximum (03),
-
-      0x15, 0x00, // Logical Minimum (0),
-      0x25, 0x01, // Logical Maximum (1),
-      0x95, 0x03, // Report Count (3),
-      0x75, 0x01, // Report Size (1),
-
-      0x81, 0x02, // Input (Data, Variable, Absolute), ;3 button bits
-
-      0x95, 0x01, // Report Count (1),
-      0x75, 0x05, // Report Size (5),
-      0x81, 0x01, // Input (Constant), ;5 bit padding
-
-      0x05, 0x01, // Usage Page (Generic Desktop),
-      0x09, 0x30, // Usage (X),
-      0x09, 0x31, // Usage (Y),
-      0x09, 0x38,
-
-      0x15, 0x81, // Logical Minimum (-127),
-      0x25, 0x7F, // Logical Maximum (127),
-      0x75, 0x08, // Report Size (8),
-      0x95, 0x03, // Report Count (3),
-
-      0x81, 0x06, // Input (Data, Variable, Relative), ;2 position bytes (X & Y)
-    0xC0,       // end collection - Physical
-
-    0x09, 0x3c, // usage
-    0x05, 0xff,
-    0x09, 0x01,
-    0x15, 0x00,
-    0x25, 0x01,
-    0x75, 0x01,
-    0x95, 0x02,
-    0xb1, 0x22,
-    0x75, 0x06,
-    0x95, 0x01,
-    0xb1, 0x01,
-  0xC0        // end collection - Application
-  };
-//}}}
 //{{{  keyboard hid report descriptor
-__ALIGN_BEGIN uint8_t kHidKeyboardReportDescriptor[78] __ALIGN_END = {
+__ALIGN_BEGIN uint8_t kHidReportDescriptor[] __ALIGN_END = {
   0x05, 0x01,    // Usage Page (Generic Desktop Ctrls)
   0x09, 0x06,    // Usage (Keyboard)
   0xA1, 0x01,    // Collection (Application)
     0x85, 0x01,    //  Report ID (1)
-    0x05, 0x07,    //  Usage Page (Kbrd/Keypad)
+    0x05, 0x07,    //  Usage Page (Keyboard/Keypad)
     0x75, 0x01,    //  Report Size (1)
     0x95, 0x08,    //  Report Count (8)
     0x19, 0xE0,    //  Usage Minimum (0xE0)
@@ -140,62 +91,91 @@ __ALIGN_BEGIN uint8_t kHidKeyboardReportDescriptor[78] __ALIGN_END = {
     0x75, 0x08,    //  Report Size (8)
     0x15, 0x00,    //  Logical Minimum (0)
     0x25, 0x64,    //  Logical Maximum (100)
-    0x05, 0x07,    //  Usage Page (Kbrd/Keypad)
+    0x05, 0x07,    //  Usage Page (Keyboard/Keypad)
     0x19, 0x00,    //  Usage Minimum (0x00)
     0x29, 0x65,    //  Usage Maximum (0x65)
     0x81, 0x00,    //  Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
   0xC0,          // End Collection
-
-  0x05, 0x0C,    // Usage Page (Consumer)
-  0x09, 0x01,    // Usage (Consumer Control)
-  0xA1, 0x01,    // Collection (Application)
-    0x85, 0x02,    //  Report ID (2)
-    0x05, 0x0C,    //  Usage Page (Consumer)
-    0x15, 0x00,    //  Logical Minimum (0)
-    0x25, 0x01,    //  Logical Maximum (1)
-    0x75, 0x01,    //  Report Size (1)
-    0x95, 0x08,    //  Report Count (8)
-    0x09, 0xB5,    //  Usage (Scan Next Track)
-    0x09, 0xB6,    //  Usage (Scan Previous Track)
-    0x09, 0xB7,    //  Usage (Stop)
-    0x09, 0xB8,    //  Usage (Eject)
-    0x09, 0xCD,    //  Usage (Play/Pause)
-    0x09, 0xE2,    //  Usage (Mute)
-    0x09, 0xE9,    //  Usage (Volume Increment)
-    0x09, 0xEA,    //  Usage (Volume Decrement)
-    0x81, 0x02,    //  Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-  0xC0,          // End Collection
   };
+//}}}
+//{{{  mouse hid report descriptor
+//__ALIGN_BEGIN const uint8_t kHidReportDescriptor[] __ALIGN_END = {
+  //0x05, 0x01, // Usage Page (Generic Desktop),
+  //0x09, 0x02, // Usage (Mouse),
+  //0xA1, 0x01, // Collection (Application),
+    //0x09, 0x01, // Usage (Pointer),
+    //0xA1, 0x00, // Collection (Physical),
+      //0x05, 0x09, // Usage Page (Buttons),
+      //0x19, 0x01, // Usage Minimum (01),
+      //0x29, 0x03, // Usage Maximum (03),
+
+      //0x15, 0x00, // Logical Minimum (0),
+      //0x25, 0x01, // Logical Maximum (1),
+      //0x95, 0x03, // Report Count (3),
+      //0x75, 0x01, // Report Size (1),
+
+      //0x81, 0x02, // Input (Data, Variable, Absolute), ;3 button bits
+
+      //0x95, 0x01, // Report Count (1),
+      //0x75, 0x05, // Report Size (5),
+      //0x81, 0x01, // Input (Constant), ;5 bit padding
+
+      //0x05, 0x01, // Usage Page (Generic Desktop),
+      //0x09, 0x30, // Usage (X),
+      //0x09, 0x31, // Usage (Y),
+      //0x09, 0x38,
+
+      //0x15, 0x81, // Logical Minimum (-127),
+      //0x25, 0x7F, // Logical Maximum (127),
+      //0x75, 0x08, // Report Size (8),
+      //0x95, 0x03, // Report Count (3),
+
+      //0x81, 0x06, // Input (Data, Variable, Relative), ;2 position bytes (X & Y)
+    //0xC0,       // end collection - Physical
+
+    //0x09, 0x3c, // usage
+    //0x05, 0xff,
+    //0x09, 0x01,
+    //0x15, 0x00,
+    //0x25, 0x01,
+    //0x75, 0x01,
+    //0x95, 0x02,
+    //0xb1, 0x22,
+    //0x75, 0x06,
+    //0x95, 0x01,
+    //0xb1, 0x01,
+  //0xC0        // end collection - Application
+  //};
 //}}}
 //{{{  hid configuration descriptor
 __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
   9, USB_DESC_TYPE_CONFIGURATION,
-  34,0,  // wTotalLength - bytes returned
+  sizeof(kHidConfigurationDescriptor),0,  // wTotalLength - bytes returned
   1,     // bNumInterfaces: 1 interface
   1,     // bConfigurationValue - configuration value
   0,     // iConfiguration - index of string descriptor describing the configuration
   0xE0,  // bmAttributes: bus powered and Support Remote Wake-up
   0x32,  // MaxPower 100 mA: this current is used for detecting Vbus
 
-  // joystick mouse interface descriptor
+  // hid interface descriptor
   9, USB_DESC_TYPE_INTERFACE,
   0,     // bInterfaceNumber - number of Interface
   0,     // bAlternateSetting - alternate setting
   1,     // bNumEndpoints
   3,     // bInterfaceClass: HID
-  //0x01, // bInterfaceSubClass : 1 = BOOT, 0 = no boot
-  //0x02, // nInterfaceProtocol : 0 = none, 1 = keyboard, 2 = mouse
+  //0x01, // bInterfaceSubClass : 0 = no boot  1 = BOOT,
+  //0x02, // nInterfaceProtocol : 0 = none     1 = keyboard  2 = mouse
   0,     // bInterfaceSubClass -  no boot
   1,     // nInterfaceProtocol - keyboard,
   0,     // iInterface - index of string descriptor
 
-  // joystick mouse HID descriptor
+  // HID descriptor
   9, 0x21,
   0x11,1,    // bcdHID: HID Class Spec release number
   0,         // bCountryCode: Hardware target country
   1,         // bNumDescriptors: number HID class descriptors to follow
   0x22,      // bDescriptorType
-  78,0,      // wItemLength - total length of report descriptor
+  sizeof(kHidReportDescriptor),0,      // wItemLength - total length of report descriptor
 
   // mouse endpoint descriptor
   7, USB_DESC_TYPE_ENDPOINT,
@@ -208,12 +188,12 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
 //}}}
 //{{{  device configuration descriptor
 __ALIGN_BEGIN const uint8_t kHidDescriptor[9] __ALIGN_END = {
-  0x09, 0x21,
+  sizeof(kHidDescriptor), 0x21,
   0x11,1,    // bcdHID: HID Class Spec release number
   0,         // bCountryCode: Hardware target country
   1,         // bNumDescriptors: Number of HID class descriptors to follow
   0x22,      // bDescriptorType
-  78,0,      // wItemLength: Total length of Report descriptor
+  sizeof(kHidReportDescriptor),0,      // wItemLength: Total length of Report descriptor
   };
 //}}}
 //{{{  string descriptors
@@ -336,8 +316,7 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
         case USB_REQ_GET_DESCRIPTOR: {
           if (req->wValue >> 8 == 0x22) { // hidReportDescriptor
             gApp->getLcd()->debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
-            //USBD_CtlSendData (device, (uint8_t*)kHidMouseReportDescriptor, 74);
-            USBD_CtlSendData (device, (uint8_t*)kHidKeyboardReportDescriptor, 78);
+            USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor, sizeof(kHidReportDescriptor));
             }
           else if (req->wValue >> 8 == 0x21) { // hidDescriptor
             gApp->getLcd()->debug (LCD_COLOR_GREEN, "- getDescriptor hid");

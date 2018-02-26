@@ -216,12 +216,7 @@ void BSP_LCD_LayerDefaultInit (uint16_t LayerIndex, uint32_t FB_Address) {
   }
 //}}}
 
-//{{{
-void BSP_LCD_SelectLayer (uint32_t LayerIndex)
-{
-  ActiveLayer = LayerIndex;
-}
-//}}}
+void BSP_LCD_SelectLayer (uint32_t LayerIndex) { ActiveLayer = LayerIndex; }
 //{{{
 void BSP_LCD_SetLayerVisible (uint32_t LayerIndex, FunctionalState State)
 {
@@ -243,16 +238,14 @@ void BSP_LCD_SetLayerVisible_NoReload (uint32_t LayerIndex, FunctionalState Stat
 }
 //}}}
 //{{{
-void BSP_LCD_SetTransparency (uint32_t LayerIndex, uint8_t Transparency)
-{
+void BSP_LCD_SetTransparency (uint32_t LayerIndex, uint8_t Transparency) {
   HAL_LTDC_SetAlpha(&hLtdcHandler, Transparency, LayerIndex);
-}
+  }
 //}}}
 //{{{
-void BSP_LCD_SetTransparency_NoReload (uint32_t LayerIndex, uint8_t Transparency)
-{
+void BSP_LCD_SetTransparency_NoReload (uint32_t LayerIndex, uint8_t Transparency) {
   HAL_LTDC_SetAlpha_NoReload(&hLtdcHandler, Transparency, LayerIndex);
-}
+  }
 //}}}
 //{{{
 void BSP_LCD_SetLayerAddress (uint32_t LayerIndex, uint32_t Address)
@@ -261,18 +254,12 @@ void BSP_LCD_SetLayerAddress (uint32_t LayerIndex, uint32_t Address)
 }
 //}}}
 //{{{
-void BSP_LCD_SetLayerAddress_NoReload (uint32_t LayerIndex, uint32_t Address)
-{
+void BSP_LCD_SetLayerAddress_NoReload (uint32_t LayerIndex, uint32_t Address) { 
   HAL_LTDC_SetAddress_NoReload(&hLtdcHandler, Address, LayerIndex);
-}
-//}}}
+  }
 
-//{{{
-void BSP_LCD_Reload (uint32_t ReloadType)
-{
-  HAL_LTDC_Reload (&hLtdcHandler, ReloadType);
-}
 //}}}
+void BSP_LCD_Reload (uint32_t ReloadType) { HAL_LTDC_Reload (&hLtdcHandler, ReloadType); }
 
 uint32_t BSP_LCD_GetTextColor() { return TextColor; }
 uint32_t BSP_LCD_GetBackColor() { return BackColor; }
@@ -318,25 +305,28 @@ void BSP_LCD_DisplayChar (uint16_t x, uint16_t y, uint8_t ascii) {
 
   const uint16_t width = Font16.Width;
   const uint16_t byteAlignedWidth = (width+7)/8;
-  const uint16_t offset = 8*(byteAlignedWidth) - width - 1;
+  const uint16_t offset = 8*(byteAlignedWidth) - width-1;
   const uint8_t* fontChar = &Font16.table [(ascii-' ') * Font16.Height * byteAlignedWidth];
-  auto ptr = ((uint32_t*)hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + (y * BSP_LCD_GetXSize()) + x;
+  auto fbPtr = ((uint32_t*)hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + (y * BSP_LCD_GetXSize()) + x;
 
   for (auto fontLine = 0u; fontLine < Font16.Height; fontLine++) {
     auto fontPtr = (uint8_t*)fontChar + byteAlignedWidth * fontLine;
     uint16_t fontLineBits = *fontPtr++;
     if (byteAlignedWidth == 2)
       fontLineBits = (fontLineBits << 8) | *fontPtr;
-
-    uint16_t bit = 1 << (width + offset);
-    auto endPtr = ptr + width;
-    while (ptr != endPtr) {
-      if (fontLineBits & bit)
-        *ptr = TextColor;
-      ptr++;
-      bit >>= 1;
+    if (fontLineBits) {
+      uint16_t bit = 1 << (width + offset);
+      auto endPtr = fbPtr + width;
+      while (fbPtr != endPtr) {
+        if (fontLineBits & bit)
+          *fbPtr = TextColor;
+        fbPtr++;
+        bit >>= 1;
+        }
+      fbPtr += BSP_LCD_GetXSize() - width;
       }
-    ptr += BSP_LCD_GetXSize() - width;
+    else
+      fbPtr += BSP_LCD_GetXSize();
     }
   }
 //}}}
@@ -356,8 +346,8 @@ void BSP_LCD_DisplayStringAt (uint16_t x, uint16_t y, char* text, Text_AlignMode
       }
 
     case RIGHT_MODE: {
-     uint32_t xSize = BSP_LCD_GetXSize() / Font16.Width;
-     char* ptr = text;
+      uint32_t xSize = BSP_LCD_GetXSize() / Font16.Width;
+      char* ptr = text;
       uint32_t size = 0;
       while (*ptr++)
         size++;
@@ -537,7 +527,7 @@ void BSP_LCD_DrawPolygon (pPoint Points, uint16_t PointCount)
 {
   int16_t x = 0, y = 0;
 
-  if(PointCount < 2)
+  if (PointCount < 2)
     return;
 
   BSP_LCD_DrawLine(Points->X, Points->Y, (Points+PointCount-1)->X, (Points+PointCount-1)->Y);
