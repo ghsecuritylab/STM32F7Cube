@@ -40,6 +40,7 @@ extern "C" { void EXTI9_5_IRQHandler() { gApp->getPs2()->onIrq(); } }
 #define STM_VID      0x0483
 #define STM_HID_PID  0x5710
 
+// device descriptor
 __ALIGN_BEGIN const uint8_t kDeviceDescriptor[USB_LEN_DEV_DESC] __ALIGN_END = {
   sizeof(kDeviceDescriptor), USB_DESC_TYPE_DEVICE,
   0,2,                       // bcdUSB
@@ -72,30 +73,31 @@ __ALIGN_BEGIN const uint8_t kHidDeviceQualifierDescriptor[USB_LEN_DEV_QUALIFIER_
   1,     // bNumConfigurations
   0,     // bReserved
   };
+
 //}}}
 //{{{  keyboard hid report descriptor
 __ALIGN_BEGIN uint8_t kHidReportDescriptor[] __ALIGN_END = {
-  0x05, 0x01,    // Usage Page (Generic Desktop Ctrls)
-  0x09, 0x06,    // Usage (Keyboard)
-  0xA1, 0x01,    // Collection (Application)
-    0x85, 0x01,    //  Report ID (1)
-    0x05, 0x07,    //  Usage Page (Keyboard/Keypad)
-    0x75, 0x01,    //  Report Size (1)
-    0x95, 0x08,    //  Report Count (8)
-    0x19, 0xE0,    //  Usage Minimum (0xE0)
-    0x29, 0xE7,    //  Usage Maximum (0xE7)
-    0x15, 0x00,    //  Logical Minimum (0)
-    0x25, 0x01,    //  Logical Maximum (1)
-    0x81, 0x02,    //  Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-    0x95, 0x03,    //  Report Count (3)
-    0x75, 0x08,    //  Report Size (8)
-    0x15, 0x00,    //  Logical Minimum (0)
-    0x25, 0x64,    //  Logical Maximum (100)
-    0x05, 0x07,    //  Usage Page (Keyboard/Keypad)
-    0x19, 0x00,    //  Usage Minimum (0x00)
-    0x29, 0x65,    //  Usage Maximum (0x65)
-    0x81, 0x00,    //  Input (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
-  0xC0,          // End Collection
+  0x05, 0x01,  // Usage Page (Generic Desktop Ctrls)
+  0x09, 0x06,  // Usage (Keyboard)
+  0xA1, 0x01,  // Collection (Application)
+    0x85, 0x01,  //  Report ID (1)
+    0x05, 0x07,  //  Usage Page (Keyboard/Keypad)
+    0x75, 0x01,  //  Report Size (1)
+    0x95, 0x08,  //  Report Count (8)
+    0x19, 0xE0,  //  Usage Minimum (0xE0)
+    0x29, 0xE7,  //  Usage Maximum (0xE7)
+    0x15, 0x00,  //  Logical Minimum (0)
+    0x25, 0x01,  //  Logical Maximum (1)
+    0x81, 0x02,  //  Input (Data, Var, Abs, No Wrap,Linear,Preferred State,No Null Position)
+    0x95, 0x03,  //  Report Count (3)
+    0x75, 0x08,  //  Report Size (8)
+    0x15, 0x00,  //  Logical Minimum (0)
+    0x25, 0x64,  //  Logical Maximum (100)
+    0x05, 0x07,  //  Usage Page (Keyboard/Keypad)
+    0x19, 0x00,  //  Usage Minimum (0x00)
+    0x29, 0x65,  //  Usage Maximum (0x65)
+    0x81, 0x00,  //  Input (Data, Array, Abs, No Wrap,Linear,Preferred State,No Null Position)
+  0xC0,        // End Collection
   };
 //}}}
 //{{{  mouse hid report descriptor
@@ -171,29 +173,19 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
 
   // HID descriptor
   9, 0x21,
-  0x11,1,    // bcdHID: HID Class Spec release number
-  0,         // bCountryCode: Hardware target country
-  1,         // bNumDescriptors: number HID class descriptors to follow
-  0x22,      // bDescriptorType
-  sizeof(kHidReportDescriptor),0,      // wItemLength - total length of report descriptor
+  0x11,1,  // bcdHID: HID Class Spec release number
+  0,       // bCountryCode: Hardware target country
+  1,       // bNumDescriptors: number HID class descriptors to follow
+  0x22,    // bDescriptorType
+  sizeof(kHidReportDescriptor),0, // wItemLength - total length of report descriptor
 
-  // mouse endpoint descriptor
+  // hid endpoint descriptor
   7, USB_DESC_TYPE_ENDPOINT,
   HID_IN_ENDPOINT,      // bEndpointAddress - endpoint address (IN)
   3,                    // bmAttributes - interrupt endpoint
   HID_IN_ENDPOINT_SIZE, // wMaxPacketSize
   0,
   10,                   // bInterval - polling interval (10 ms)
-  };
-//}}}
-//{{{  device configuration descriptor
-__ALIGN_BEGIN const uint8_t kHidDescriptor[9] __ALIGN_END = {
-  sizeof(kHidDescriptor), 0x21,
-  0x11,1,    // bcdHID: HID Class Spec release number
-  0,         // bCountryCode: Hardware target country
-  1,         // bNumDescriptors: Number of HID class descriptors to follow
-  0x22,      // bDescriptorType
-  sizeof(kHidReportDescriptor),0,      // wItemLength: Total length of Report descriptor
   };
 //}}}
 //{{{  string descriptors
@@ -320,7 +312,7 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
             }
           else if (req->wValue >> 8 == 0x21) { // hidDescriptor
             gApp->getLcd()->debug (LCD_COLOR_GREEN, "- getDescriptor hid");
-            USBD_CtlSendData (device, (uint8_t*)kHidDescriptor, 9);
+            USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor+18, 9);
             }
           break;
           }
@@ -386,7 +378,7 @@ uint8_t* usbGetDeviceQualifierDescriptor (uint16_t* length) {
 //}}}
 //}}}
 //{{{
-uint8_t hidSendReport (USBD_HandleTypeDef* device, uint8_t* report) {
+uint8_t hidSendMouseReport (USBD_HandleTypeDef* device, uint8_t* report) {
 
   auto hidData = (tHidData*)device->pClassData;
   if (device->dev_state == USBD_STATE_CONFIGURED) {
