@@ -1,6 +1,6 @@
-System Power 81  E0 37  E0 F0 37
-System Sleep 82  E0 3F  E0 F0 3F
-System Wake  83  E0 5E  E0 F0 5E
+SystemPower 81  E0 37  E0 F0 37
+SystemSleep 82  E0 3F  E0 F0 3F
+SystemWake  83  E0 5E  E0 F0 5E
 
 a A  04  1C  F0 1C
 b B  05  32  F0 32
@@ -78,39 +78,39 @@ ScrollLock   47  7E     F0 7E
 Pause        48  E1 14 77 E1 F0 14 F0 77
 Insert       49  E0 70  E0 F0 70
 Home         4A  E0 6C  E0 F0 6C
-Page Up      4B  E0 7D  E0 F0 7D
+PageUp       4B  E0 7D  E0 F0 7D
 Delete       4C  E0 71  E0 F0 71
 End          4D  E0 69  E0 F0 69
-Page Down    4E  E0 7A  E0 F0 7A
+PageDown     4E  E0 7A  E0 F0 7A
 
-Right Arrow  4F  E0 74  E0 F0 74
-Left Arrow   50  E0 6B  E0 F0 6B
-Down Arrow   51  E0 72  E0 F0 72
-Up Arrow     52  E0 75  E0 F0 75
+RightArrow   4F  E0 74  E0 F0 74
+LeftArrow    50  E0 6B  E0 F0 6B
+DownArrow    51  E0 72  E0 F0 72
+Uprrow       52  E0 75  E0 F0 75
 
 Num Lock     53  77     F0 77
-Keypad /     54  E0 4A  E0 F0 4A
-Keypad *     55  7C     F0 7C
-Keypad -     56  7B     F0 7B
-Keypad +     57  79     F0 79
-Keypad Enter 58  E0 5A  E0 F0 5A
-Keypad 1     59  69     F0 69
-Keypad 2     5A  72     F0 72
-Keypad 3     5B  7A     F0 7A
-Keypad 4     5C  6B     F0 6B
-Keypad 5     5D  73     F0 73
-Keypad 6     5E  74     F0 74
-Keypad 7     5F  6C     F0 6C
-Keypad 8     60  75     F0 75
-Keypad 9     61  7D     F0 7D
-Keypad 0     62  70     F0 70
-Keypad .     63  71     F0 71
+Keypad/     54  E0 4A  E0 F0 4A
+Keypad*     55  7C     F0 7C
+Keypad-     56  7B     F0 7B
+Keypad+     57  79     F0 79
+KeypadEnter 58  E0 5A  E0 F0 5A
+Keypad1     59  69     F0 69
+Keypad2     5A  72     F0 72
+Keypad3     5B  7A     F0 7A
+Keypad4     5C  6B     F0 6B
+Keypad5     5D  73     F0 73
+Keypad6     5E  74     F0 74
+Keypad7     5F  6C     F0 6C
+Keypad8     60  75     F0 75
+Keypad9     61  7D     F0 7D
+Keypad0     62  70     F0 70
+Keypad.     63  71     F0 71
 
-Left Control  E0  14     F0 14
-Left Shift    E1  12     F0 12
-Left Alt      E2  11     F0 11
-Left GUI      E3  E0 1F  E0 F0 1F
-Right Control E4  E0 14  E0 F0 14
-Right Shift   E5  59     F0 59
-Right Alt     E6  E0 11  E0 F0 11
-Right GUI     E7  E0 27  E0 F0 27
+LeftControl  E0  14     F0 14
+LeftShift    E1  12     F0 12
+LeftAlt      E2  11     F0 11
+LeftGUI      E3  E0 1F  E0 F0 1F
+RightControl E4  E0 14  E0 F0 14
+RightShift   E5  59     F0 59
+RightAlt     E6  E0 11  E0 F0 11
+RightGUI     E7  E0 27  E0 F0 27
