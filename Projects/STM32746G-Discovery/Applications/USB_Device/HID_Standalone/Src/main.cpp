@@ -165,10 +165,8 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
   0,     // bAlternateSetting - alternate setting
   1,     // bNumEndpoints
   3,     // bInterfaceClass: HID
-  //0x01, // bInterfaceSubClass : 0 = no boot  1 = BOOT,
-  //0x02, // nInterfaceProtocol : 0 = none     1 = keyboard  2 = mouse
-  0,     // bInterfaceSubClass -  no boot
-  1,     // nInterfaceProtocol - keyboard,
+  0,     // bInterfaceSubClass -  no boot  - 0x01, // bInterfaceSubClass : 0 = no boot  1 = BOOT,
+  1,     // nInterfaceProtocol - keyboard, - 0x02, // nInterfaceProtocol : 0 = none     1 = keyboard  2 = mouse
   0,     // iInterface - index of string descriptor
 
   // HID descriptor
@@ -300,28 +298,28 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   auto hidData = (tHidData*)device->pClassData;
   gApp->getLcd()->debug (LCD_COLOR_YELLOW, "setup bmReq:%x req:%x v:%x l:%d",
-                                req->bmRequest, req->bRequest, req->wValue, req->wLength);
+                                            req->bmRequest, req->bRequest, req->wValue, req->wLength);
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest) {
         case USB_REQ_GET_DESCRIPTOR: {
-          if (req->wValue >> 8 == 0x22) { // hidReportDescriptor
-            gApp->getLcd()->debug (LCD_COLOR_GREEN, "- getDescriptor report len:%d", req->wLength);
-            USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor, sizeof(kHidReportDescriptor));
-            }
-          else if (req->wValue >> 8 == 0x21) { // hidDescriptor
-            gApp->getLcd()->debug (LCD_COLOR_GREEN, "- getDescriptor hid");
+          if (req->wValue >> 8 == 0x21) { // hidDescriptor
+            gApp->getLcd()->debug (LCD_COLOR_RED, "-getDescriptor hid");
             USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor+18, 9);
+            }
+          else if (req->wValue >> 8 == 0x22) { // hidReportDescriptor
+            gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getDescriptor report len:%d", req->wLength);
+            USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor, sizeof(kHidReportDescriptor));
             }
           break;
           }
         case USB_REQ_GET_INTERFACE :
-          gApp->getLcd()->debug (LCD_COLOR_GREEN, "- getInterface");
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getInterface");
           USBD_CtlSendData (device, (uint8_t*)&hidData->mAltSetting, 1);
           break;
         case USB_REQ_SET_INTERFACE :
-          gApp->getLcd()->debug (LCD_COLOR_GREEN, "- setInterface");
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setInterface");
           hidData->mAltSetting = (uint8_t)(req->wValue);
           break;
         }
@@ -329,21 +327,21 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
     case USB_REQ_TYPE_CLASS :
       switch (req->bRequest) {
-        case 0x0B: // HID_REQ_SET_PROTOCOL:
-          hidData->mProtocol = (uint8_t)(req->wValue);
-          gApp->getLcd()->debug (LCD_COLOR_GREEN, "- setProtocol %d", req->wValue);
+        case 0x02: // reqGetIdle
+          USBD_CtlSendData (device, (uint8_t*)&hidData->mIdleState, 1);
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getIdle %d", hidData->mIdleState);
           break;
-        case 0x03: // HID_REQ_GET_PROTOCOL:
+        case 0x03: // reqGetProtocol
           USBD_CtlSendData (device, (uint8_t*)&hidData->mProtocol, 1);
-          gApp->getLcd()->debug (LCD_COLOR_GREEN, "- getProtocol %d", hidData->mProtocol);
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getProtocol %d", hidData->mProtocol);
           break;
         case 0x0A: // reqSetIdle
           hidData->mIdleState = (uint8_t)(req->wValue >> 8);
-          gApp->getLcd()->debug (LCD_COLOR_GREEN, "- setIdle %d", req->wValue);
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setIdle %d", req->wValue);
           break;
-        case 0x02: // reqGetIdle
-          USBD_CtlSendData (device, (uint8_t*)&hidData->mIdleState, 1);
-          gApp->getLcd()->debug (LCD_COLOR_GREEN, "- getIdle %d", hidData->mIdleState);
+        case 0x0B: // reqSetProtocol
+          hidData->mProtocol = (uint8_t)(req->wValue);
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setProtocol %d", req->wValue);
           break;
         default:
           USBD_CtlError (device, req);

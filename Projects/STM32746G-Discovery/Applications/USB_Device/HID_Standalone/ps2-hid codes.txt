@@ -1,0 +1,116 @@
+System Power 81  E0 37  E0 F0 37
+System Sleep 82  E0 3F  E0 F0 3F
+System Wake  83  E0 5E  E0 F0 5E
+
+a A  04  1C  F0 1C
+b B  05  32  F0 32
+c C  06  21  F0 21
+d D  07  23  F0 23
+e E  08  24  F0 24
+f F  09  2B  F0 2B
+g G  0A  34  F0 34
+h H  0B  33  F0 33
+i I  0C  43  F0 43
+j J  0D  3B  F0 3B
+k K  0E  42  F0 42
+l L  0F  4B  F0 4B
+m M  10  3A  F0 3A
+n N  11  31  F0 31
+o O  12  44  F0 44
+p P  13  4D  F0 4D
+q Q  14  15  F0 15
+r R  15  2D  F0 2D
+s S  16  1B  F0 1B
+t T  17  2C  F0 2C
+u U  18  3C  F0 3C
+v V  19  2A  F0 2A
+w W  1A  1D  F0 1D
+x X  1B  22  F0 22
+y Y  1C  35  F0 35
+z Z  1D  1A  F0 1A
+
+1 !  1E  16  F0 16
+2 @  1F  1E  F0 1E
+3 #  20  26  F0 26
+4 $  21  25  F0 25
+5 %  22  2E  F0 2E
+6 ^  23  36  F0 36
+7 &  24  3D  F0 3D
+8 *  25  3E  F0 3E
+9 (  26  46  F0 46
+0 )  27  45  F0 45
+
+Return    28  5A  F0 5A
+Escape    29  76  F0 76
+Backspace 2A  66  F0 66
+Tab       2B  0D  F0 0D
+Space     2C  29  F0 29
+
+- _  2D  4E  F0 4E
+= +  2E  55  F0 55
+[ {  2F  54  F0 54
+] }  30  5B  F0 5B
+\ |  31  5D  F0 5D
+; :  33  4C  F0 4C
+' "  34  52  F0 52
+` ~  35  0E  F0 0E
+, <  36  41  F0 41
+. >  37  49  F0 49
+/ ?  38  4A  F0 4A
+
+CapsLock 39  58  F0 58
+
+F1  3A  05  F0 05
+F2  3B  06  F0 06
+F3  3C  04  F0 04
+F4  3D  0C  F0 0C
+F5  3E  03  F0 03
+F6  3F  0B  F0 0B
+F7  40  83  F0 83
+F8  41  0A  F0 0A
+F9  42  01  F0 01
+F10 43  09  F0 09
+F11 44  78  F0 78
+F12 45  07  F0 07
+
+PrintScreen  46  E0 7C  E0 F0 7C
+ScrollLock   47  7E     F0 7E
+Pause        48  E1 14 77 E1 F0 14 F0 77
+Insert       49  E0 70  E0 F0 70
+Home         4A  E0 6C  E0 F0 6C
+Page Up      4B  E0 7D  E0 F0 7D
+Delete       4C  E0 71  E0 F0 71
+End          4D  E0 69  E0 F0 69
+Page Down    4E  E0 7A  E0 F0 7A
+
+Right Arrow  4F  E0 74  E0 F0 74
+Left Arrow   50  E0 6B  E0 F0 6B
+Down Arrow   51  E0 72  E0 F0 72
+Up Arrow     52  E0 75  E0 F0 75
+
+Num Lock     53  77     F0 77
+Keypad /     54  E0 4A  E0 F0 4A
+Keypad *     55  7C     F0 7C
+Keypad -     56  7B     F0 7B
+Keypad +     57  79     F0 79
+Keypad Enter 58  E0 5A  E0 F0 5A
+Keypad 1     59  69     F0 69
+Keypad 2     5A  72     F0 72
+Keypad 3     5B  7A     F0 7A
+Keypad 4     5C  6B     F0 6B
+Keypad 5     5D  73     F0 73
+Keypad 6     5E  74     F0 74
+Keypad 7     5F  6C     F0 6C
+Keypad 8     60  75     F0 75
+Keypad 9     61  7D     F0 7D
+Keypad 0     62  70     F0 70
+Keypad .     63  71     F0 71
+
+Left Control  E0  14     F0 14
+Left Shift    E1  12     F0 12
+Left Alt      E2  11     F0 11
+Left GUI      E3  E0 1F  E0 F0 1F
+Right Control E4  E0 14  E0 F0 14
+Right Shift   E5  59     F0 59
+Right Alt     E6  E0 11  E0 F0 11
+Right GUI     E7  E0 27  E0 F0 27
