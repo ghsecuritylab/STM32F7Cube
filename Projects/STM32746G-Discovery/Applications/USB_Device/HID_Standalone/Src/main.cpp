@@ -376,7 +376,7 @@ uint8_t* usbGetDeviceQualifierDescriptor (uint16_t* length) {
 //}}}
 //}}}
 //{{{
-uint8_t hidSendMouseReport (USBD_HandleTypeDef* device, uint8_t* report) {
+void hidSendMouse (USBD_HandleTypeDef* device, uint8_t* report) {
 
   auto hidData = (tHidData*)device->pClassData;
   if (device->dev_state == USBD_STATE_CONFIGURED) {
@@ -385,12 +385,10 @@ uint8_t hidSendMouseReport (USBD_HandleTypeDef* device, uint8_t* report) {
       USBD_LL_Transmit (device, HID_IN_ENDPOINT, report, HID_IN_ENDPOINT_SIZE);
       }
     }
-
-  return USBD_OK;
   }
 //}}}
 //{{{
-uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
+void hidSendKeyboard (uint8_t modifier, uint8_t code) {
 
   struct keyboardHID_t {
     uint8_t id;
@@ -402,30 +400,23 @@ uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
   struct keyboardHID_t keyboardHID;
 
   keyboardHID.id = 1;
-  keyboardHID.modifiers = 0;
-  keyboardHID.key1 = 0;
+  keyboardHID.modifiers = modifier;
+  keyboardHID.key1 = code;
   keyboardHID.key2 = 0;
   keyboardHID.key3 = 0;
 
-  auto hidData = (tHidData*)device->pClassData;
-  if (device->dev_state == USBD_STATE_CONFIGURED) {
+  auto hidData = (tHidData*)gUsbDevice.pClassData;
+  if (gUsbDevice.dev_state == USBD_STATE_CONFIGURED) {
     if (hidData->mState == HID_IDLE) {
       hidData->mState = HID_BUSY;
-      USBD_LL_Transmit (device, HID_IN_ENDPOINT, (uint8_t*)(&keyboardHID), 5);
+      USBD_LL_Transmit (&gUsbDevice, HID_IN_ENDPOINT, (uint8_t*)(&keyboardHID), 5);
+      HAL_Delay (10);
       }
+    else
+      gApp->getLcd()->debug (LCD_COLOR_RED, "missed char %x", code);
     }
-
-  HAL_Delay (30);
-  keyboardHID.modifiers = 0;
-  keyboardHID.key1 = 0;
-  if (device->dev_state == USBD_STATE_CONFIGURED) {
-    if (hidData->mState == HID_IDLE) {
-      hidData->mState = HID_BUSY;
-      USBD_LL_Transmit (device, HID_IN_ENDPOINT, (uint8_t*)(&keyboardHID), 5);
-      }
-    }
-
-  return USBD_OK;
+  else
+    gApp->getLcd()->debug (LCD_COLOR_RED, "unconfigured");
   }
 //}}}
 //{{{
@@ -511,7 +502,8 @@ void cApp::run (bool keyboard) {
         mPs2->getRawChar();
       while (mPs2->hasChar()) {
         auto ch = mPs2->getChar();
-        mLcd->debug (ch & 0x100 ? LCD_COLOR_GREEN : LCD_COLOR_YELLOW, "key %03x", ch);
+        hidSendKeyboard (ch >> 8, ch & 0xFF);
+        mLcd->debug (ch & 0x100 ? LCD_COLOR_GREEN : LCD_COLOR_YELLOW, "sendHid %02x:%02x", ch >> 8, ch & 0xFF);
         }
       }
     }
@@ -532,7 +524,6 @@ void cApp::onPress (int x, int y) {
 
   //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,0,0,0 };
   //hidSendReport (&gUsbDevice, HID_Buffer);
-  //hidSendKeyboardReport (&gUsbDevice);
 
   mLcd->debug (LCD_COLOR_GREEN, "onPress %d %d", x, y);
   }

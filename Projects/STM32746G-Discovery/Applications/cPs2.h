@@ -13,7 +13,12 @@ class cPs2 {
 public:
   //{{{
   cPs2 (cLcd* lcd) : mLcd(lcd) {
+
     initGpio();
+    mModBits = 0;
+    mRxExpCode = false;
+    mRxReleaseCode = false;
+    mPauseCode = false;
     }
   //}}}
 
@@ -29,6 +34,8 @@ public:
     mLcd->debug (LCD_COLOR_YELLOW, "keyboard id %x %x", getRawChar(), getRawChar());
 
     resetChar();
+
+    mLcd->debug (LCD_COLOR_CYAN, "reste mod %x", mModBits);
     }
   //}}}
   //{{{
@@ -127,6 +134,11 @@ public:
 
     mCurCode = 0;
     mCurChar = 0;
+
+    mModBits = 0;
+    mRxExpCode = false;
+    mRxReleaseCode = false;
+    mPauseCode = false;
     }
   //}}}
 
@@ -310,36 +322,39 @@ public:
               mInRawPtr = (mInRawPtr + 1) % kMaxRing;
 
               if (mCode == 0xE0)
-                mRxExpandCode = true;
+                mRxExpCode = true;
               else if (mCode == 0xE1)
                 mPauseCode = true;
               else if (mCode == 0xF0)
                 mRxReleaseCode = true;
               else {
-                auto hidCode = mRxExpandCode ? kPs2Key[mCode].mExtendedHidCode : kPs2Key[mCode].mHidCode;
-                auto modifierBits = mRxExpandCode ? kPs2Key[mCode].mAsciiShiftCode : kPs2Key[mCode].mModifierBits;
-                if (mRxReleaseCode)
-                  mModifierBits &= ~modifierBits;
-                else
-                  mModifierBits |= modifierBits;
+                auto hidCode = mRxExpCode ? kPs2Key[mCode].mExpHidCode : kPs2Key[mCode].mHidCode;
+                auto modBits = mRxExpCode ? kPs2Key[mCode].mExpModBits : kPs2Key[mCode].mModBits;
 
-                if (modifierBits) {
-                  mLcd->debug (LCD_COLOR_RED, "mod %x %x rel:%x", mModifierBits, modifierBits, mRxReleaseCode);
+                if (modBits) {
+                  if (mRxReleaseCode)
+                    mModBits &= ~modBits;
+                  else
+                    mModBits |= modBits;
+                  mRxReleaseCode = false;
                   }
                 else {
                   if (!mRxReleaseCode) {
-                    // add to decoded chars debug buffer
-                    mCurChar++;
-                    mChars[mCurChar % kMaxChars] = (modifierBits & (kLeftShift + kRightShift)) ?
-                                                     kPs2Key[mCode].mAsciiShiftCode : kPs2Key[mCode].mAsciiCode;
+                    auto asciiChar = (mModBits & (kLeftShift + kRightShift)) ?
+                                       kPs2Key[mCode].mAsciiShiftCode : kPs2Key[mCode].mAsciiCode;
+                    if (asciiChar) {
+                      // add to decoded chars debug buffer
+                      mCurChar++;
+                      mChars[mCurChar % kMaxChars] = asciiChar;
+                      }
                     }
-
-                  // add to partially decoded char ring buffer
-                  mRxData[mInPtr] = hidCode | (mRxReleaseCode * 0x100);
-                  mInPtr = (mInPtr + 1) % kMaxRing;
                   }
 
-                mRxExpandCode = false;
+                // add to ring buffer
+                mRxData[mInPtr] = (mModBits << 8) | (mRxReleaseCode ? 0 : hidCode);
+                mInPtr = (mInPtr + 1) % kMaxRing;
+
+                mRxExpCode = false;
                 mRxReleaseCode = false;
                 mPauseCode = false;
                 }
@@ -372,18 +387,18 @@ private:
 
   typedef struct tHidLookup {
     uint8_t mHidCode;
-    uint8_t mModifierBits;
-    uint8_t mExtendedHidCode;
-    uint8_t mExtendedModifierBits;
+    uint8_t mModBits;
+    uint8_t mExpHidCode;
+    uint8_t mExpModBits;
     uint8_t mAsciiCode;
     uint8_t mAsciiShiftCode;
     } tHidLookup;
 
   const tHidLookup kPs2Key[0x84] = {
    //{{{  0x00
-   {0,0, 0,0, 0,0},
+   {0,0,    0,0, 0,0},
    {0x42,0, 0,0, 0,0},   // F9
-   {0,0, 0,0, 0,0},
+   {0,0,    0,0, 0,0},
    {0x3e,0, 0,0, 0,0},   // F5
 
    {0x3c,0, 0,0, 0,0},   // F3
@@ -391,7 +406,7 @@ private:
    {0x3b,0, 0,0, 0,0},   // F2
    {0x45,0, 0,0, 0,0},   // F12
 
-   {0,0, 0,0, 0,0},
+   {0,0,    0,0, 0,0},
    {0x43,0, 0,0, 0,0},   // F10
    {0x41,0, 0,0, 0,0},   // F8
    {0x3f,0, 0,0, 0,0},   // F6
@@ -399,15 +414,15 @@ private:
    {0x3d,0, 0,0, 0,0},   // F4
    {0x2b,0, 0,0, 0,0},   // tab
    {0x35,0, 0,0, 0,0},   // ` ~
-   {0,0, 0,0, 0,0},
+   {0,0,    0,0, 0,0},
    //}}}
    //{{{  0x10
    {0,0, 0,0, 0,0},
-   {0xe2,kLeftAlt, 0xE2,kRightAlt, 0,0},
+   {0xe2,kLeftAlt, 0xe6,kRightAlt, 0,0},
    {0xe1,kLeftShift, 0,0, 0,0},
    {0,0, 0,0, 0,0},
 
-   {0xe0,kLeftControl, 0xe0,kRightControl, 0,0},
+   {0xe0,kLeftControl, 0xe4,kRightControl, 0,0},
    {0x14,0, 0,0, 'q','Q'},
    {0x1e,0, 0,0, '1','!'},
    {0,0, 0,0, 0,0},
@@ -420,7 +435,7 @@ private:
    {0x04,0, 0,0, 'a','A'},
    {0x1a,0, 0,0, 'w','W'},
    {0x1f,0, 0,0, '2','"'},
-   {0,0, 0,0, 0,0},
+   {0,0, 0xe3,kLeftMeta, 0,0},
    //}}}
    //{{{  0x20
    {0,0, 0,0, 0,0},
@@ -429,8 +444,8 @@ private:
    {0x07,0, 0,0, 'd','D'},
 
    {0x08,0, 0,0, 'e','E'},
-   {0x21,0, 0,0, '$',0},
-   {0x20,0, 0,0, '#',0},
+   {0x21,0, 0,0, '4','$'},
+   {0x20,0, 0xe7,kRightMeta, '3','#'},
    {0,0, 0,0, 0,0},
 
    {0,0, 0,0, 0,0},
@@ -520,9 +535,9 @@ private:
    {0,0, 0,0, 0,0},
    {0x59,0, 0,0, '1',0},
    {0,0, 0,0, 0,0},
-   {0x5c,0, 0,0, '4',0},
+   {0x5c,0, 0x50,0, '4','4'},
 
-   {0x5f,0, 0,0, '7',0},
+   {0x5f,0, 0x4a,0, '7','7'},
    {0,0, 0,0, 0,0},
    {0,0, 0,0, 0,0},
    {0,0, 0,0, 0,0},
@@ -530,23 +545,23 @@ private:
    //{{{  0x70
    {0x62,0, 0x49,0, '0',0},
    {0x63,0, 0x4c,0, '.',0},
-   {0x5A,0, 0x51,0, '2',0},
-   {0x5d,0, 0x4f,0, '5',0},
+   {0x5A,0, 0x51,0, '2','2'},
+   {0x5d,0, 0,0,    '5','5'},
 
-   {0x5e,0, 0x52,0, '6',0},
-   {0x60,0, 0,0, '8',0},
-   {0x29,0, 0,0, 0x1b,0},
-   {0x53,0, 0,0, 0,0},
+   {0x5e,0, 0x4f,0, '6','6'},
+   {0x60,0, 0x52,0, '8','8'},
+   {0x29,0, 0,0,    0x1b,0},
+   {0x53,0, 0,0,    0,0},
 
-   {0x44,0, 0,0, 0,0},
-   {0x57,0, 0,0, '+',0},
-   {0x5b,0, 0x4e,0, '3',0},
-   {0x56,0, 0,0, '-',0},
+   {0x44,0, 0,0,    0,0},
+   {0x57,0, 0,0,    '+','+'},
+   {0x5b,0, 0x4e,0, '3','3'},
+   {0x56,0, 0,0,    '-','-'},
 
-   {0x55,0, 0x46,0, '*',0},
-   {0x61,0, 0x4b,0, '9',0},
-   {0x47,0, 0,0, 0,0},
-   {0,0, 0,0, 0,0},
+   {0x55,0, 0x46,0, '*','*'},
+   {0x61,0, 0x4b,0, '9','9'},
+   {0x47,0, 0,0,    0,0},
+   {0,0,    0,0,    0,0},
    //}}}
    //{{{  0x80
    {0,0, 0,0, 0,0},
@@ -661,10 +676,10 @@ private:
   int mCurChar = 0;
   int mChars[kMaxChars];
 
-  bool mRxExpandCode = false;
+  uint8_t mModBits = 0;
+  bool mRxExpCode = false;
   bool mRxReleaseCode = false;
   bool mPauseCode = false;
-  int mModifierBits = 0;
 
   // touchpad
   bool mStream = false;
