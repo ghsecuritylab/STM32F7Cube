@@ -402,8 +402,8 @@ uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
   struct keyboardHID_t keyboardHID;
 
   keyboardHID.id = 1;
-  keyboardHID.modifiers = KEY_MOD_LSHIFT;
-  keyboardHID.key1 = KEY_L;
+  keyboardHID.modifiers = 0;
+  keyboardHID.key1 = 0;
   keyboardHID.key2 = 0;
   keyboardHID.key3 = 0;
 
@@ -417,7 +417,7 @@ uint8_t hidSendKeyboardReport (USBD_HandleTypeDef* device) {
 
   HAL_Delay (30);
   keyboardHID.modifiers = 0;
-  keyboardHID.key1 = KEY_NONE;
+  keyboardHID.key1 = 0;
   if (device->dev_state == USBD_STATE_CONFIGURED) {
     if (hidData->mState == HID_IDLE) {
       hidData->mState = HID_BUSY;
