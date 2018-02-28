@@ -9,7 +9,7 @@
 //}}}
 std::string kVersion = "USB HID keyboard ps2 28/2/18";
 #define HID_IN_ENDPOINT       0x81
-#define HID_IN_ENDPOINT_SIZE  5
+#define HID_IN_ENDPOINT_SIZE  7
 
 //{{{
 class cApp : public cTouch {
@@ -80,23 +80,34 @@ __ALIGN_BEGIN uint8_t kHidReportDescriptor[] __ALIGN_END = {
   0x05, 0x01,  // Usage Page (Generic Desktop Ctrls)
   0x09, 0x06,  // Usage (Keyboard)
   0xA1, 0x01,  // Collection (Application)
-    0x85, 0x01,  //  Report ID (1)
+    //0x85, 0x01,  //  Report ID (1)  - extra byte in report with id = 1
     0x05, 0x07,  //  Usage Page (Keyboard/Keypad)
-    0x75, 0x01,  //  Report Size (1)
-    0x95, 0x08,  //  Report Count (8)
-    0x19, 0xE0,  //  Usage Minimum (0xE0)
-    0x29, 0xE7,  //  Usage Maximum (0xE7)
-    0x15, 0x00,  //  Logical Minimum (0)
-    0x25, 0x01,  //  Logical Maximum (1)
-    0x81, 0x02,  //  Input (Data, Var, Abs, No Wrap,Linear,Preferred State,No Null Position)
-    0x95, 0x03,  //  Report Count (3)
-    0x75, 0x08,  //  Report Size (8)
-    0x15, 0x00,  //  Logical Minimum (0)
-    0x25, 0x64,  //  Logical Maximum (100)
+    0x75, 0x01,  //  Report Size - 1 bit
+    0x95, 0x08,  //  Report Count - 8
+    0x15, 0x00,  //  Logical Minimum - 0
+    0x25, 0x01,  //  Logical Maximum - 1
+    0x19, 0xE0,  //  Usage Minimum - 0xE0
+    0x29, 0xE7,  //  Usage Maximum - 0xE7
+    0x81, 0x02,  //  Input - Data, Var, Abs, No Wrap,Linear,Preferred State,No Null Position
+
+    0x95, 0x05,  //  REPORT_COUNT - 5
+    0x75, 0x01,  //  REPORT_SIZE - 1
+    0x05, 0x08,  //  USAGE_PAGE - LEDs
+    0x19, 0x01,  //  USAGE_MINIMUM - Num Lock
+    0x29, 0x05,  //  USAGE_MAXIMUM  - Kana
+    0x91, 0x02,  //  OUTPUT - Data,Var,Abs
+    0x95, 0x01,  //  REPORT_COUNT  - 1
+    0x75, 0x03,  //  REPORT_SIZE - 3
+    0x91, 0x03,  //  OUTPUT - Cnst,Var,Abs
+
+    0x95, 0x06,  //  Report Count - 6
+    0x75, 0x08,  //  Report Size - 8 bits
+    0x15, 0x00,  //  Logical Minimum - 0
+    0x25, 0x65,  //  Logical Maximum - 101
     0x05, 0x07,  //  Usage Page (Keyboard/Keypad)
-    0x19, 0x00,  //  Usage Minimum (0x00)
-    0x29, 0x65,  //  Usage Maximum (0x65)
-    0x81, 0x00,  //  Input (Data, Array, Abs, No Wrap,Linear,Preferred State,No Null Position)
+    0x19, 0x00,  //  Usage Minimum - 0x00
+    0x29, 0x65,  //  Usage Maximum - 101
+    0x81, 0x00,  //  Input - Data, Array, Abs, No Wrap,Linear,Preferred State,No Null Position
   0xC0,        // End Collection
   };
 //}}}
@@ -161,13 +172,13 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
 
   // hid interface descriptor
   9, USB_DESC_TYPE_INTERFACE,
-  0,     // bInterfaceNumber - number of Interface
-  0,     // bAlternateSetting - alternate setting
-  1,     // bNumEndpoints
-  3,     // bInterfaceClass: HID
-  0,     // bInterfaceSubClass -  no boot  - 0x01, // bInterfaceSubClass : 0 = no boot  1 = BOOT,
-  1,     // nInterfaceProtocol - keyboard, - 0x02, // nInterfaceProtocol : 0 = none     1 = keyboard  2 = mouse
-  0,     // iInterface - index of string descriptor
+  0,  // bInterfaceNumber - number of Interface
+  0,  // bAlternateSetting - alternate setting
+  1,  // bNumEndpoints
+  3,  // bInterfaceClass - HID
+  1,  // bInterfaceSubClass - boot = 1, boot = 0
+  1,  // nInterfaceProtocol - keyboard -  none = 0, keyboard = 1, mouse = 2
+  0,  // iInterface - index of string descriptor
 
   // HID descriptor
   9, 0x21,
@@ -179,11 +190,11 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
 
   // hid endpoint descriptor
   7, USB_DESC_TYPE_ENDPOINT,
-  HID_IN_ENDPOINT,      // bEndpointAddress - endpoint address (IN)
-  3,                    // bmAttributes - interrupt endpoint
-  HID_IN_ENDPOINT_SIZE, // wMaxPacketSize
+  HID_IN_ENDPOINT,       // bEndpointAddress - endpoint address (IN)
+  3,                     // bmAttributes - interrupt endpoint
+  HID_IN_ENDPOINT_SIZE,  // wMaxPacketSize
   0,
-  10,                   // bInterval - polling interval (10 ms)
+  10,                    // bInterval - polling interval (10 ms)
   };
 //}}}
 //{{{  string descriptors
@@ -263,12 +274,13 @@ uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
 //}}}
 
 //{{{  hidClass handlers
-typedef enum { HID_IDLE = 0, HID_BUSY, } eHidStateTypeDef;
+typedef enum { HID_IDLE = 0, HID_BUSY } eHidStateTypeDef;
 //{{{  tHidData
 typedef struct {
   uint32_t         mProtocol;
   uint32_t         mIdleState;
   uint32_t         mAltSetting;
+  uint32_t         mConfiguration;
   eHidStateTypeDef mState;
   } tHidData;
 //}}}
@@ -297,23 +309,31 @@ uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   auto hidData = (tHidData*)device->pClassData;
-  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "setup bmReq:%x req:%x v:%x l:%d",
+  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "usbSetup bmRq:%x bRq:%x wV:%x wL:%d",
                                             req->bmRequest, req->bRequest, req->wValue, req->wLength);
 
   switch (req->bmRequest & USB_REQ_TYPE_MASK) {
     case USB_REQ_TYPE_STANDARD:
       switch (req->bRequest) {
         case USB_REQ_GET_DESCRIPTOR: {
-          if (req->wValue >> 8 == 0x21) { // hidDescriptor
-            gApp->getLcd()->debug (LCD_COLOR_RED, "-getDescriptor hid");
+          if (req->wValue >> 8 == 0x21) {
+            gApp->getLcd()->debug (LCD_COLOR_RED, "-getDescriptor hid - offset ok?");
             USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor+18, 9);
             }
-          else if (req->wValue >> 8 == 0x22) { // hidReportDescriptor
+          else if (req->wValue >> 8 == 0x22) {
             gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getDescriptor report len:%d", req->wLength);
             USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor, sizeof(kHidReportDescriptor));
             }
           break;
           }
+        case USB_REQ_GET_CONFIGURATION :
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getConfiguration");
+          USBD_CtlSendData (device, (uint8_t*)&hidData->mConfiguration, 1);
+          break;
+        case USB_REQ_SET_CONFIGURATION:
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setConfiguration");
+          hidData->mConfiguration = (uint8_t)(req->wValue);
+          break;
         case USB_REQ_GET_INTERFACE :
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getInterface");
           USBD_CtlSendData (device, (uint8_t*)&hidData->mAltSetting, 1);
@@ -390,26 +410,32 @@ void hidSendMouse (USBD_HandleTypeDef* device, uint8_t* report) {
 //{{{
 void hidSendKeyboard (uint8_t modifier, uint8_t code) {
 
-  struct keyboardHID_t {
-    uint8_t id;
-    uint8_t modifiers;
-    uint8_t key1;
-    uint8_t key2;
-    uint8_t key3;
+  class cKeyboardHID {
+  public:
+    //uint8_t mId = 1;
+    uint8_t mModifier = 0;
+    uint8_t mKey1 = 0;
+    uint8_t mKey2 = 0;
+    uint8_t mKey3 = 0;
+    uint8_t mKey4 = 0;
+    uint8_t mKey5 = 0;
+    uint8_t mKey6 = 0;
     };
-  struct keyboardHID_t keyboardHID;
 
-  keyboardHID.id = 1;
-  keyboardHID.modifiers = modifier;
-  keyboardHID.key1 = code;
-  keyboardHID.key2 = 0;
-  keyboardHID.key3 = 0;
+  cKeyboardHID keyboardHID;
+  keyboardHID.mModifier = modifier;
+  keyboardHID.mKey1 = code;
+  keyboardHID.mKey2 = 0;
+  keyboardHID.mKey3 = 0;
+  keyboardHID.mKey4 = 0;
+  keyboardHID.mKey5 = 0;
+  keyboardHID.mKey6 = 0;
 
   auto hidData = (tHidData*)gUsbDevice.pClassData;
   if (gUsbDevice.dev_state == USBD_STATE_CONFIGURED) {
     if (hidData->mState == HID_IDLE) {
       hidData->mState = HID_BUSY;
-      USBD_LL_Transmit (&gUsbDevice, HID_IN_ENDPOINT, (uint8_t*)(&keyboardHID), 5);
+      USBD_LL_Transmit (&gUsbDevice, HID_IN_ENDPOINT, (uint8_t*)(&keyboardHID), HID_IN_ENDPOINT_SIZE);
       HAL_Delay (10);
       }
     else
@@ -524,7 +550,6 @@ void cApp::onPress (int x, int y) {
 
   //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,0,0,0 };
   //hidSendReport (&gUsbDevice, HID_Buffer);
-
   mLcd->debug (LCD_COLOR_GREEN, "onPress %d %d", x, y);
   }
 //}}}
@@ -534,7 +559,7 @@ void cApp::onMove (int x, int y, int z) {
   if (x || y) {
     //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,(uint8_t)x,(uint8_t)y,0 };
     //hidSendReport (&gUsbDevice, HID_Buffer);
-  mLcd->debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
+    mLcd->debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
     }
   }
 //}}}

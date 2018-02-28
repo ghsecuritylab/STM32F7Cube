@@ -36,6 +36,11 @@ private:
 cApp* gApp;
 extern "C" { void EXTI9_5_IRQHandler() { gApp->getPs2()->onIrq(); } }
 
+// D0: NUM lock
+// D1: CAPS lock
+// D2: SCROLL lock
+// D3: Compose
+// D4: Kana
 //{{{  device descriptors
 #define STM_VID      0x0483
 #define STM_HID_PID  0x5710
@@ -90,10 +95,20 @@ __ALIGN_BEGIN uint8_t kHidReportDescriptor[] __ALIGN_END = {
     0x29, 0xE7,  //  Usage Maximum - 0xE7
     0x81, 0x02,  //  Input - Data, Var, Abs, No Wrap,Linear,Preferred State,No Null Position
 
-    0x75, 0x08,  //  Report Size - 8 bits
+    0x95, 0x05,  //  REPORT_COUNT - 5
+    0x75, 0x01,  //  REPORT_SIZE - 1
+    0x05, 0x08,  //  USAGE_PAGE - LEDs
+    0x19, 0x01,  //  USAGE_MINIMUM - Num Lock
+    0x29, 0x05,  //  USAGE_MAXIMUM  - Kana
+    0x91, 0x02,  //  OUTPUT - Data,Var,Abs
+    0x95, 0x01,  //  REPORT_COUNT  - 1
+    0x75, 0x03,  //  REPORT_SIZE - 3
+    0x91, 0x03,  //  OUTPUT - Cnst,Var,Abs
+
     0x95, 0x06,  //  Report Count - 6
+    0x75, 0x08,  //  Report Size - 8 bits
     0x15, 0x00,  //  Logical Minimum - 0
-    0x25, 0x64,  //  Logical Maximum - 100
+    0x25, 0x65,  //  Logical Maximum - 101
     0x05, 0x07,  //  Usage Page (Keyboard/Keypad)
     0x19, 0x00,  //  Usage Minimum - 0x00
     0x29, 0x65,  //  Usage Maximum - 101
@@ -264,12 +279,13 @@ uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
 //}}}
 
 //{{{  hidClass handlers
-typedef enum { HID_IDLE = 0, HID_BUSY, } eHidStateTypeDef;
+typedef enum { HID_IDLE = 0, HID_BUSY } eHidStateTypeDef;
 //{{{  tHidData
 typedef struct {
   uint32_t         mProtocol;
   uint32_t         mIdleState;
   uint32_t         mAltSetting;
+  uint32_t         mConfiguration;
   eHidStateTypeDef mState;
   } tHidData;
 //}}}
@@ -298,35 +314,34 @@ uint8_t usbDeInit (USBD_HandleTypeDef* device, uint8_t cfgidx) {
 uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
   auto hidData = (tHidData*)device->pClassData;
-  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "setup bmReq:%x req:%x v:%x l:%d",
+  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "usbSetup bmRq:%x bRq:%x wV:%x wL:%d",
                                             req->bmRequest, req->bRequest, req->wValue, req->wLength);
 
-  switch (req->bmRequest & USB_REQ_TYPE_MASK) {
-    case USB_REQ_TYPE_STANDARD:
+  switch (req->bmRequest & USB_REQ_TYPE_MASK) { // 0x60
+    case USB_REQ_TYPE_STANDARD: // 0X00
       switch (req->bRequest) {
-        case USB_REQ_GET_DESCRIPTOR: {
-          if (req->wValue >> 8 == 0x21) { // hidDescriptor
-            gApp->getLcd()->debug (LCD_COLOR_RED, "-getDescriptor hid");
+        case USB_REQ_GET_DESCRIPTOR: // 0x06
+          if (req->wValue >> 8 == 0x21) {
+            gApp->getLcd()->debug (LCD_COLOR_RED, "-getDescriptor hid - offset ok?");
             USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor+18, 9);
             }
-          else if (req->wValue >> 8 == 0x22) { // hidReportDescriptor
+          else if (req->wValue >> 8 == 0x22) {
             gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getDescriptor report len:%d", req->wLength);
             USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor, sizeof(kHidReportDescriptor));
             }
           break;
-          }
-        case USB_REQ_GET_INTERFACE :
+        case USB_REQ_GET_INTERFACE: // 0x0a
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getInterface");
           USBD_CtlSendData (device, (uint8_t*)&hidData->mAltSetting, 1);
           break;
-        case USB_REQ_SET_INTERFACE :
+        case USB_REQ_SET_INTERFACE: // 0x0b
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setInterface");
           hidData->mAltSetting = (uint8_t)(req->wValue);
           break;
         }
       break;
 
-    case USB_REQ_TYPE_CLASS :
+    case USB_REQ_TYPE_CLASS: // 0x20
       switch (req->bRequest) {
         case 0x02: // reqGetIdle
           USBD_CtlSendData (device, (uint8_t*)&hidData->mIdleState, 1);
@@ -335,6 +350,14 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
         case 0x03: // reqGetProtocol
           USBD_CtlSendData (device, (uint8_t*)&hidData->mProtocol, 1);
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getProtocol %d", hidData->mProtocol);
+          break;
+        case USB_REQ_GET_CONFIGURATION : // 0x08
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getConfiguration?");
+          USBD_CtlSendData (device, (uint8_t*)&hidData->mConfiguration, 1);
+          break;
+        case USB_REQ_SET_CONFIGURATION:  // 0x09
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setConfiguration?");
+          hidData->mConfiguration = (uint8_t)(req->wValue);
           break;
         case 0x0A: // reqSetIdle
           hidData->mIdleState = (uint8_t)(req->wValue >> 8);
@@ -356,6 +379,19 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 //}}}
 
 //{{{
+uint8_t usbEp0TxReady (USBD_HandleTypeDef* device) {
+  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "usbEp0TxReady");
+  return USBD_OK;
+  }
+//}}}
+//{{{
+uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
+  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "usbEp0RxReady");
+  return USBD_OK;
+  }
+//}}}
+
+//{{{
 uint8_t* usbGetConfigurationDescriptor (uint16_t* length) {
   *length = sizeof(kHidConfigurationDescriptor);
   return (uint8_t*)kHidConfigurationDescriptor;
@@ -366,9 +402,17 @@ uint8_t usbDataIn (USBD_HandleTypeDef* device, uint8_t epnum) {
   // Ensure that the FIFO is empty before a new transfer, this condition could
   // be caused by  a new transfer before the end of the previous transfer
   ((tHidData*)device->pClassData)->mState = HID_IDLE;
+  //gApp->getLcd()->debug (LCD_COLOR_YELLOW, "usbDataIn");
   return USBD_OK;
   }
 //}}}
+//{{{
+uint8_t usbDataOut (USBD_HandleTypeDef* device, uint8_t epNum) {
+  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "usbDataOut");
+  return USBD_OK;
+  }
+//}}}
+
 //{{{
 uint8_t* usbGetDeviceQualifierDescriptor (uint16_t* length) {
   *length = sizeof (kHidDeviceQualifierDescriptor);
@@ -458,13 +502,13 @@ void cApp::run (bool keyboard) {
     usbInit,
     usbDeInit,
     usbSetup,
-    NULL, //EP0_TxSent
-    NULL, //EP0_RxReady
+    usbEp0TxReady,
+    usbEp0RxReady,
     usbDataIn,
-    NULL, // DataOut
-    NULL, // SOF
-    NULL,
-    NULL,
+    usbDataOut,
+    NULL, // usbSof
+    NULL, // usbIsoInInComplete
+    NULL, // usbIsoOutInComplete
     usbGetConfigurationDescriptor,
     usbGetConfigurationDescriptor,
     usbGetConfigurationDescriptor,
