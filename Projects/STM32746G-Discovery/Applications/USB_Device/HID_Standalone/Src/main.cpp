@@ -9,7 +9,7 @@
 //}}}
 std::string kVersion = "USB HID keyboard ps2 28/2/18";
 #define HID_IN_ENDPOINT       0x81
-#define HID_IN_ENDPOINT_SIZE  4
+#define HID_IN_ENDPOINT_SIZE  7
 
 //{{{
 class cApp : public cTouch {
@@ -89,7 +89,7 @@ __ALIGN_BEGIN uint8_t kHidReportDescriptor[] __ALIGN_END = {
     0x15, 0x00,  //  Logical Minimum (0)
     0x25, 0x01,  //  Logical Maximum (1)
     0x81, 0x02,  //  Input (Data, Var, Abs, No Wrap,Linear,Preferred State,No Null Position)
-    0x95, 0x03,  //  Report Count
+    0x95, 0x06,  //  Report Count
     0x75, 0x08,  //  Report Size (8)
     0x15, 0x00,  //  Logical Minimum (0)
     0x25, 0x64,  //  Logical Maximum (100)
@@ -393,7 +393,6 @@ void hidSendKeyboard (uint8_t modifier, uint8_t code) {
   struct keyboardHID_t {
     //uint8_t id;
     uint8_t mModifiers;
-    uint8_t mReserved;
     uint8_t mKey1;
     uint8_t mKey2;
     uint8_t mKey3;
@@ -405,10 +404,9 @@ void hidSendKeyboard (uint8_t modifier, uint8_t code) {
 
   //keyboardHID.id = 1;
   keyboardHID.mModifiers = modifier;
-  keyboardHID.mReserved = 0;
-  keyboardHID.mKey1 = code;
+  keyboardHID.mKey1 = 0;
   keyboardHID.mKey2 = 0;
-  keyboardHID.mKey3 = 0;
+  keyboardHID.mKey3 = code;
   keyboardHID.mKey4 = 0;
   keyboardHID.mKey5 = 0;
   keyboardHID.mKey6 = 0;
