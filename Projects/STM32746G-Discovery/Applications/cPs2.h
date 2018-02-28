@@ -28,6 +28,7 @@ public:
     sendChar (0xFF);
     if (getRawChar() != 0xAA)
       mLcd->debug (LCD_COLOR_RED, "initPs2keyboard - missing 0xAA reset");
+    resetCode();
 
     // send getId
     sendChar (0xF2);
@@ -137,6 +138,13 @@ public:
     mRxExpCode = false;
     mRxReleaseCode = false;
     mPauseCode = false;
+    }
+  //}}}
+  //{{{
+  void resetCode() {
+
+    mInPtr = 0;
+    mOutPtr = 0;
     }
   //}}}
 
@@ -252,7 +260,7 @@ public:
     if (__HAL_GPIO_EXTI_GET_IT (GPIO_PIN_8) != RESET) {
       __HAL_GPIO_EXTI_CLEAR_IT (GPIO_PIN_8);
 
-      if (mRx) {
+      if (!mTx) {
         bool bit = (GPIOF->IDR & GPIO_PIN_9) != 0;
 
         mSample++;
@@ -357,6 +365,7 @@ public:
                 mPauseCode = false;
                 }
               }
+
             break;
             //}}}
           case 9:
@@ -447,16 +456,19 @@ private:
    {0x1b,0, 0,0, 'x','X'},
    {0x07,0, 0,0, 'd','D'},
 
+   // 0x24
    {0x08,0, 0,0, 'e','E'},
    {0x21,0, 0,0, '4','$'},
-   {0x20,0, 0xe7,kRightMeta, '3','#'},
-   {0,0, 0,0, 0,0},
+   {0x20,0, 0,0, '3','#'},
+   {0,0, 0xe7,kRightMeta, 0,0},
 
+   // 0x28
    {0,0, 0,0, 0,0},
    {0x2c,0, 0,0, ' ',' '},
    {0x19,0, 0,0, 'v','V'},
    {0x09,0, 0,0, 'f','F'},
 
+   // 0x2C
    {0x17,0, 0,0, 't',0},
    {0x15,0, 0,0, 'r',0},
    {0x22,0, 0,0, '%',0},
@@ -617,7 +629,7 @@ private:
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_RESET); // set clock lo, release inhibit, if necessary
     HAL_Delay (2); // Wait out any final clock pulse, 100us
 
-    mRx = false;
+    mTx = true;
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, GPIO_PIN_RESET); // set data lo, start bit
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_8, GPIO_PIN_SET);   // set clock hi, float
 
@@ -637,13 +649,13 @@ private:
     while (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for rising edge
     HAL_GPIO_WritePin (GPIOF, GPIO_PIN_9, GPIO_PIN_SET); // set data hi, stop bit
     while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
+    mTx = false;
 
     while (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for rising edge
     while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
-    mRx = true;
 
-    if (getRawChar() != 0xFA)
-      mLcd->debug (LCD_COLOR_RED, "send - no 0xFA ack");
+    getRawChar();
+    resetCode();
     }
   //}}}
   //{{{
@@ -660,7 +672,7 @@ private:
   cLcd* mLcd;
 
   // bits
-  bool mRx = true;
+  bool mTx = false;
   int mBitPos = -1;
   uint16_t mCode = 0;
 

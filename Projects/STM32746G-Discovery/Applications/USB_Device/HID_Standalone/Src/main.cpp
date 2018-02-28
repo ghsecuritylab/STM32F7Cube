@@ -287,6 +287,7 @@ typedef struct {
   uint32_t         mAltSetting;
   uint32_t         mConfiguration;
   eHidStateTypeDef mState;
+  uint8_t          mData[USB_MAX_EP0_SIZE];
   } tHidData;
 //}}}
 
@@ -330,6 +331,17 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
             USBD_CtlSendData (device, (uint8_t*)kHidReportDescriptor, sizeof(kHidReportDescriptor));
             }
           break;
+        case USB_REQ_SET_DESCRIPTOR: // 0x07
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setDescriptor");
+          break;
+        case USB_REQ_GET_CONFIGURATION : // 0x08
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getConfiguration?");
+          USBD_CtlSendData (device, (uint8_t*)&hidData->mConfiguration, 1);
+          break;
+        case USB_REQ_SET_CONFIGURATION:  // 0x09
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setConfiguration?");
+          hidData->mConfiguration = (uint8_t)(req->wValue);
+          break;
         case USB_REQ_GET_INTERFACE: // 0x0a
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getInterface");
           USBD_CtlSendData (device, (uint8_t*)&hidData->mAltSetting, 1);
@@ -343,27 +355,27 @@ uint8_t usbSetup (USBD_HandleTypeDef* device, USBD_SetupReqTypedef* req) {
 
     case USB_REQ_TYPE_CLASS: // 0x20
       switch (req->bRequest) {
-        case 0x02: // reqGetIdle
+        case 0x01: // getReport
+          gApp->getLcd()->debug (LCD_COLOR_RED, "-getReport");
+          break;
+        case 0x02: // getIdle
           USBD_CtlSendData (device, (uint8_t*)&hidData->mIdleState, 1);
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getIdle %d", hidData->mIdleState);
           break;
-        case 0x03: // reqGetProtocol
+        case 0x03: // getProtocol
           USBD_CtlSendData (device, (uint8_t*)&hidData->mProtocol, 1);
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getProtocol %d", hidData->mProtocol);
           break;
-        case USB_REQ_GET_CONFIGURATION : // 0x08
-          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-getConfiguration?");
-          USBD_CtlSendData (device, (uint8_t*)&hidData->mConfiguration, 1);
+        case 0x09: // setReport
+          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setReport v:%d wI:%x wLen:%d",
+                                 req->wValue, req->wIndex, req->wLength);
+          USBD_CtlPrepareRx (device, hidData->mData, req->wLength);
           break;
-        case USB_REQ_SET_CONFIGURATION:  // 0x09
-          gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setConfiguration?");
-          hidData->mConfiguration = (uint8_t)(req->wValue);
-          break;
-        case 0x0A: // reqSetIdle
+        case 0x0A: // setIdle
           hidData->mIdleState = (uint8_t)(req->wValue >> 8);
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setIdle %d", req->wValue);
           break;
-        case 0x0B: // reqSetProtocol
+        case 0x0B: // setProtocol
           hidData->mProtocol = (uint8_t)(req->wValue);
           gApp->getLcd()->debug (LCD_COLOR_GREEN, "-setProtocol %d", req->wValue);
           break;
@@ -386,7 +398,19 @@ uint8_t usbEp0TxReady (USBD_HandleTypeDef* device) {
 //}}}
 //{{{
 uint8_t usbEp0RxReady (USBD_HandleTypeDef* device) {
-  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "usbEp0RxReady");
+
+  auto hidData = (tHidData*)device->pClassData;
+  gApp->getLcd()->debug (LCD_COLOR_YELLOW, "usbEp0RxReady data:%x", hidData->mData[0]);
+
+  uint8_t leds = 0;
+  if (hidData->mData[0] & 0x01)
+    leds |= 0x02;
+  if (hidData->mData[0] & 0x02)
+    leds |= 0x04;
+  if (hidData->mData[0] & 0x04)
+    leds |= 0x01;
+  gApp->getPs2()->sendLeds (leds);
+
   return USBD_OK;
   }
 //}}}
