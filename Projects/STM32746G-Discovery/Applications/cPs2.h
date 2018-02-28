@@ -1,9 +1,9 @@
 // cPs2.h
-#pragma once
 // keyboard brown  - touchpad red    - V - +5v
 // keyboard yellow - touchpad yellow - C - A3 - PF8 - clock
 // keyboard red    - touchpad green  - O - A2 - PF9 - data
 // keyboard black  - touchpad black  - G - ground
+#pragma once
 //{{{  includes
 #include "../../../system.h"
 #include "../../../cLcd.h"
@@ -30,12 +30,10 @@ public:
       mLcd->debug (LCD_COLOR_RED, "initPs2keyboard - missing 0xAA reset");
 
     // send getId
-    sendChar (0x0F2);
+    sendChar (0xF2);
     mLcd->debug (LCD_COLOR_YELLOW, "keyboard id %x %x", getRawChar(), getRawChar());
 
     resetChar();
-
-    mLcd->debug (LCD_COLOR_CYAN, "reste mod %x", mModBits);
     }
   //}}}
   //{{{
@@ -635,8 +633,6 @@ private:
     while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
 
     while (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for rising edge
-    //if (HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8) == true)
-    //  lcd->info ("sendChar - missing line control bit");
     while (!HAL_GPIO_ReadPin (GPIOF, GPIO_PIN_8)) {} // wait for falling edge
     mRx = true;
 

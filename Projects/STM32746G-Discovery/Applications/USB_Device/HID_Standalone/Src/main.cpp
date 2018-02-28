@@ -7,9 +7,9 @@
 #include "../../../cPs2.h"
 #include "../../../usbd.h"
 //}}}
-std::string kVersion = "USB HID keyboard ps2 26/2/18";
+std::string kVersion = "USB HID keyboard ps2 28/2/18";
 #define HID_IN_ENDPOINT       0x81
-#define HID_IN_ENDPOINT_SIZE  5
+#define HID_IN_ENDPOINT_SIZE  4
 
 //{{{
 class cApp : public cTouch {
@@ -80,7 +80,7 @@ __ALIGN_BEGIN uint8_t kHidReportDescriptor[] __ALIGN_END = {
   0x05, 0x01,  // Usage Page (Generic Desktop Ctrls)
   0x09, 0x06,  // Usage (Keyboard)
   0xA1, 0x01,  // Collection (Application)
-    0x85, 0x01,  //  Report ID (1)
+    //0x85, 0x01,  //  Report ID (1)  - extra byte in report with id = 1
     0x05, 0x07,  //  Usage Page (Keyboard/Keypad)
     0x75, 0x01,  //  Report Size (1)
     0x95, 0x08,  //  Report Count (8)
@@ -89,7 +89,7 @@ __ALIGN_BEGIN uint8_t kHidReportDescriptor[] __ALIGN_END = {
     0x15, 0x00,  //  Logical Minimum (0)
     0x25, 0x01,  //  Logical Maximum (1)
     0x81, 0x02,  //  Input (Data, Var, Abs, No Wrap,Linear,Preferred State,No Null Position)
-    0x95, 0x03,  //  Report Count (3)
+    0x95, 0x03,  //  Report Count
     0x75, 0x08,  //  Report Size (8)
     0x15, 0x00,  //  Logical Minimum (0)
     0x25, 0x64,  //  Logical Maximum (100)
@@ -165,7 +165,7 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
   0,     // bAlternateSetting - alternate setting
   1,     // bNumEndpoints
   3,     // bInterfaceClass: HID
-  0,     // bInterfaceSubClass -  no boot  - 0x01, // bInterfaceSubClass : 0 = no boot  1 = BOOT,
+  1,     // bInterfaceSubClass -  no boot  - 0x01, // bInterfaceSubClass : 0 = no boot  1 = BOOT,
   1,     // nInterfaceProtocol - keyboard, - 0x02, // nInterfaceProtocol : 0 = none     1 = keyboard  2 = mouse
   0,     // iInterface - index of string descriptor
 
@@ -391,25 +391,33 @@ void hidSendMouse (USBD_HandleTypeDef* device, uint8_t* report) {
 void hidSendKeyboard (uint8_t modifier, uint8_t code) {
 
   struct keyboardHID_t {
-    uint8_t id;
-    uint8_t modifiers;
-    uint8_t key1;
-    uint8_t key2;
-    uint8_t key3;
+    //uint8_t id;
+    uint8_t mModifiers;
+    uint8_t mReserved;
+    uint8_t mKey1;
+    uint8_t mKey2;
+    uint8_t mKey3;
+    uint8_t mKey4;
+    uint8_t mKey5;
+    uint8_t mKey6;
     };
   struct keyboardHID_t keyboardHID;
 
-  keyboardHID.id = 1;
-  keyboardHID.modifiers = modifier;
-  keyboardHID.key1 = code;
-  keyboardHID.key2 = 0;
-  keyboardHID.key3 = 0;
+  //keyboardHID.id = 1;
+  keyboardHID.mModifiers = modifier;
+  keyboardHID.mReserved = 0;
+  keyboardHID.mKey1 = code;
+  keyboardHID.mKey2 = 0;
+  keyboardHID.mKey3 = 0;
+  keyboardHID.mKey4 = 0;
+  keyboardHID.mKey5 = 0;
+  keyboardHID.mKey6 = 0;
 
   auto hidData = (tHidData*)gUsbDevice.pClassData;
   if (gUsbDevice.dev_state == USBD_STATE_CONFIGURED) {
     if (hidData->mState == HID_IDLE) {
       hidData->mState = HID_BUSY;
-      USBD_LL_Transmit (&gUsbDevice, HID_IN_ENDPOINT, (uint8_t*)(&keyboardHID), 5);
+      USBD_LL_Transmit (&gUsbDevice, HID_IN_ENDPOINT, (uint8_t*)(&keyboardHID), HID_IN_ENDPOINT_SIZE);
       HAL_Delay (10);
       }
     else
@@ -524,7 +532,6 @@ void cApp::onPress (int x, int y) {
 
   //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,0,0,0 };
   //hidSendReport (&gUsbDevice, HID_Buffer);
-
   mLcd->debug (LCD_COLOR_GREEN, "onPress %d %d", x, y);
   }
 //}}}
@@ -534,7 +541,7 @@ void cApp::onMove (int x, int y, int z) {
   if (x || y) {
     //uint8_t HID_Buffer[HID_IN_ENDPOINT_SIZE] = { 1,(uint8_t)x,(uint8_t)y,0 };
     //hidSendReport (&gUsbDevice, HID_Buffer);
-  mLcd->debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
+    mLcd->debug (LCD_COLOR_GREEN, "onMove %d %d %d", x, y, z);
     }
   }
 //}}}
