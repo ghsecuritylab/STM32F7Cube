@@ -279,15 +279,16 @@ uint8_t* serialStringDescriptor (USBD_SpeedTypeDef speed, uint16_t* length) {
 //}}}
 
 //{{{  hidClass handlers
-typedef enum { HID_IDLE = 0, HID_BUSY } eHidStateTypeDef;
+#define HID_IDLE false
+#define HID_BUSY true
 //{{{  tHidData
 typedef struct {
-  uint32_t         mProtocol;
-  uint32_t         mIdleState;
-  uint32_t         mAltSetting;
-  uint32_t         mConfiguration;
-  eHidStateTypeDef mState;
-  uint8_t          mData[USB_MAX_EP0_SIZE];
+  uint32_t mProtocol;
+  uint32_t mIdleState;
+  uint32_t mAltSetting;
+  uint32_t mConfiguration;
+  bool     mState;
+  uint8_t  mData[USB_MAX_EP0_SIZE];
   } tHidData;
 //}}}
 

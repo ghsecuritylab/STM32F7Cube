@@ -145,6 +145,7 @@ public:
 
     mInPtr = 0;
     mOutPtr = 0;
+    mModBits = 0;
     }
   //}}}
 
