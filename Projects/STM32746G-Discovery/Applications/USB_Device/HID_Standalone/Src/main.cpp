@@ -162,13 +162,13 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
 
   // hid interface descriptor
   9, USB_DESC_TYPE_INTERFACE,
-  0,     // bInterfaceNumber - number of Interface
-  0,     // bAlternateSetting - alternate setting
-  1,     // bNumEndpoints
-  3,     // bInterfaceClass: HID
-  1,     // bInterfaceSubClass -  no boot  - 0x01, // bInterfaceSubClass : 0 = no boot  1 = BOOT,
-  1,     // nInterfaceProtocol - keyboard, - 0x02, // nInterfaceProtocol : 0 = none     1 = keyboard  2 = mouse
-  0,     // iInterface - index of string descriptor
+  0,  // bInterfaceNumber - number of Interface
+  0,  // bAlternateSetting - alternate setting
+  1,  // bNumEndpoints
+  3,  // bInterfaceClass - HID
+  1,  // bInterfaceSubClass - boot = 1, boot = 0
+  1,  // nInterfaceProtocol - keyboard -  none = 0, keyboard = 1, mouse = 2
+  0,  // iInterface - index of string descriptor
 
   // HID descriptor
   9, 0x21,
@@ -180,11 +180,11 @@ __ALIGN_BEGIN const uint8_t kHidConfigurationDescriptor[34] __ALIGN_END = {
 
   // hid endpoint descriptor
   7, USB_DESC_TYPE_ENDPOINT,
-  HID_IN_ENDPOINT,      // bEndpointAddress - endpoint address (IN)
-  3,                    // bmAttributes - interrupt endpoint
-  HID_IN_ENDPOINT_SIZE, // wMaxPacketSize
+  HID_IN_ENDPOINT,       // bEndpointAddress - endpoint address (IN)
+  3,                     // bmAttributes - interrupt endpoint
+  HID_IN_ENDPOINT_SIZE,  // wMaxPacketSize
   0,
-  10,                   // bInterval - polling interval (10 ms)
+  10,                    // bInterval - polling interval (10 ms)
   };
 //}}}
 //{{{  string descriptors
@@ -394,7 +394,7 @@ void hidSendKeyboard (uint8_t modifier, uint8_t code) {
   class cKeyboardHID {
   public:
     //uint8_t mId = 1;
-    uint8_t mModifiers = 0;
+    uint8_t mModifier = 0;
     uint8_t mKey1 = 0;
     uint8_t mKey2 = 0;
     uint8_t mKey3 = 0;
@@ -404,10 +404,10 @@ void hidSendKeyboard (uint8_t modifier, uint8_t code) {
     };
 
   cKeyboardHID keyboardHID;
-  keyboardHID.mModifiers = modifier;
-  keyboardHID.mKey1 = 0;
+  keyboardHID.mModifier = modifier;
+  keyboardHID.mKey1 = code;
   keyboardHID.mKey2 = 0;
-  keyboardHID.mKey3 = code;
+  keyboardHID.mKey3 = 0;
   keyboardHID.mKey4 = 0;
   keyboardHID.mKey5 = 0;
   keyboardHID.mKey6 = 0;
