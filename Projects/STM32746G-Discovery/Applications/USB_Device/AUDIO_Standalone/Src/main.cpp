@@ -792,7 +792,7 @@ int main() {
   USBD_Start (&gUsbDevice);
 
   while (true) {
-    touch.poll();
+    touch.pollTouch();
     gLcd.show (kVersion);
     gPackets.show();
     touch.show();
